@@ -16,6 +16,8 @@ export interface AppConfig {
 
   JWT_SECRET: string;
   JWT_EXPIRES_IN: string;
+
+  LOG_LEVEL: 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
 }
 
 @Injectable()
@@ -47,6 +49,10 @@ export class ConfigService {
 
       JWT_SECRET: Joi.string().required(),
       JWT_EXPIRES_IN: Joi.string().required(),
+
+      LOG_LEVEL: Joi.string()
+        .valid('fatal', 'error', 'warn', 'info', 'debug', 'trace')
+        .default('debug'),
     }).unknown(true);
 
     const validationResult = schema.validate(process.env, {
