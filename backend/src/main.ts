@@ -4,36 +4,33 @@ import { AppModule } from './app.module';
 import { ConfigService } from './config/config.service';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { LoggerService } from './logger/logger.service';
+import helmet from 'helmet';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  app.enableShutdownHooks();
+
   const configService = app.get(ConfigService);
   const logger = app.get(LoggerService);
+
   const port = configService.get('PORT');
   const allowedOrigins = configService
     .get('ALLOWED_ORIGINS')
     .split(',')
     .map((origin) => origin.trim());
 
-  // ----------------------
-  // Global Prefix
-  // ----------------------
   app.setGlobalPrefix('api');
 
   app.useGlobalFilters(new GlobalExceptionFilter(logger));
 
-  // ----------------------
-  // CORS
-  // ----------------------
+  app.use(helmet());
+
   app.enableCors({
     origin: allowedOrigins,
     credentials: true,
   });
 
-  // ----------------------
-  // Validation
-  // ----------------------
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
