@@ -74,15 +74,19 @@ export class CollegeService {
         skip: queryArgs.skip,
         take: queryArgs.take,
         orderBy: queryArgs.orderBy,
-        include: { score: true, participants: false },
+        include: {
+          score: true,
+          participants: query.includeRelations || false,
+        },
       }),
       this.prisma.college.count({ where: queryArgs.where }),
     ]);
 
     const items: CollegeResponse[] = colleges.map((c) => ({
       ...c,
-      participantCount: 0, // we can fetch real count if needed
+      participantCount: c.participants?.length || 0,
       score: c.score,
+      participants: query.includeRelations ? c.participants : undefined,
     }));
 
     this.logger.info('Fetched colleges', {
@@ -95,7 +99,7 @@ export class CollegeService {
   // GET ONE
   async findOne(
     id: number,
-    includeParticipants = false,
+    includeRelations: boolean = false,
   ): Promise<CollegeResponse> {
     const ctx = { entity: this.entity, action: 'fetchOne', additional: { id } };
     this.logger.debug('Fetching college by id', ctx);
@@ -104,7 +108,7 @@ export class CollegeService {
       where: { id },
       include: {
         score: true,
-        participants: includeParticipants ? true : false,
+        participants: includeRelations,
         _count: { select: { participants: true } },
       },
     });
@@ -121,7 +125,7 @@ export class CollegeService {
       createdAt: college.createdAt,
       score: college.score,
       participantCount: college._count.participants,
-      participants: includeParticipants ? college.participants : undefined,
+      participants: includeRelations ? college.participants : undefined,
     };
 
     this.logger.info('Fetched college successfully', ctx);

@@ -9,60 +9,59 @@ import {
   Query,
   ParseIntPipe,
 } from '@nestjs/common';
-import { CollegeService } from './college.service';
-import { CreateCollegeDto, UpdateCollegeDto } from './dto';
+import { ParticipantService } from './participant.service';
+import { CreateParticipantDto, UpdateParticipantDto } from './dto';
 import { QueryOptionsDto } from 'src/common/dto/query-options.dto';
 
-@Controller({ path: 'colleges', version: '1' })
-export class CollegeController {
-  constructor(private readonly collegeService: CollegeService) {}
+@Controller({ path: 'participants', version: '1' })
+export class ParticipantController {
+  constructor(private readonly participantService: ParticipantService) {}
 
   // ────────────────────────────────────────────────
-  // CREATE COLLEGE
+  // CREATE PARTICIPANT
   // ────────────────────────────────────────────────
   @Post()
-  async create(@Body() dto: CreateCollegeDto) {
-    return this.collegeService.create(dto);
+  async create(@Body() dto: CreateParticipantDto) {
+    return this.participantService.create(dto);
   }
 
   // ────────────────────────────────────────────────
-  // GET ALL COLLEGES
+  // GET ALL PARTICIPANTS
   // ────────────────────────────────────────────────
   @Get()
   async findAll(@Query() query: QueryOptionsDto) {
-    return this.collegeService.findAll(query);
+    return this.participantService.findAll(query);
   }
 
   // ────────────────────────────────────────────────
-  // GET ONE COLLEGE
+  // GET ONE PARTICIPANT
   // ────────────────────────────────────────────────
   @Get(':id')
   async findOne(
     @Param('id', ParseIntPipe) id: number,
-    @Query('includeRelations') includeRelations?: string, // Accept only what we need
+    @Query('includeRelations') includeRelations?: string,
   ) {
     // Convert string 'true'/'false' to boolean (default to false)
     const includeRelationsBool = includeRelations === 'true';
-
-    return this.collegeService.findOne(id, includeRelationsBool);
+    return this.participantService.findOne(id, includeRelationsBool);
   }
 
   // ────────────────────────────────────────────────
-  // UPDATE COLLEGE
+  // UPDATE PARTICIPANT
   // ────────────────────────────────────────────────
   @Patch(':id')
   async update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateCollegeDto,
+    @Body() dto: UpdateParticipantDto,
   ) {
-    return this.collegeService.update(id, dto);
+    return this.participantService.update(id, dto);
   }
 
   // ────────────────────────────────────────────────
-  // DELETE COLLEGE
+  // DELETE PARTICIPANT
   // ────────────────────────────────────────────────
   @Delete(':id')
   async remove(@Param('id', ParseIntPipe) id: number) {
-    return this.collegeService.remove(id);
+    return this.participantService.remove(id);
   }
 }

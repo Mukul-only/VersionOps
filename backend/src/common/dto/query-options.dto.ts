@@ -6,6 +6,7 @@ import {
   MaxLength,
   IsInt,
   Min,
+  IsBoolean,
 } from 'class-validator';
 import { Trim } from '../decorators/trim.decorator';
 
@@ -43,4 +44,9 @@ export class QueryOptionsDto {
   @IsString()
   @Type(() => Object)
   filters?: string;
+
+  @IsOptional()
+  @Type(() => Boolean)
+  @IsBoolean()
+  includeRelations?: boolean = false;
 }

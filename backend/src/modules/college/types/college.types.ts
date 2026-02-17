@@ -8,9 +8,9 @@ export interface CollegeResponse {
   id: number;
   code: string;
   name: string;
-  createdAt: Date;
-  score: CollegeScore | null;
+  score?: CollegeScore | null;
   participants?: Participant[]; // optional, full list
+  createdAt?: Date;
   participantCount?: number; // optional, count
 }
 

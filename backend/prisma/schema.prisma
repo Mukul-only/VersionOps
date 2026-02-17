@@ -46,9 +46,6 @@ model College {
 model Participant {
   id              Int      @id @default(autoincrement())
 
-  /// Global serial number (S.No)
-  serialNo        Int      @unique
-
   /// Readable ID: ABC-1-001
   participantId   String   @unique @db.VarChar(50)
 
@@ -56,7 +53,7 @@ model Participant {
 
   collegeId       Int
   college         College  @relation(fields: [collegeId], references: [id], onDelete: Restrict)
-
+  email           String   @unique @db.VarChar(255)
   year            Year
 
   /// Fest attendance status

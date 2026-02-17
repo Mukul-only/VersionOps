@@ -8,6 +8,7 @@ import { ConfigModule } from './config/config.module';
 import { LoggerModule } from './logger/logger.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { CollegeModule } from './modules/college/college.module';
+import { ParticipantModule } from './modules/participant/participant.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { CollegeModule } from './modules/college/college.module';
     LoggerModule,
     PrismaModule,
     CollegeModule,
+    ParticipantModule,
     ThrottlerModule.forRoot({
       throttlers: [
         {

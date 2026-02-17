@@ -31,8 +31,8 @@ export class PrismaService
       adapter,
       log:
         configService.get('NODE_ENV') === 'development'
-          ? ['query', 'warn', 'error']
-          : ['warn', 'error'],
+          ? ['warn', 'error']
+          : ['error'],
     });
 
     this.pool = pool;
