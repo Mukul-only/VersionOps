@@ -1,0 +1,160 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Year {
+  ONE
+  TWO
+}
+
+enum Position {
+  FIRST
+  SECOND
+  THIRD
+}
+
+/// Fest level attendance
+enum FestStatus {
+  REGISTERED
+  CHECKED_IN
+  NO_SHOW
+}
+
+/// Per-event attendance
+enum ParticipationStatus {
+  REGISTERED
+  CHECKED_IN
+  NO_SHOW
+}
+
+model College {
+  id        Int      @id @default(autoincrement())
+  code      String   @unique @db.VarChar(10)
+  name      String   @db.VarChar(255)
+  createdAt DateTime @default(now())
+
+  participants Participant[]
+  score        CollegeScore?
+
+  @@map("colleges")
+}
+
+model Participant {
+  id              Int      @id @default(autoincrement())
+
+  /// Global serial number (S.No)
+  serialNo        Int      @unique
+
+  /// Readable ID: ABC-1-001
+  participantId   String   @unique @db.VarChar(50)
+
+  name            String   @db.VarChar(255)
+
+  collegeId       Int
+  college         College  @relation(fields: [collegeId], references: [id])
+
+  year            Year
+
+  /// Fest attendance status
+  festStatus      FestStatus @default(REGISTERED)
+
+  hackerearthUser String?  @db.VarChar(100)
+  phone           String?  @db.VarChar(20)
+
+  createdAt       DateTime @default(now())
+
+  participations  EventParticipation[]
+  results         EventResult[]
+
+  @@map("participants")
+}
+
+
+model Event {
+  id                   Int      @id @default(autoincrement())
+  name                 String   @db.VarChar(255)
+
+  /// 1 = solo event, >1 = team event
+  teamSize             Int      @default(1)
+
+  participationPoints  Int      @default(0)
+  firstPrizePoints     Int      @default(0)
+  secondPrizePoints    Int      @default(0)
+  thirdPrizePoints     Int      @default(0)
+
+  createdAt            DateTime @default(now())
+
+  participations       EventParticipation[]
+  results              EventResult[]
+
+  @@map("events")
+}
+
+
+model EventParticipation {
+  id              Int      @id @default(autoincrement())
+
+  eventId         Int
+  participantId   Int
+
+  event           Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  participant     Participant  @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  /// Dummy ID like AC-001
+  dummyId         String?  @db.VarChar(50)
+
+  /// Team grouping identifier (same value = same team)
+  teamId          String?  @db.VarChar(50)
+
+  /// Event attendance status
+  status          ParticipationStatus @default(REGISTERED)
+
+  createdAt       DateTime @default(now())
+
+  @@unique([eventId, participantId])
+  @@map("event_participations")
+}
+
+//////////////////////////////////////////////////////////
+// EVENT RESULTS (WINNERS ONLY)
+//////////////////////////////////////////////////////////
+
+model EventResult {
+  id              Int      @id @default(autoincrement())
+
+  eventId         Int
+  participantId   Int
+
+  event           Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  participant     Participant  @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  position        Position
+
+  /// Final calculated points after fairness multiplier
+  pointsAwarded   Int
+
+  createdAt       DateTime @default(now())
+
+  @@unique([eventId, participantId])
+  @@map("event_results")
+}
+
+
+model CollegeScore {
+  collegeId      Int     @id
+
+  college        College @relation(fields: [collegeId], references: [id], onDelete: Restrict)
+
+  totalPoints    Int     @default(0)
+  firstPrizes    Int     @default(0)
+  secondPrizes   Int     @default(0)
+  thirdPrizes    Int     @default(0)
+
+  updatedAt      DateTime @updatedAt
+
+  @@map("college_scores")
+}
