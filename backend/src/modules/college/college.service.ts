@@ -1,18 +1,21 @@
 import {
+  Injectable,
   BadRequestException,
   ConflictException,
-  Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from 'src/config/config.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { LoggerService } from 'src/logger/logger.service';
-import { College } from '@prisma/client';
+import { Prisma, College } from '@prisma/client';
 
 import { CreateCollegeDto, UpdateCollegeDto } from './dto';
 import { QueryOptionsDto } from 'src/common/dto/query-options.dto';
 import { buildQueryArgs } from 'src/common/utils/query-builder.util';
-import { Prisma } from '@prisma/client';
+import {
+  CollegeResponse,
+  PaginatedCollegeResponse,
+} from './types/college.types';
 
 @Injectable()
 export class CollegeService {
@@ -24,31 +27,20 @@ export class CollegeService {
     private readonly logger: LoggerService,
   ) {}
 
-  /*
-   ============================
-   CREATE COLLEGE
-   ============================
-  */
-  async create(dto: CreateCollegeDto) {
+  // CREATE
+  async create(dto: CreateCollegeDto): Promise<CollegeResponse> {
     const { code, name } = dto;
     const ctx = { entity: this.entity, action: 'create', additional: { code } };
-
     this.logger.debug('Creating college', ctx);
 
     const existing = await this.prisma.college.findUnique({ where: { code } });
     if (existing) {
-      this.logger.warn(
-        `Attempt to create duplicate college code: ${code}`,
-        ctx,
-      );
+      this.logger.warn(`Duplicate college code: ${code}`, ctx);
       throw new ConflictException('College code already exists');
     }
 
     const college = await this.prisma.$transaction(async (tx) => {
-      const createdCollege = await tx.college.create({
-        data: { code, name },
-      });
-
+      const createdCollege = await tx.college.create({ data: { code, name } });
       await tx.collegeScore.create({
         data: {
           collegeId: createdCollege.id,
@@ -58,20 +50,16 @@ export class CollegeService {
           thirdPrizes: 0,
         },
       });
-
       return createdCollege;
     });
 
     this.logger.info(`College created: ${college.code}`, ctx);
-    return college;
+
+    return { ...college, score: null, participantCount: 0 };
   }
 
-  /*
-   ============================
-   GET ALL 
-   ============================
-  */
-  async findAll(query: QueryOptionsDto) {
+  // GET ALL
+  async findAll(query: QueryOptionsDto): Promise<PaginatedCollegeResponse> {
     const ctx = { entity: this.entity, action: 'fetch', additional: { query } };
     this.logger.debug('Fetching colleges', ctx);
 
@@ -86,24 +74,29 @@ export class CollegeService {
         skip: queryArgs.skip,
         take: queryArgs.take,
         orderBy: queryArgs.orderBy,
+        include: { score: true, participants: false },
       }),
       this.prisma.college.count({ where: queryArgs.where }),
     ]);
 
+    const items: CollegeResponse[] = colleges.map((c) => ({
+      ...c,
+      participantCount: 0, // we can fetch real count if needed
+      score: c.score,
+    }));
+
     this.logger.info('Fetched colleges', {
       ...ctx,
-      additional: { fetched: colleges.length, total },
+      additional: { fetched: items.length, total },
     });
-
-    return { items: colleges, total };
+    return { items, total };
   }
 
-  /*
-   ============================
-   GET ONE
-   ============================
-  */
-  async findOne(id: number) {
+  // GET ONE
+  async findOne(
+    id: number,
+    includeParticipants = false,
+  ): Promise<CollegeResponse> {
     const ctx = { entity: this.entity, action: 'fetchOne', additional: { id } };
     this.logger.debug('Fetching college by id', ctx);
 
@@ -111,6 +104,7 @@ export class CollegeService {
       where: { id },
       include: {
         score: true,
+        participants: includeParticipants ? true : false,
         _count: { select: { participants: true } },
       },
     });
@@ -120,16 +114,22 @@ export class CollegeService {
       throw new NotFoundException('College not found');
     }
 
+    const response: CollegeResponse = {
+      id: college.id,
+      code: college.code,
+      name: college.name,
+      createdAt: college.createdAt,
+      score: college.score,
+      participantCount: college._count.participants,
+      participants: includeParticipants ? college.participants : undefined,
+    };
+
     this.logger.info('Fetched college successfully', ctx);
-    return college;
+    return response;
   }
 
-  /*
-   ============================
-   UPDATE
-   ============================
-  */
-  async update(id: number, dto: UpdateCollegeDto) {
+  // UPDATE
+  async update(id: number, dto: UpdateCollegeDto): Promise<CollegeResponse> {
     const ctx = { entity: this.entity, action: 'update', additional: { id } };
     this.logger.debug('Updating college', ctx);
 
@@ -142,18 +142,24 @@ export class CollegeService {
     const updated = await this.prisma.college.update({
       where: { id },
       data: { name: dto.name },
+      include: { score: true, _count: { select: { participants: true } } },
     });
 
+    const response: CollegeResponse = {
+      id: updated.id,
+      code: updated.code,
+      name: updated.name,
+      createdAt: updated.createdAt,
+      score: updated.score,
+      participantCount: updated._count.participants,
+    };
+
     this.logger.info(`College updated: ${college.code}`, ctx);
-    return updated;
+    return response;
   }
 
-  /*
-   ============================
-   DELETE COLLEGE
-   ============================
-  */
-  async remove(id: number) {
+  // DELETE
+  async remove(id: number): Promise<{ success: boolean }> {
     const ctx = { entity: this.entity, action: 'delete', additional: { id } };
     this.logger.debug('Deleting college', ctx);
 
@@ -183,6 +189,6 @@ export class CollegeService {
     ]);
 
     this.logger.info(`College deleted: ${college.code}`, ctx);
-    return { message: 'College deleted successfully', success: true };
+    return { success: true };
   }
 }
