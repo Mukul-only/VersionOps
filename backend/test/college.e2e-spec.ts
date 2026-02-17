@@ -26,7 +26,7 @@ describe('College E2E', () => {
   afterAll(async () => {
     await prisma.collegeScore.deleteMany({});
     await prisma.college.deleteMany({});
-    await prisma.$disconnect(); // Add this line
+    await prisma.$disconnect();
     await app.close();
   });
 
