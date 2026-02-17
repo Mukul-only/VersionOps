@@ -116,6 +116,7 @@ model EventParticipation {
   createdAt       DateTime @default(now())
 
   @@unique([eventId, participantId])
+  @@unique([eventId, dummyId])
   @@map("event_participations")
 }
 
@@ -133,10 +134,6 @@ model EventResult {
   participant     Participant  @relation(fields: [participantId], references: [id], onDelete: Cascade)
 
   position        Position
-
-  /// Final calculated points after fairness multiplier
-  pointsAwarded   Int
-
   createdAt       DateTime @default(now())
 
   @@unique([eventId, participantId])
