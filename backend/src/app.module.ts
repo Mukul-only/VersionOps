@@ -7,12 +7,14 @@ import { AppService } from './app.service';
 import { ConfigModule } from './config/config.module';
 import { LoggerModule } from './logger/logger.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { CollegeModule } from './modules/college/college.module';
 
 @Module({
   imports: [
     ConfigModule,
     LoggerModule,
     PrismaModule,
+    CollegeModule,
     ThrottlerModule.forRoot({
       throttlers: [
         {

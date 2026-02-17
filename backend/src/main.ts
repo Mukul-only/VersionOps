@@ -5,6 +5,7 @@ import { ConfigService } from './config/config.service';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { LoggerService } from './logger/logger.service';
 import helmet from 'helmet';
+import { VersioningType } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -21,6 +22,10 @@ async function bootstrap() {
     .map((origin) => origin.trim());
 
   app.setGlobalPrefix('api');
+  // --- Enable API Versioning ---
+  app.enableVersioning({
+    type: VersioningType.URI, // /v1/...
+  });
 
   app.useGlobalFilters(new GlobalExceptionFilter(logger));
 

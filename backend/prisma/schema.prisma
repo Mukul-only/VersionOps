@@ -55,7 +55,7 @@ model Participant {
   name            String   @db.VarChar(255)
 
   collegeId       Int
-  college         College  @relation(fields: [collegeId], references: [id])
+  college         College  @relation(fields: [collegeId], references: [id], onDelete: Restrict)
 
   year            Year
 
