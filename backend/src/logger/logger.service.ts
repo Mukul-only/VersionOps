@@ -1,8 +1,8 @@
-import { Injectable, Scope } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import pino, { Logger as PinoLogger } from 'pino';
 import { ConfigService } from '../config/config.service';
 
-@Injectable({ scope: Scope.TRANSIENT })
+@Injectable()
 export class LoggerService {
   private readonly logger: PinoLogger;
   private readonly isProduction: boolean;
