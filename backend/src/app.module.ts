@@ -11,6 +11,7 @@ import { CollegeModule } from './modules/college/college.module';
 import { ParticipantModule } from './modules/participant/participant.module';
 import { EventModule } from './modules/event/event.module';
 import { EventParticipationModule } from './modules/event-participation/event-participation.module';
+import { EventResultModule } from './modules/event-result/event-result.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { EventParticipationModule } from './modules/event-participation/event-pa
     ParticipantModule,
     EventModule,
     EventParticipationModule,
+    EventResultModule,
     ThrottlerModule.forRoot({
       throttlers: [
         {
