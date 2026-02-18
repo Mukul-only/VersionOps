@@ -23,10 +23,10 @@ CREATE TABLE "colleges" (
 -- CreateTable
 CREATE TABLE "participants" (
     "id" SERIAL NOT NULL,
-    "serialNo" INTEGER NOT NULL,
     "participantId" VARCHAR(50) NOT NULL,
     "name" VARCHAR(255) NOT NULL,
     "collegeId" INTEGER NOT NULL,
+    "email" VARCHAR(255) NOT NULL,
     "year" "Year" NOT NULL,
     "festStatus" "FestStatus" NOT NULL DEFAULT 'REGISTERED',
     "hackerearthUser" VARCHAR(100),
@@ -69,7 +69,6 @@ CREATE TABLE "event_results" (
     "eventId" INTEGER NOT NULL,
     "participantId" INTEGER NOT NULL,
     "position" "Position" NOT NULL,
-    "pointsAwarded" INTEGER NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "event_results_pkey" PRIMARY KEY ("id")
@@ -91,13 +90,22 @@ CREATE TABLE "college_scores" (
 CREATE UNIQUE INDEX "colleges_code_key" ON "colleges"("code");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "participants_serialNo_key" ON "participants"("serialNo");
-
--- CreateIndex
 CREATE UNIQUE INDEX "participants_participantId_key" ON "participants"("participantId");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "participants_email_key" ON "participants"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "events_name_key" ON "events"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "event_participations_dummyId_key" ON "event_participations"("dummyId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "event_participations_eventId_participantId_key" ON "event_participations"("eventId", "participantId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "event_participations_eventId_dummyId_key" ON "event_participations"("eventId", "dummyId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "event_results_eventId_participantId_key" ON "event_results"("eventId", "participantId");

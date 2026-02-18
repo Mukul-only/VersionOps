@@ -10,6 +10,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { CollegeModule } from './modules/college/college.module';
 import { ParticipantModule } from './modules/participant/participant.module';
 import { EventModule } from './modules/event/event.module';
+import { EventParticipationModule } from './modules/event-participation/event-participation.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { EventModule } from './modules/event/event.module';
     CollegeModule,
     ParticipantModule,
     EventModule,
+    EventParticipationModule,
     ThrottlerModule.forRoot({
       throttlers: [
         {
