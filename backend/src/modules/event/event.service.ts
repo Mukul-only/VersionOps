@@ -27,7 +27,16 @@ export class EventService {
   async create(dto: CreateEventDto): Promise<EventResponse> {
     const ctx = { entity: this.entity, action: 'create', additional: { dto } };
     this.logger.debug('Creating event', ctx);
+    const existingEvent = await this.prisma.event.findUnique({
+      where: { name: dto.name },
+    });
 
+    if (existingEvent) {
+      this.logger.warn(`Event with name "${dto.name}" already exists`, ctx);
+      throw new ConflictException(
+        `Event with name "${dto.name}" already exists`,
+      );
+    }
     const event = await this.prisma.event.create({
       data: {
         name: dto.name,
@@ -124,6 +133,20 @@ export class EventService {
       throw new NotFoundException('Event not found');
     }
 
+    // Check if name is being updated and if it's unique
+    if (dto.name && dto.name !== existing.name) {
+      const nameExists = await this.prisma.event.findUnique({
+        where: { name: dto.name },
+      });
+
+      if (nameExists) {
+        this.logger.warn(`Event with name "${dto.name}" already exists`, ctx);
+        throw new ConflictException(
+          `Event with name "${dto.name}" already exists`,
+        );
+      }
+    }
+
     const updated = await this.prisma.event.update({
       where: { id },
       data: {
@@ -139,7 +162,6 @@ export class EventService {
     this.logger.info(`Event updated: ${updated.name}`, ctx);
     return this.mapToResponse(updated);
   }
-
   // ─────────────────────────────
   // DELETE EVENT
   // ─────────────────────────────
