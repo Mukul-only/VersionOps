@@ -75,7 +75,6 @@ model Event {
   id                   Int      @id @default(autoincrement())
   name                 String   @db.VarChar(255)
 
-  /// 1 = solo event, >1 = team event
   teamSize             Int      @default(1)
 
   participationPoints  Int      @default(0)
