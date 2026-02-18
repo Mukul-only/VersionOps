@@ -12,6 +12,7 @@ import { ParticipantModule } from './modules/participant/participant.module';
 import { EventModule } from './modules/event/event.module';
 import { EventParticipationModule } from './modules/event-participation/event-participation.module';
 import { EventResultModule } from './modules/event-result/event-result.module';
+import { LeaderboardModule } from './modules/leaderboard/leadeboard.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { EventResultModule } from './modules/event-result/event-result.module';
     EventModule,
     EventParticipationModule,
     EventResultModule,
+    LeaderboardModule,
     ThrottlerModule.forRoot({
       throttlers: [
         {
