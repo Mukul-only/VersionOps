@@ -10,12 +10,30 @@ import {
   ParseIntPipe,
 } from '@nestjs/common';
 import { ParticipantService } from './participant.service';
+import { BulkImportService } from './bulk-import.service';
 import { CreateParticipantDto, UpdateParticipantDto } from './dto';
 import { QueryOptionsDto } from 'src/common/dto/query-options.dto';
+import {
+  BulkParticipantInput,
+  BulkImportResult,
+} from './types/participants.types';
 
 @Controller({ path: 'participants', version: '1' })
 export class ParticipantController {
-  constructor(private readonly participantService: ParticipantService) {}
+  constructor(
+    private readonly participantService: ParticipantService,
+    private readonly bulkImportService: BulkImportService,
+  ) {}
+
+  // ────────────────────────────────────────────────
+  // BULK IMPORT PARTICIPANTS
+  // ────────────────────────────────────────────────
+  @Post('bulk-import')
+  async bulkImport(
+    @Body() data: BulkParticipantInput[],
+  ): Promise<BulkImportResult> {
+    return this.bulkImportService.bulkImport(data);
+  }
 
   // ────────────────────────────────────────────────
   // CREATE PARTICIPANT
@@ -41,7 +59,6 @@ export class ParticipantController {
     @Param('id', ParseIntPipe) id: number,
     @Query('includeRelations') includeRelations?: string,
   ) {
-    // Convert string 'true'/'false' to boolean (default to false)
     const includeRelationsBool = includeRelations === 'true';
     return this.participantService.findOne(id, includeRelationsBool);
   }

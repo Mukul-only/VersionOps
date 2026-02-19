@@ -59,7 +59,7 @@ model Participant {
   /// Fest attendance status
   festStatus      FestStatus @default(REGISTERED)
 
-  hackerearthUser String?  @db.VarChar(100)
+  hackerearthUser String?  @unique() @db.VarChar(100)
   phone           String?  @db.VarChar(20)
 
   createdAt       DateTime @default(now())

@@ -56,6 +56,15 @@ export class ParticipantService {
       throw new ConflictException('Email already registered');
     }
 
+    if (dto.hackerearthUser) {
+      const existingHackerearthUser = await this.prisma.participant.findUnique({
+        where: { hackerearthUser: dto.hackerearthUser },
+      });
+      if (existingHackerearthUser) {
+        throw new ConflictException('HackerEarth username already registered');
+      }
+    }
+
     const count = await this.prisma.participant.count({
       where: { collegeId: dto.collegeId },
     });
@@ -186,6 +195,23 @@ export class ParticipantService {
       });
       if (emailExists) {
         throw new ConflictException('Email already registered');
+      }
+    }
+
+    if (
+      dto.hackerearthUser !== undefined &&
+      dto.hackerearthUser !== participant.hackerearthUser
+    ) {
+      // If setting to null, no need to check uniqueness
+      if (dto.hackerearthUser !== null) {
+        const hackerearthExists = await this.prisma.participant.findUnique({
+          where: { hackerearthUser: dto.hackerearthUser },
+        });
+        if (hackerearthExists) {
+          throw new ConflictException(
+            'HackerEarth username already registered',
+          );
+        }
       }
     }
 
