@@ -12,6 +12,7 @@ import {
   Year,
   EventParticipation,
   EventResult,
+  FestStatus,
 } from '@prisma/client';
 
 import { CreateParticipantDto, UpdateParticipantDto } from './dto';
@@ -270,6 +271,39 @@ export class ParticipantService {
 
     this.logger.info(`Participant deleted: ${participant.participantId}`, ctx);
     return { success: true };
+  }
+
+  // ─────────────────────────────
+  // CHECK-IN for FEST
+  // ─────────────────────────────
+  async checkIn(id: number): Promise<ParticipantResponse> {
+    const ctx = { entity: this.entity, action: 'check-in', id };
+    this.logger.debug('Checking in participant for FEST', ctx);
+
+    const participant = await this.prisma.participant.findUnique({
+      where: { id },
+      include: { college: true },
+    });
+
+    if (!participant) {
+      throw new NotFoundException('Participant not found');
+    }
+
+    if (participant.festStatus === FestStatus.CHECKED_IN) {
+      throw new ConflictException('Participant already checked in');
+    }
+
+    const updated = await this.prisma.participant.update({
+      where: { id },
+      data: {
+        festStatus: FestStatus.CHECKED_IN,
+      },
+      include: { college: true },
+    });
+
+    this.logger.info(`Participant checked in: ${updated.participantId}`, ctx);
+
+    return this.mapToResponse(updated);
   }
 
   // ─────────────────────────────

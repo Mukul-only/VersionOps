@@ -36,6 +36,14 @@ export class ParticipantController {
   }
 
   // ────────────────────────────────────────────────
+  // CHECK-IN PARTICIPANT
+  // ────────────────────────────────────────────────
+  @Post(':id/check-in')
+  async checkIn(@Param('id', ParseIntPipe) id: number) {
+    return this.participantService.checkIn(id);
+  }
+
+  // ────────────────────────────────────────────────
   // CREATE PARTICIPANT
   // ────────────────────────────────────────────────
   @Post()
