@@ -24,13 +24,6 @@ enum FestStatus {
   NO_SHOW
 }
 
-/// Per-event attendance
-enum ParticipationStatus {
-  REGISTERED
-  CHECKED_IN
-  NO_SHOW
-}
-
 model College {
   id        Int      @id @default(autoincrement())
   code      String   @unique @db.VarChar(10)
@@ -105,9 +98,6 @@ model EventParticipation {
 
   /// Team grouping identifier (same value = same team)
   teamId          String?  @db.VarChar(50)
-
-  /// Event attendance status
-  status          ParticipationStatus @default(REGISTERED)
 
   createdAt       DateTime @default(now())
 

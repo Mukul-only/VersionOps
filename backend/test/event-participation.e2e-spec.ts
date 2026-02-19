@@ -7,7 +7,7 @@ import {
   EventParticipationResponse,
   PaginatedEventParticipationResponse,
 } from 'src/modules/event-participation/types/event-participation.types';
-import { ParticipationStatus, Year } from '@prisma/client';
+import { Year } from '@prisma/client';
 
 describe('EventParticipation E2E', () => {
   let app: INestApplication;
@@ -316,7 +316,6 @@ describe('EventParticipation E2E', () => {
             participantId: testParticipantId,
             dummyId: 'EC-001',
             teamId: 'TEAM-A',
-            status: ParticipationStatus.REGISTERED,
           })
           .expect(201);
 
@@ -326,22 +325,6 @@ describe('EventParticipation E2E', () => {
         expect(participation.participantId).toBe(testParticipantId);
         expect(participation.dummyId).toBe('EC-001');
         expect(participation.teamId).toBe('TEAM-A');
-        expect(participation.status).toBe(ParticipationStatus.REGISTERED);
-      });
-
-      it('should create with default status', async () => {
-        const response = await request(httpServer)
-          .post('/api/v1/event-participations')
-          .send({
-            eventId: anotherEventId,
-            participantId: anotherParticipantId,
-            dummyId: 'EC-002',
-          })
-          .expect(201);
-
-        expect((response.body as EventParticipationResponse).status).toBe(
-          ParticipationStatus.REGISTERED,
-        );
       });
 
       it('should reject duplicate participant in same event', async () => {
@@ -523,20 +506,8 @@ describe('EventParticipation E2E', () => {
             participantId: thirdParticipantId,
             dummyId: 'UPDATE-TEST',
             teamId: 'OLD-TEAM',
-            status: ParticipationStatus.REGISTERED,
           });
         participationId = (response.body as EventParticipationResponse).id;
-      });
-
-      it('should update status', async () => {
-        const response = await request(httpServer)
-          .patch(`/api/v1/event-participations/${participationId}`)
-          .send({ status: ParticipationStatus.CHECKED_IN })
-          .expect(200);
-
-        expect((response.body as EventParticipationResponse).status).toBe(
-          ParticipationStatus.CHECKED_IN,
-        );
       });
 
       it('should update teamId', async () => {
@@ -574,13 +545,6 @@ describe('EventParticipation E2E', () => {
           .patch(`/api/v1/event-participations/${participationId}`)
           .send({ dummyId: 'DUPLICATE-TEST' })
           .expect(409);
-      });
-
-      it('should return 404 for non-existent participation', async () => {
-        await request(httpServer)
-          .patch('/api/v1/event-participations/99999')
-          .send({ status: ParticipationStatus.CHECKED_IN })
-          .expect(404);
       });
     });
 

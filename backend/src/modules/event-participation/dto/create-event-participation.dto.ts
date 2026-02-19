@@ -1,5 +1,4 @@
-import { IsInt, IsOptional, IsString, IsEnum } from 'class-validator';
-import { ParticipationStatus } from '@prisma/client';
+import { IsInt, IsOptional, IsString } from 'class-validator';
 
 export class CreateEventParticipationDto {
   @IsInt()
@@ -15,8 +14,4 @@ export class CreateEventParticipationDto {
   @IsOptional()
   @IsString()
   teamId?: string;
-
-  @IsOptional()
-  @IsEnum(ParticipationStatus)
-  status?: ParticipationStatus;
 }

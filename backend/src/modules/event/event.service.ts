@@ -5,8 +5,15 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { LoggerService } from 'src/logger/logger.service';
-import { Prisma, Event, EventParticipation, EventResult } from '@prisma/client';
-
+import {
+  Prisma,
+  Event,
+  EventParticipation,
+  EventResult,
+  Participant,
+  College,
+} from '@prisma/client';
+import { PaginatedParticipantResponse } from '../participant/types/participants.types';
 import { CreateEventDto, UpdateEventDto } from './dto';
 import { QueryOptionsDto } from 'src/common/dto/query-options.dto';
 import { buildQueryArgs } from 'src/common/utils/query-builder.util';
@@ -192,6 +199,95 @@ export class EventService {
 
     this.logger.info(`Event deleted: ${event.name}`, ctx);
     return { success: true };
+  }
+
+  // ─────────────────────────────
+  // GET PARTICIPANTS FOR EVENT
+  // ─────────────────────────────
+  async getParticipantsForEvent(
+    eventId: number,
+    query: QueryOptionsDto,
+  ): Promise<PaginatedParticipantResponse> {
+    const ctx = {
+      entity: this.entity,
+      action: 'fetchEventParticipants',
+      additional: { eventId, query },
+    };
+
+    this.logger.debug('Fetching participants for event', ctx);
+
+    // Ensure event exists
+    const event = await this.prisma.event.findUnique({
+      where: { id: eventId },
+      select: { id: true },
+    });
+
+    if (!event) {
+      throw new NotFoundException('Event not found');
+    }
+
+    // Build query args for participant search
+    const queryArgs = buildQueryArgs<Participant, Prisma.ParticipantWhereInput>(
+      query,
+      ['participantId', 'name', 'hackerearthUser'],
+    );
+
+    const whereClause: Prisma.ParticipantWhereInput = {
+      ...queryArgs.where,
+
+      // Must have participation in this event
+      participations: {
+        some: {
+          eventId,
+        },
+      },
+    };
+
+    const [participants, total] = await Promise.all([
+      this.prisma.participant.findMany({
+        where: whereClause,
+        skip: queryArgs.skip,
+        take: queryArgs.take,
+        orderBy: queryArgs.orderBy,
+        include: {
+          college: true,
+        },
+      }),
+      this.prisma.participant.count({
+        where: whereClause,
+      }),
+    ]);
+
+    this.logger.info('Fetched event participants', {
+      ...ctx,
+      additional: { fetched: participants.length, total },
+    });
+
+    return {
+      items: participants.map((p) => this.mapParticipantToResponse(p)),
+      total,
+    };
+  }
+
+  private mapParticipantToResponse(
+    participant: Participant & { college: College },
+  ) {
+    return {
+      id: participant.id,
+      participantId: participant.participantId,
+      name: participant.name,
+      email: participant.email,
+      year: participant.year,
+      festStatus: participant.festStatus,
+      hackerearthUser: participant.hackerearthUser || undefined,
+      phone: participant.phone || undefined,
+      college: {
+        id: participant.college.id,
+        code: participant.college.code,
+        name: participant.college.name,
+      },
+      createdAt: participant.createdAt.toISOString(),
+    };
   }
 
   // ─────────────────────────────

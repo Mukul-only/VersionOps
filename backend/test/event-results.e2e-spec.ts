@@ -7,7 +7,7 @@ import {
   EventResultResponse,
   PaginatedEventResultResponse,
 } from 'src/modules/event-result/types/event-result.types';
-import { ParticipationStatus, Year, Position } from '@prisma/client';
+import { Year, Position } from '@prisma/client';
 
 describe('EventResult E2E', () => {
   let app: INestApplication;
@@ -101,27 +101,22 @@ describe('EventResult E2E', () => {
         {
           eventId: testEventId,
           participantId: testParticipantId,
-          status: ParticipationStatus.REGISTERED,
         },
         {
           eventId: testEventId,
           participantId: anotherParticipantId,
-          status: ParticipationStatus.REGISTERED,
         },
         {
           eventId: anotherEventId,
           participantId: testParticipantId,
-          status: ParticipationStatus.REGISTERED,
         },
         {
           eventId: anotherEventId,
           participantId: anotherParticipantId,
-          status: ParticipationStatus.REGISTERED,
         },
         {
           eventId: anotherEventId,
           participantId: thirdParticipantId,
-          status: ParticipationStatus.REGISTERED,
         },
       ],
     });

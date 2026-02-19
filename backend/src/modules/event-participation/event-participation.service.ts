@@ -5,13 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { LoggerService } from 'src/logger/logger.service';
-import {
-  Prisma,
-  EventParticipation,
-  ParticipationStatus,
-  Event,
-  Participant,
-} from '@prisma/client';
+import { Prisma, EventParticipation, Event, Participant } from '@prisma/client';
 
 import {
   CreateEventParticipationDto,
@@ -113,7 +107,6 @@ export class EventParticipationService {
         participantId: dto.participantId,
         dummyId: dto.dummyId,
         teamId: dto.teamId,
-        status: dto.status ?? ParticipationStatus.REGISTERED,
       },
       include: {
         event: true,
@@ -277,7 +270,6 @@ export class EventParticipationService {
         participantId,
         dummyId,
         teamId,
-        status: dto.status,
       },
       include: {
         event: true,
@@ -321,7 +313,6 @@ export class EventParticipationService {
       participantId: entity.participantId,
       dummyId: entity.dummyId ?? undefined,
       teamId: entity.teamId ?? undefined,
-      status: entity.status,
       event: includeRelations ? entity.event : undefined,
       participant: includeRelations ? entity.participant : undefined,
       createdAt: entity.createdAt.toISOString(),

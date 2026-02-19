@@ -18,6 +18,17 @@ export class EventController {
   constructor(private readonly eventService: EventService) {}
 
   // ────────────────────────────────────────────────
+  // GET PARTICIPANTS FOR EVENT
+  // ────────────────────────────────────────────────
+  @Get(':id/participants')
+  async getParticipantsForEvent(
+    @Query() query: QueryOptionsDto,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.eventService.getParticipantsForEvent(id, query);
+  }
+
+  // ────────────────────────────────────────────────
   // CREATE EVENT
   // ────────────────────────────────────────────────
   @Post()
