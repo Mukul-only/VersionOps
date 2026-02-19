@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { EventParticipationService } from './event-participation.service';
 import {
+  BulkCopyParticipantsDto,
   CreateEventParticipationDto,
   UpdateEventParticipationDto,
 } from './dto';
@@ -19,6 +20,11 @@ import { QueryOptionsDto } from 'src/common/dto/query-options.dto';
 @Controller({ path: 'event-participations', version: '1' })
 export class EventParticipationController {
   constructor(private readonly service: EventParticipationService) {}
+
+  @Post('bulk-copy')
+  async bulkCopyParticipants(@Body() dto: BulkCopyParticipantsDto) {
+    return this.service.bulkCopyParticipants(dto);
+  }
 
   @Post()
   async create(@Body() dto: CreateEventParticipationDto) {

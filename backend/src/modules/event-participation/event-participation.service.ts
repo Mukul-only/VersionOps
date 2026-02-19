@@ -10,6 +10,7 @@ import { Prisma, EventParticipation, Event, Participant } from '@prisma/client';
 import {
   CreateEventParticipationDto,
   UpdateEventParticipationDto,
+  BulkCopyParticipantsDto,
 } from './dto';
 import { QueryOptionsDto } from 'src/common/dto/query-options.dto';
 import { buildQueryArgs } from 'src/common/utils/query-builder.util';
@@ -295,6 +296,83 @@ export class EventParticipationService {
     await this.prisma.eventParticipation.delete({ where: { id } });
 
     return { success: true };
+  }
+
+  // ─────────────────────────────
+  // BULK COPY PARTICIPANTS
+  // ─────────────────────────────
+  async bulkCopyParticipants(
+    dto: BulkCopyParticipantsDto,
+  ): Promise<{ copied: number }> {
+    const ctx = {
+      entity: this.entity,
+      action: 'bulkCopyParticipants',
+      additional: dto,
+    };
+
+    this.logger.debug('Bulk copying participants', ctx);
+
+    if (dto.fromEventId === dto.toEventId) {
+      throw new ConflictException('Source and target events cannot be same');
+    }
+
+    // Validate events
+    const [fromEvent, toEvent] = await Promise.all([
+      this.prisma.event.findUnique({ where: { id: dto.fromEventId } }),
+      this.prisma.event.findUnique({ where: { id: dto.toEventId } }),
+    ]);
+
+    if (!fromEvent) throw new NotFoundException('Source event not found');
+    if (!toEvent) throw new NotFoundException('Target event not found');
+
+    // Get participants from source event
+    const sourceParticipations = await this.prisma.eventParticipation.findMany({
+      where: {
+        eventId: dto.fromEventId,
+        ...(dto.participantIds && {
+          participantId: { in: dto.participantIds },
+        }),
+      },
+      select: {
+        participantId: true,
+      },
+    });
+
+    if (sourceParticipations.length === 0) {
+      return { copied: 0 };
+    }
+
+    const participantIds = sourceParticipations.map((p) => p.participantId);
+
+    // Check duplicates in target event
+    const alreadyExists = await this.prisma.eventParticipation.findMany({
+      where: {
+        eventId: dto.toEventId,
+        participantId: { in: participantIds },
+      },
+      select: { participantId: true },
+    });
+
+    const existingIds = new Set(alreadyExists.map((e) => e.participantId));
+
+    const filteredIds = participantIds.filter((id) => !existingIds.has(id));
+
+    if (filteredIds.length === 0) {
+      return { copied: 0 };
+    }
+
+    // Create new entries in target event
+    await this.prisma.eventParticipation.createMany({
+      data: filteredIds.map((participantId) => ({
+        eventId: dto.toEventId,
+        participantId,
+      })),
+      skipDuplicates: true, // safety
+    });
+
+    this.logger.info(`Copied ${filteredIds.length} participants`, ctx);
+
+    return { copied: filteredIds.length };
   }
 
   // ─────────────────────────────
