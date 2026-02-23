@@ -143,7 +143,9 @@ export class EventParticipationService {
         orderBy: queryArgs.orderBy,
         include: {
           event: includeRelations,
-          participant: includeRelations,
+          participant: includeRelations
+            ? { include: { college: true } }
+            : false,
         },
       }),
       this.prisma.eventParticipation.count({ where: queryArgs.where }),
