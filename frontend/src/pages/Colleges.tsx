@@ -31,7 +31,7 @@ export default function Colleges() {
 
   const loadColleges = async () => {
     try {
-      const response = await collegeService.getAll({ take: 100 });
+      const response = await collegeService.getAll({ take: 100, includeRelations: true });
       setColleges(response.items);
     } catch (error) {
       toast.error("Failed to load colleges");

@@ -86,6 +86,7 @@ export default function Events() {
         eventResultService.getAll({ filters: JSON.stringify({ eventId }), includeRelations: true, take: 100 })
       ]);
       setRoster(participationsRes.items);
+      console.log(participationsRes.items)
       setResults(resultsRes.items);
     } catch (error) {
       toast.error("Failed to load event details");
