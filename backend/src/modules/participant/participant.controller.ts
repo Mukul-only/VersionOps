@@ -9,6 +9,14 @@ import {
   Query,
   ParseIntPipe,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+  ApiBody,
+} from '@nestjs/swagger';
 import { ParticipantService } from './participant.service';
 import { BulkImportService } from './bulk-import.service';
 import { CreateParticipantDto, UpdateParticipantDto } from './dto';
@@ -18,6 +26,7 @@ import {
   BulkImportResult,
 } from './types/participants.types';
 
+@ApiTags('Participants')
 @Controller({ path: 'participants', version: '1' })
 export class ParticipantController {
   constructor(
@@ -29,6 +38,15 @@ export class ParticipantController {
   // BULK IMPORT PARTICIPANTS
   // ────────────────────────────────────────────────
   @Post('bulk-import')
+  @ApiOperation({ summary: 'Bulk import participants' })
+  @ApiBody({
+    description: 'Array of participant data for bulk import',
+    type: [Object], // Replace with class if converted from type
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Bulk import completed',
+  })
   async bulkImport(
     @Body() data: BulkParticipantInput[],
   ): Promise<BulkImportResult> {
@@ -39,6 +57,20 @@ export class ParticipantController {
   // CHECK-IN PARTICIPANT
   // ────────────────────────────────────────────────
   @Post(':id/check-in')
+  @ApiOperation({ summary: 'Check-in a participant' })
+  @ApiParam({
+    name: 'id',
+    description: 'Participant ID',
+    example: 1,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Participant checked-in successfully',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Participant not found',
+  })
   async checkIn(@Param('id', ParseIntPipe) id: number) {
     return this.participantService.checkIn(id);
   }
@@ -47,6 +79,9 @@ export class ParticipantController {
   // CREATE PARTICIPANT
   // ────────────────────────────────────────────────
   @Post()
+  @ApiOperation({ summary: 'Create a new participant' })
+  @ApiResponse({ status: 201, description: 'Participant created successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid input data' })
   async create(@Body() dto: CreateParticipantDto) {
     return this.participantService.create(dto);
   }
@@ -55,6 +90,13 @@ export class ParticipantController {
   // GET ALL PARTICIPANTS
   // ────────────────────────────────────────────────
   @Get()
+  @ApiOperation({
+    summary: 'Get all participants with filtering and pagination',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Participants fetched successfully',
+  })
   async findAll(@Query() query: QueryOptionsDto) {
     return this.participantService.findAll(query);
   }
@@ -63,6 +105,20 @@ export class ParticipantController {
   // GET ONE PARTICIPANT
   // ────────────────────────────────────────────────
   @Get(':id')
+  @ApiOperation({ summary: 'Get a single participant by ID' })
+  @ApiParam({
+    name: 'id',
+    description: 'Participant ID',
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'includeRelations',
+    required: false,
+    description: 'Include related entities (true/false)',
+    example: 'true',
+  })
+  @ApiResponse({ status: 200, description: 'Participant fetched successfully' })
+  @ApiResponse({ status: 404, description: 'Participant not found' })
   async findOne(
     @Param('id', ParseIntPipe) id: number,
     @Query('includeRelations') includeRelations?: string,
@@ -75,6 +131,14 @@ export class ParticipantController {
   // UPDATE PARTICIPANT
   // ────────────────────────────────────────────────
   @Patch(':id')
+  @ApiOperation({ summary: 'Update an existing participant' })
+  @ApiParam({
+    name: 'id',
+    description: 'Participant ID',
+    example: 1,
+  })
+  @ApiResponse({ status: 200, description: 'Participant updated successfully' })
+  @ApiResponse({ status: 404, description: 'Participant not found' })
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateParticipantDto,
@@ -86,6 +150,14 @@ export class ParticipantController {
   // DELETE PARTICIPANT
   // ────────────────────────────────────────────────
   @Delete(':id')
+  @ApiOperation({ summary: 'Delete a participant by ID' })
+  @ApiParam({
+    name: 'id',
+    description: 'Participant ID',
+    example: 1,
+  })
+  @ApiResponse({ status: 200, description: 'Participant deleted successfully' })
+  @ApiResponse({ status: 404, description: 'Participant not found' })
   async remove(@Param('id', ParseIntPipe) id: number) {
     return this.participantService.remove(id);
   }

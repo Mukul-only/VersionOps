@@ -7,9 +7,6 @@ CREATE TYPE "Position" AS ENUM ('FIRST', 'SECOND', 'THIRD');
 -- CreateEnum
 CREATE TYPE "FestStatus" AS ENUM ('REGISTERED', 'CHECKED_IN', 'NO_SHOW');
 
--- CreateEnum
-CREATE TYPE "ParticipationStatus" AS ENUM ('REGISTERED', 'CHECKED_IN', 'NO_SHOW');
-
 -- CreateTable
 CREATE TABLE "colleges" (
     "id" SERIAL NOT NULL,
@@ -57,7 +54,6 @@ CREATE TABLE "event_participations" (
     "participantId" INTEGER NOT NULL,
     "dummyId" VARCHAR(50),
     "teamId" VARCHAR(50),
-    "status" "ParticipationStatus" NOT NULL DEFAULT 'REGISTERED',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "event_participations_pkey" PRIMARY KEY ("id")
@@ -96,10 +92,10 @@ CREATE UNIQUE INDEX "participants_participantId_key" ON "participants"("particip
 CREATE UNIQUE INDEX "participants_email_key" ON "participants"("email");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "events_name_key" ON "events"("name");
+CREATE UNIQUE INDEX "participants_hackerearthUser_key" ON "participants"("hackerearthUser");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "event_participations_dummyId_key" ON "event_participations"("dummyId");
+CREATE UNIQUE INDEX "events_name_key" ON "events"("name");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "event_participations_eventId_participantId_key" ON "event_participations"("eventId", "participantId");

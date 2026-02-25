@@ -1,21 +1,44 @@
-import { Controller, Get, Post } from '@nestjs/common';
+import { Controller, Get, Post, Query } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { LeaderboardService } from './leaderboard.service';
 import { PaginatedLeaderboardResponse } from './types/leaderboard.types';
-import { Query } from '@nestjs/common';
 import { QueryOptionsDto } from 'src/common/dto/query-options.dto';
 
+@ApiTags('Leaderboard')
 @Controller({ path: 'leaderboard', version: '1' })
 export class LeaderboardController {
   constructor(private readonly leaderboardService: LeaderboardService) {}
 
-  // POST /leaderboard/recalculate
+  // ────────────────────────────────────────────────
+  // RECALCULATE LEADERBOARD
+  // ────────────────────────────────────────────────
   @Post('recalculate')
+  @ApiOperation({
+    summary: 'Recalculate leaderboard rankings',
+    description: 'Triggers recalculation of leaderboard scores and rankings.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Leaderboard recalculated successfully',
+    schema: {
+      example: { success: true },
+    },
+  })
   async recalculate(): Promise<{ success: boolean }> {
     return this.leaderboardService.recalculate();
   }
 
-  // GET /leaderboard
+  // ────────────────────────────────────────────────
+  // GET LEADERBOARD
+  // ────────────────────────────────────────────────
   @Get()
+  @ApiOperation({
+    summary: 'Get leaderboard with pagination and filtering',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Leaderboard fetched successfully',
+  })
   async getLeaderboard(
     @Query() query: QueryOptionsDto,
   ): Promise<PaginatedLeaderboardResponse> {
