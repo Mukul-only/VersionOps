@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, ArrowLeft, Users, UserCheck, Trophy, Pencil, Trash2 } from "lucide-react";
+import { Search, ArrowLeft, Users, UserCheck, Trophy, Pencil, Trash2, Copy } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -18,6 +18,16 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { eventService, participantService, eventParticipationService, eventResultService, collegeService } from "@/api/services";
 import { FestEvent, EventParticipation, Participant, EventResult, College } from "@/api/types";
 
@@ -38,6 +48,10 @@ export default function Events() {
 
   // Search results
   const [searchResults, setSearchResults] = useState<Participant[]>([]);
+  
+  // Bulk copy state
+  const [selectedParticipations, setSelectedParticipations] = useState<number[]>([]);
+  const [isBulkCopyDialogOpen, setIsBulkCopyDialogOpen] = useState(false);
 
   useEffect(() => {
     loadEvents();
@@ -86,8 +100,8 @@ export default function Events() {
         eventResultService.getAll({ filters: JSON.stringify({ eventId }), includeRelations: true, take: 100 })
       ]);
       setRoster(participationsRes.items);
-      console.log(participationsRes.items)
       setResults(resultsRes.items);
+      setSelectedParticipations([]); // Reset selection on event change
     } catch (error) {
       toast.error("Failed to load event details");
     }
@@ -200,6 +214,43 @@ export default function Events() {
     } catch (error: any) {
       toast.error(error.message || "Failed to delete event");
     }
+  };
+  
+  const handleBulkCopy = async (toEventId: number) => {
+    if (!selectedEventId || selectedParticipations.length === 0) return;
+
+    const participantIdsToCopy = roster
+      .filter(r => selectedParticipations.includes(r.id))
+      .map(r => r.participantId);
+
+    try {
+      await eventParticipationService.bulkCopy({
+        fromEventId: selectedEventId,
+        toEventId: toEventId,
+        participantIds: participantIdsToCopy
+      });
+      toast.success(`Copied ${participantIdsToCopy.length} participants successfully.`);
+      setIsBulkCopyDialogOpen(false);
+      setSelectedParticipations([]);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to copy participants.");
+    }
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedParticipations.length === filteredRoster.length) {
+      setSelectedParticipations([]);
+    } else {
+      setSelectedParticipations(filteredRoster.map(r => r.id));
+    }
+  };
+
+  const toggleSelectOne = (participationId: number) => {
+    setSelectedParticipations(prev =>
+      prev.includes(participationId)
+        ? prev.filter(id => id !== participationId)
+        : [...prev, participationId]
+    );
   };
 
   const selectedEvent = events.find((e) => e.id === selectedEventId);
@@ -446,22 +497,37 @@ export default function Events() {
       </div>
 
       <div className="border rounded-lg">
-        <div className="p-3 border-b bg-muted/30 flex items-center justify-between">
+        <div className="p-3 border-b bg-muted/30 flex items-center justify-between flex-wrap gap-2">
           <h3 className="text-sm font-semibold">Present Participants ({filteredRoster.length})</h3>
-          <div className="relative w-64">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <Input
-              placeholder="Search in roster..."
-              value={rosterSearchQuery}
-              onChange={(e) => setRosterSearchQuery(e.target.value)}
-              className="pl-8 h-8 text-sm"
+          <div className="flex items-center gap-2">
+            <BulkCopyDialog 
+              open={isBulkCopyDialogOpen}
+              onOpenChange={setIsBulkCopyDialogOpen}
+              events={events.filter(e => e.id !== selectedEventId)}
+              onConfirm={handleBulkCopy}
+              disabled={selectedParticipations.length === 0}
             />
+            <div className="relative w-64">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                placeholder="Search in roster..."
+                value={rosterSearchQuery}
+                onChange={(e) => setRosterSearchQuery(e.target.value)}
+                className="pl-8 h-8 text-sm"
+              />
+            </div>
           </div>
         </div>
         <div className="max-h-[400px] overflow-auto">
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10">
+                  <Checkbox
+                    checked={selectedParticipations.length === filteredRoster.length && filteredRoster.length > 0}
+                    onCheckedChange={toggleSelectAll}
+                  />
+                </TableHead>
                 <TableHead>ID</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>College</TableHead>
@@ -475,7 +541,13 @@ export default function Events() {
               {filteredRoster.map((r) => {
                   const result = results.find(res => res.participantId === r.participantId);
                   return (
-                    <TableRow key={r.id}>
+                    <TableRow key={r.id} data-state={selectedParticipations.includes(r.id) && "selected"}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedParticipations.includes(r.id)}
+                          onCheckedChange={() => toggleSelectOne(r.id)}
+                        />
+                      </TableCell>
                       <TableCell className="font-mono text-xs">{r.participant?.participantId}</TableCell>
                       <TableCell className="text-sm">{r.participant?.name}</TableCell>
                       <TableCell className="text-sm">{r.participant?.college?.code}</TableCell>
@@ -543,7 +615,7 @@ export default function Events() {
               })}
               {filteredRoster.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                     {roster.length > 0 ? "No participants found in your search." : "No participants marked present yet. Use the search above to add them."}
                   </TableCell>
                 </TableRow>
@@ -553,5 +625,62 @@ export default function Events() {
         </div>
       </div>
     </div>
+  );
+}
+
+interface BulkCopyDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  events: FestEvent[];
+  onConfirm: (toEventId: number) => void;
+  disabled: boolean;
+}
+
+function BulkCopyDialog({ open, onOpenChange, events, onConfirm, disabled }: BulkCopyDialogProps) {
+  const [targetEventId, setTargetEventId] = useState<string>("");
+
+  const handleConfirm = () => {
+    if (targetEventId) {
+      onConfirm(Number(targetEventId));
+    } else {
+      toast.warning("Please select a target event.");
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm" className="h-8 text-xs" disabled={disabled}>
+          <Copy className="h-3.5 w-3.5 mr-1.5" />
+          Bulk Copy
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Bulk Copy Participants</DialogTitle>
+          <DialogDescription>
+            Select a target event to copy the selected participants to.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="py-4">
+          <Select onValueChange={setTargetEventId} value={targetEventId}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select an event..." />
+            </SelectTrigger>
+            <SelectContent>
+              {events.map(event => (
+                <SelectItem key={event.id} value={String(event.id)}>
+                  {event.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button onClick={handleConfirm} disabled={!targetEventId}>Confirm Copy</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

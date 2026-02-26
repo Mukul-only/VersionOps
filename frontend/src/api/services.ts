@@ -130,6 +130,7 @@ export const eventParticipationService = {
   getAll: (params: PaginationParams = {}) =>
     fetchApi<PaginatedResponse<EventParticipation>>(`/event-participations${buildQueryString(params)}`),
 
+    //todo
   getById: (id: number, includeRelations = false) =>
     fetchApi<EventParticipation>(`/event-participations/${id}?includeRelations=${includeRelations}`),
 

@@ -26,7 +26,7 @@ import { useEffect, useState, useRef } from "react";
 import { College } from "@/api/types";
 import { Upload } from "lucide-react";
 
-const yearEnum = z.enum(["ONE", "TWO", "THREE", "FOUR", "FIVE"]);
+const yearEnum = z.enum(["ONE", "TWO"]);
 
 const formSchema = z.object({
   name: z.string().min(3, "Name is required"),
@@ -85,13 +85,13 @@ export default function AddParticipant() {
             toast.error("Could not read file.");
             return;
         }
-        // Assuming CSV format: name,email,collegeCode,year,hackerearthUser,phone
-        const lines = text.split('\\n').slice(1); // Skip header
+        // Assuming CSV format: name,email,collegeCode, year,hackerearthUser, phone
+        const lines = text.split('\n').slice(1); // Skip header
+          console.log({lines})
         const data = lines.map(line => {
             const [name, email, collegeCode, year, hackerearthUser, phone] = line.split(',');
             return { name, email, collegeCode, year, hackerearthUser, phone };
         }).filter(d => d.email); // Basic validation
-
         const result = await participantService.bulkImport(data);
         toast.success(`Bulk import finished: ${result.inserted} inserted, ${result.failed} failed.`);
         if (result.failed > 0) {
@@ -201,9 +201,6 @@ export default function AddParticipant() {
                         <SelectContent>
                           <SelectItem value="ONE">First</SelectItem>
                           <SelectItem value="TWO">Second</SelectItem>
-                          <SelectItem value="THREE">Third</SelectItem>
-                          <SelectItem value="FOUR">Fourth</SelectItem>
-                          <SelectItem value="FIVE">Fifth</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />

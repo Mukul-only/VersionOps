@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -27,10 +27,13 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {z} from "zod";
+
+const yearEnum = z.enum(["ONE", "TWO"]);
+
 
 export default function Participants() {
   const [participants, setParticipants] = useState<Participant[]>([]);
@@ -40,24 +43,37 @@ export default function Participants() {
   const [detailId, setDetailId] = useState<number | null>(null);
   const [detailParticipant, setDetailParticipant] = useState<Participant | null>(null);
   const [editingParticipant, setEditingParticipant] = useState<Participant | null>(null);
-  const [participantData, setParticipantData] = useState<Partial<Participant>>({});
+  const [participantData, setParticipantData] = useState<Partial<Participant> & { collegeId?: number }>({});
+
+  const loadParticipants = useCallback(async () => {
+    try {
+      const response = await participantService.getAll({
+        search: search,
+        take: 50,
+        includeRelations: true
+      });
+      setParticipants(response.items);
+    } catch (error) {
+      toast.error("Failed to load participants");
+    }
+  }, [search]);
 
   useEffect(() => {
-    loadInitialData();
+    void loadInitialData();
   }, []);
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
-      loadParticipants();
+      void loadParticipants();
     }, 300);
     return () => clearTimeout(delayDebounceFn);
-  }, [search]);
+  }, [search, loadParticipants]);
 
   useEffect(() => {
     if (detailId) {
-      loadParticipantDetails(detailId);
+      void loadParticipantDetails(detailId);
     }
-  }, [detailId]);
+  }, [detailId, loadParticipants]);
 
   const loadInitialData = async () => {
     try {
@@ -69,19 +85,6 @@ export default function Participants() {
       setColleges(collegesRes.items);
     } catch (error) {
       toast.error("Failed to load initial data");
-    }
-  };
-
-  const loadParticipants = async () => {
-    try {
-      const response = await participantService.getAll({
-        search: search,
-        take: 50,
-        includeRelations: true
-      });
-      setParticipants(response.items);
-    } catch (error) {
-      toast.error("Failed to load participants");
     }
   };
 
@@ -102,26 +105,35 @@ export default function Participants() {
       year: participant.year,
       phone: participant.phone,
       hackerearthUser: participant.hackerearthUser,
-      collegeId: participant.college.id,
+      collegeId: participant.college?.id,
     });
   };
 
   const handleUpdate = async () => {
     if (!editingParticipant) return;
     try {
-      await participantService.update(editingParticipant.id, participantData);
+      const { college, ...payload } = participantData;
+      await participantService.update(editingParticipant.id, payload);
       toast.success("Participant updated successfully");
       setEditingParticipant(null);
-      loadParticipants();
-    } catch (error: any) {
-      toast.error(error.message || "Failed to update participant");
+      await loadParticipants();
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        toast.error(error.message || "Failed to update participant");
+      } else {
+        toast.error("Failed to update participant");
+      }
     }
   };
 
   const toggleSelect = (id: number) => {
     setSelected((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
       return next;
     });
   };
@@ -140,7 +152,7 @@ export default function Participants() {
       await Promise.all(promises);
       toast.success(`${selected.size} participants checked in`);
       setSelected(new Set());
-      loadParticipants();
+      await loadParticipants();
     } catch (error) {
       toast.error("Some check-ins failed");
     }
@@ -150,19 +162,13 @@ export default function Participants() {
     try {
       await participantService.checkIn(id);
       toast.success("Participant checked in");
-      loadParticipants();
-    } catch (error: any) {
-      toast.error(error.message || "Check-in failed");
-    }
-  };
-
-  const markNoShow = async (id: number) => {
-    try {
-      await participantService.update(id, { festStatus: 'NO_SHOW' });
-      toast.success("Marked as no-show");
-      loadParticipants();
-    } catch (error: any) {
-      toast.error(error.message || "Failed to mark no-show. Backend support needed.");
+      await loadParticipants();
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        toast.error(error.message || "Check-in failed");
+      } else {
+        toast.error("Check-in failed");
+      }
     }
   };
 
@@ -172,7 +178,7 @@ export default function Participants() {
       await Promise.all(promises);
       toast.success(`${selected.size} participants marked no-show`);
       setSelected(new Set());
-      loadParticipants();
+      await loadParticipants();
     } catch (error) {
       toast.error("Some updates failed");
     }
@@ -182,9 +188,13 @@ export default function Participants() {
     try {
       await participantService.delete(participantId);
       toast.success("Participant deleted successfully");
-      loadParticipants();
-    } catch (error: any) {
-      toast.error(error.message || "Failed to delete participant");
+      await loadParticipants();
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        toast.error(error.message || "Failed to delete participant");
+      } else {
+        toast.error("Failed to delete participant");
+      }
     }
   };
 
@@ -251,53 +261,7 @@ export default function Participants() {
                   <div className="flex items-center gap-1 justify-end">
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDetailId(p.id)}><Eye className="h-4 w-4" /></Button>
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => checkIn(p.id)}><UserCheck className="h-4 w-4" /></Button>
-                    <Dialog open={!!editingParticipant} onOpenChange={() => setEditingParticipant(null)}>
-                      <DialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEditClick(p)}><Pencil className="h-4 w-4" /></Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Edit Participant</DialogTitle>
-                          <DialogDescription>Update the details for {editingParticipant?.name}.</DialogDescription>
-                        </DialogHeader>
-                        <div className="grid gap-4 py-4">
-                          <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="name" className="text-right">Name</Label>
-                            <Input id="name" value={participantData.name} onChange={(e) => setParticipantData({...participantData, name: e.target.value})} className="col-span-3" />
-                          </div>
-                          <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="email" className="text-right">Email</Label>
-                            <Input id="email" value={participantData.email} onChange={(e) => setParticipantData({...participantData, email: e.target.value})} className="col-span-3" />
-                          </div>
-                          <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="year" className="text-right">Year</Label>
-                            <Input id="year" value={participantData.year} onChange={(e) => setParticipantData({...participantData, year: e.target.value})} className="col-span-3" />
-                          </div>
-                          <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="phone" className="text-right">Phone</Label>
-                            <Input id="phone" value={participantData.phone} onChange={(e) => setParticipantData({...participantData, phone: e.target.value})} className="col-span-3" />
-                          </div>
-                          <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="hackerearth" className="text-right">HackerEarth</Label>
-                            <Input id="hackerearth" value={participantData.hackerearthUser} onChange={(e) => setParticipantData({...participantData, hackerearthUser: e.target.value})} className="col-span-3" />
-                          </div>
-                          <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="college" className="text-right">College</Label>
-                            <Select value={participantData.collegeId?.toString()} onValueChange={(value) => setParticipantData({...participantData, collegeId: parseInt(value)})}>
-                              <SelectTrigger className="col-span-3">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {colleges.map((c) => <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>)}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-                        <DialogFooter>
-                          <Button onClick={handleUpdate}>Save changes</Button>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEditClick(p)}><Pencil className="h-4 w-4" /></Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive"><Trash2 className="h-4 w-4" /></Button>
@@ -325,6 +289,62 @@ export default function Participants() {
           </TableBody>
         </Table>
       </div>
+
+      <Dialog open={!!editingParticipant} onOpenChange={() => setEditingParticipant(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Participant</DialogTitle>
+            <DialogDescription>Update the details for {editingParticipant?.name}.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">Name</Label>
+              <Input id="name" value={participantData.name || ''} onChange={(e) => setParticipantData({...participantData, name: e.target.value})} className="col-span-3" />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="email" className="text-right">Email</Label>
+              <Input id="email" value={participantData.email || ''} onChange={(e) => setParticipantData({...participantData, email: e.target.value})} className="col-span-3" />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="year" className="text-right">Year</Label>
+              <Select value={participantData.year} onValueChange={(value: z.infer<typeof yearEnum>) => setParticipantData({...participantData, year: value})}>
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select year" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={yearEnum.enum.ONE}>First</SelectItem>
+                  <SelectItem value={yearEnum.enum.TWO}>Second</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="phone" className="text-right">Phone</Label>
+              <Input id="phone" value={participantData.phone || ''} onChange={(e) => setParticipantData({...participantData, phone: e.target.value})} className="col-span-3" />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="hackerearth" className="text-right">HackerEarth</Label>
+              <Input id="hackerearth" value={participantData.hackerearthUser || ''} onChange={(e) => setParticipantData({...participantData, hackerearthUser: e.target.value})} className="col-span-3" />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="college" className="text-right">College</Label>
+              <Select 
+                value={String(participantData.collegeId || '')} 
+                onValueChange={(value) => setParticipantData({...participantData, collegeId: parseInt(value)})}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select a college" />
+                </SelectTrigger>
+                <SelectContent>
+                  {colleges.map((c) => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={handleUpdate}>Save changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Sheet open={!!detailId} onOpenChange={() => { setDetailId(null); setDetailParticipant(null); }}>
         <SheetContent>
