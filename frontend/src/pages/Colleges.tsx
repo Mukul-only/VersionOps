@@ -18,20 +18,22 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import EditCollegeDialog from "./EditCollegeDialog";
+import { Input } from "@/components/ui/input";
 
 export default function Colleges() {
   const [colleges, setColleges] = useState<College[]>([]);
   const [selectedCollege, setSelectedCollege] = useState<College | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [editingCollege, setEditingCollege] = useState<College | null>(null);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     void loadColleges();
-  }, []);
+  }, [search]);
 
   const loadColleges = async () => {
     try {
-      const response = await collegeService.getAll({ take: 100, includeRelations: true });
+      const response = await collegeService.getAll({ take: 100, includeRelations: true, search });
       setColleges(response.items);
     } catch (error) {
       toast.error("Failed to load colleges");
@@ -74,6 +76,15 @@ export default function Colleges() {
         <p className="text-sm text-muted-foreground">{colleges.length} registered</p>
       </div>
 
+      <div className="flex items-center space-x-2">
+        <Input
+          placeholder="Search for colleges..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-sm"
+        />
+      </div>
+
       <div className="border rounded-lg overflow-hidden">
         <Table>
           <TableHeader>
@@ -81,6 +92,9 @@ export default function Colleges() {
               <TableHead className="w-20">Code</TableHead>
               <TableHead>Name</TableHead>
               <TableHead className="w-32">Participants</TableHead>
+              <TableHead className="w-16 text-center">🥇</TableHead>
+              <TableHead className="w-16 text-center">🥈</TableHead>
+              <TableHead className="w-16 text-center">🥉</TableHead>
               <TableHead className="w-28">Points</TableHead>
               <TableHead className="w-32 text-right">Actions</TableHead>
             </TableRow>
@@ -91,7 +105,10 @@ export default function Colleges() {
                 <TableCell className="font-mono text-xs font-medium">{c.code}</TableCell>
                 <TableCell className="font-medium">{c.name}</TableCell>
                 <TableCell>{c.participantCount}</TableCell>
-                <TableCell className="font-mono font-semibold">{getScore(c, 'totalPoints')}</TableCell>
+                <TableCell className="font-mono font-semibold text-center">{getScore(c, "firstPrizes")}</TableCell>
+                <TableCell className="font-mono font-semibold text-center">{getScore(c, "secondPrizes")}</TableCell>
+                <TableCell className="font-mono font-semibold text-center">{getScore(c, "thirdPrizes")}</TableCell>
+                <TableCell className="font-mono font-semibold">{getScore(c, "totalPoints")}</TableCell>
                 <TableCell className="text-right">
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openDetails(c)}>
                     <Eye className="h-4 w-4" />
@@ -142,7 +159,7 @@ export default function Colleges() {
                 <div className="grid grid-cols-3 gap-4 text-sm">
                   <div className="stat-card text-center">
                     <p className="text-muted-foreground text-xs">Points</p>
-                    <p className="text-xl font-bold">{getScore(selectedCollege, 'totalPoints')}</p>
+                    <p className="text-xl font-bold">{getScore(selectedCollege, "totalPoints")}</p>
                   </div>
                   <div className="stat-card text-center">
                     <p className="text-muted-foreground text-xs">Participants</p>
@@ -151,9 +168,9 @@ export default function Colleges() {
                   <div className="stat-card text-center">
                     <p className="text-muted-foreground text-xs">Prizes</p>
                     <p className="text-xl font-bold">
-                      {(getScore(selectedCollege, 'firstPrizes') || 0) +
-                       (getScore(selectedCollege, 'secondPrizes') || 0) +
-                       (getScore(selectedCollege, 'thirdPrizes') || 0)}
+                      {(getScore(selectedCollege, "firstPrizes") || 0) +
+                        (getScore(selectedCollege, "secondPrizes") || 0) +
+                        (getScore(selectedCollege, "thirdPrizes") || 0)}
                     </p>
                   </div>
                 </div>

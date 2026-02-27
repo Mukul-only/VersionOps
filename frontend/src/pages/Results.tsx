@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Save } from "lucide-react";
 import { eventService, eventParticipationService, eventResultService } from "@/api/services";
 import { FestEvent, EventParticipation, EventResult } from "@/api/types";
+import { Badge } from "@/components/ui/badge";
 
 export default function Results() {
   const [events, setEvents] = useState<FestEvent[]>([]);
@@ -37,64 +36,64 @@ export default function Results() {
 
   const loadEventData = async (eventId: number) => {
     try {
-      const [partsRes, resultsRes] = await Promise.all([
-        eventParticipationService.getAll({ filters: JSON.stringify({ eventId }), includeRelations: true, take: 1000 }),
-        eventResultService.getAll({ filters: JSON.stringify({ eventId }), includeRelations: true, take: 100 })
-      ]);
-      setParticipations(partsRes.items);
+      const resultsRes = await eventResultService.getAll({ 
+        filters: JSON.stringify({ eventId, position: { in: ['FIRST', 'SECOND', 'THIRD'] } }), 
+        includeRelations: true, 
+        take: 3 
+      });
+      
+      const participantIds = resultsRes.items.map(r => r.participantId);
+      
+      if (participantIds.length > 0) {
+        const partsRes = await eventParticipationService.getAll({ 
+          filters: JSON.stringify({ eventId, participantId: { in: participantIds } }), 
+          includeRelations: true, 
+          take: 3 
+        });
+        setParticipations(partsRes.items);
+      } else {
+        setParticipations([]);
+      }
+      
       setResults(resultsRes.items);
     } catch (error) {
       toast.error("Failed to load event data");
     }
   };
 
-  const setPosition = async (participantId: number, position: string) => {
-    if (!selectedEventId) return;
-    const eventId = parseInt(selectedEventId);
-
-    try {
-      const existingResult = results.find(r => r.participantId === participantId);
-      
-      if (position === "none") {
-        if (existingResult) {
-          await eventResultService.delete(existingResult.id);
-          setResults(prev => prev.filter(r => r.id !== existingResult.id));
-          toast.success("Position cleared");
-        }
-      } else {
-        const posEnum = position as "FIRST" | "SECOND" | "THIRD";
-        
-        // Check if position is taken by someone else and clear it (optional but good UX)
-        const currentHolder = results.find(r => r.position === posEnum);
-        if (currentHolder && currentHolder.participantId !== participantId) {
-           await eventResultService.delete(currentHolder.id);
-           setResults(prev => prev.filter(r => r.id !== currentHolder.id));
-        }
-
-        if (existingResult) {
-          const updated = await eventResultService.update(existingResult.id, { position: posEnum });
-          setResults(prev => prev.map(r => r.id === updated.id ? updated : r));
-        } else {
-          const created = await eventResultService.create({
-            eventId,
-            participantId,
-            position: posEnum
-          });
-          setResults(prev => [...prev, created]);
-        }
-        toast.success(`Position set to ${position}`);
-      }
-    } catch (error: any) {
-      toast.error(error.message || "Failed to update result");
+  const getPositionBadge = (position?: "FIRST" | "SECOND" | "THIRD") => {
+    switch (position) {
+      case 'FIRST':
+        return <Badge className="bg-yellow-500 text-white">🥇 First</Badge>;
+      case 'SECOND':
+        return <Badge className="bg-gray-400 text-white">🥈 Second</Badge>;
+      case 'THIRD':
+        return <Badge className="bg-yellow-700 text-white">🥉 Third</Badge>;
+      default:
+        return <Badge variant="outline">-</Badge>;
     }
   };
+
+  const positionOrder: { [key: string]: number } = {
+    'FIRST': 1,
+    'SECOND': 2,
+    'THIRD': 3,
+  };
+
+  const sortedParticipations = [...participations].sort((a, b) => {
+    const resultA = results.find(r => r.participantId === a.participantId);
+    const resultB = results.find(r => r.participantId === b.participantId);
+    const posA = resultA ? positionOrder[resultA.position] : 4;
+    const posB = resultB ? positionOrder[resultB.position] : 4;
+    return posA - posB;
+  });
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Results</h2>
-          <p className="text-sm text-muted-foreground">Enter event results</p>
+          <p className="text-sm text-muted-foreground">View event winners</p>
         </div>
       </div>
 
@@ -116,45 +115,28 @@ export default function Results() {
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <TableHead>ID</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>College</TableHead>
-                <TableHead>Dummy ID</TableHead>
                 <TableHead className="w-36">Position</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {participations.map((p) => {
+              {sortedParticipations.map((p) => {
                 const result = results.find(r => r.participantId === p.participantId);
                 return (
                   <TableRow key={p.id}>
-                    <TableCell className="font-mono text-xs">{p.participant?.participantId}</TableCell>
                     <TableCell className="font-medium">{p.participant?.name}</TableCell>
                     <TableCell>{p.participant?.college?.code}</TableCell>
-                    <TableCell className="font-mono text-xs">{p.dummyId}</TableCell>
                     <TableCell>
-                      <Select 
-                        value={result?.position || "none"} 
-                        onValueChange={(v) => setPosition(p.participantId, v)}
-                      >
-                        <SelectTrigger className="h-8 text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">—</SelectItem>
-                          <SelectItem value="FIRST">🥇 First</SelectItem>
-                          <SelectItem value="SECOND">🥈 Second</SelectItem>
-                          <SelectItem value="THIRD">🥉 Third</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      {getPositionBadge(result?.position)}
                     </TableCell>
                   </TableRow>
                 );
               })}
               {participations.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                    No participants in this event. Add them from the Events page first.
+                  <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
+                    No results for this event yet.
                   </TableCell>
                 </TableRow>
               )}
