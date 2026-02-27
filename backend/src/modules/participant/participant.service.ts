@@ -116,7 +116,7 @@ export class ParticipantService {
 
     const queryArgs = buildQueryArgs<Participant, Prisma.ParticipantWhereInput>(
       query,
-      ['participantId', 'name', 'hackerearthUser'],
+      ['participantId', 'name', 'hackerearthUser', 'email'],
     );
 
     const [participants, total] = await Promise.all([
