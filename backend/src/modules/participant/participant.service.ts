@@ -2,6 +2,7 @@ import {
   Injectable,
   ConflictException,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ConfigService } from 'src/config/config.service';
@@ -273,12 +274,34 @@ export class ParticipantService {
     return { success: true };
   }
 
+  private readonly festStatusMap: Record<string, FestStatus> = {
+    'check-in': FestStatus.CHECKED_IN,
+    registered: FestStatus.REGISTERED,
+    'no-show': FestStatus.NO_SHOW,
+  };
+
   // ─────────────────────────────
-  // CHECK-IN for FEST
+  // UPDATE FEST STATUS
   // ─────────────────────────────
-  async checkIn(id: number): Promise<ParticipantResponse> {
-    const ctx = { entity: this.entity, action: 'check-in', id };
-    this.logger.debug('Checking in participant for FEST', ctx);
+  async updateFestStatus(
+    id: number,
+    status: string,
+  ): Promise<ParticipantResponse> {
+    const ctx = {
+      entity: this.entity,
+      action: 'update-fest-status',
+      id,
+      status,
+    };
+    this.logger.debug('Updating FEST status', ctx);
+
+    const mappedStatus = this.festStatusMap[status];
+
+    if (!mappedStatus) {
+      throw new BadRequestException(
+        `Invalid fest status. Allowed: ${Object.keys(this.festStatusMap).join(', ')}`,
+      );
+    }
 
     const participant = await this.prisma.participant.findUnique({
       where: { id },
@@ -289,19 +312,22 @@ export class ParticipantService {
       throw new NotFoundException('Participant not found');
     }
 
-    if (participant.festStatus === FestStatus.CHECKED_IN) {
-      throw new ConflictException('Participant already checked in');
+    if (participant.festStatus === mappedStatus) {
+      throw new ConflictException(`Participant already in status: ${status}`);
     }
 
     const updated = await this.prisma.participant.update({
       where: { id },
       data: {
-        festStatus: FestStatus.CHECKED_IN,
+        festStatus: mappedStatus,
       },
       include: { college: true },
     });
 
-    this.logger.info(`Participant checked in: ${updated.participantId}`, ctx);
+    this.logger.info(
+      `Participant status updated to ${status}: ${updated.participantId}`,
+      ctx,
+    );
 
     return this.mapToResponse(updated);
   }

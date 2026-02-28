@@ -2,7 +2,7 @@
 2. GET Each college page useful info (GET /api/v1/colleges/:id?includeRelations=true)                                                                                           done
 3. View Partipants page can have filters, sort etc. (GET /api/v1/participants?filters), refer to QueryOptionsDTO & queryBuilder to see how to create filter query.              done
 4. GET each participant page useful info (GET /api/v1/participants/:id?includeRelations=true), can show in which events participated, results etc.                              done
-5. If participant is checkedIn, provide a toggle button to maybe uncheckIn (just in case he is mistakenly checkedIn) (API: I will provide)                                      awaiting apis
+5. If participant is checkedIn, provide a toggle button to maybe uncheckIn (just in case he is mistakenly checkedIn) (API: I will provide)                                      apis build
 6. Event roster page if possible show, few partcipants already instead of searching all the time.                                                                               unclear
 7. Results page should only show TOP 3 positions.                                                                                                                               done
 8. Improve UI for Leaderboard and Results page (we will show it in closing ceremony)                                                                                            todo

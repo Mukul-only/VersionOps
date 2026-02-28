@@ -72,9 +72,52 @@ export class ParticipantController {
     description: 'Participant not found',
   })
   async checkIn(@Param('id', ParseIntPipe) id: number) {
-    return this.participantService.checkIn(id);
+    return this.participantService.updateFestStatus(id, 'check-in');
   }
 
+  // ────────────────────────────────────────────────
+  // MARK PARTICIPANT AS NO-SHOW
+  // ────────────────────────────────────────────────
+  @Post(':id/no-show')
+  @ApiOperation({ summary: 'Mark participant as no-show' })
+  @ApiParam({
+    name: 'id',
+    description: 'Participant ID',
+    example: 1,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Participant marked as no-show successfully',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Participant not found',
+  })
+  async markNoShow(@Param('id', ParseIntPipe) id: number) {
+    return this.participantService.updateFestStatus(id, 'no-show');
+  }
+
+  // ────────────────────────────────────────────────
+  // MARK PARTICIPANT AS REGISTERED
+  // ────────────────────────────────────────────────
+  @Post(':id/registered')
+  @ApiOperation({ summary: 'Mark participant as registered' })
+  @ApiParam({
+    name: 'id',
+    description: 'Participant ID',
+    example: 1,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Participant marked as registered successfully',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Participant not found',
+  })
+  async markRegistered(@Param('id', ParseIntPipe) id: number) {
+    return this.participantService.updateFestStatus(id, 'registered');
+  }
   // ────────────────────────────────────────────────
   // CREATE PARTICIPANT
   // ────────────────────────────────────────────────
