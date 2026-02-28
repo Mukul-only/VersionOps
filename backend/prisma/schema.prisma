@@ -27,7 +27,7 @@ enum FestStatus {
 model College {
   id        Int      @id @default(autoincrement())
   code      String   @unique @db.VarChar(10)
-  name      String   @db.VarChar(255)
+  name      String   @unique @db.VarChar(255)
   createdAt DateTime @default(now())
 
   participants Participant[]

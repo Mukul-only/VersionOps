@@ -73,7 +73,9 @@ export default function AddParticipant() {
     }
   }
 
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -81,25 +83,29 @@ export default function AddParticipant() {
     reader.onload = async (e) => {
       try {
         const text = e.target?.result;
-        if (typeof text !== 'string') {
-            toast.error("Could not read file.");
-            return;
+        if (typeof text !== "string") {
+          toast.error("Could not read file.");
+          return;
         }
         // Assuming CSV format: name,email,collegeCode, year,hackerearthUser, phone
-        const lines = text.split('\n').slice(1); // Skip header
-          console.log({lines})
-        const data = lines.map(line => {
-            const [name, email, collegeCode, year, hackerearthUser, phone] = line.split(',');
+        const lines = text.split("\n").slice(1); // Skip header
+        console.log({ lines });
+        const data = lines
+          .map((line) => {
+            const [name, email, collegeCode, year, hackerearthUser, phone] =
+              line.split(",");
             return { name, email, collegeCode, year, hackerearthUser, phone };
-        }).filter(d => d.email); // Basic validation
+          })
+          .filter((d) => d.email); // Basic validation
         const result = await participantService.bulkImport(data);
-        toast.success(`Bulk import finished: ${result.inserted} inserted, ${result.failed} failed.`);
+        toast.success(
+          `Bulk import finished: ${result.inserted} inserted, ${result.failed} failed.`,
+        );
         if (result.failed > 0) {
-            // TODO: Display detailed errors to the user
-            console.error("Failed imports:", result.errors);
+          // TODO: Display detailed errors to the user
+          console.error("Failed imports:", result.errors);
         }
         navigate("/participants");
-
       } catch (error: any) {
         toast.error(error.message || "Failed to process bulk import.");
       }
@@ -111,7 +117,9 @@ export default function AddParticipant() {
     <div className="space-y-4">
       <div className="flex justify-between items-start">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Add New Participant</h2>
+          <h2 className="text-2xl font-bold tracking-tight">
+            Add New Participant
+          </h2>
           <p className="text-sm text-muted-foreground">
             Enter the details for the new participant or use bulk import.
           </p>
@@ -142,7 +150,7 @@ export default function AddParticipant() {
                   <FormItem>
                     <FormLabel>Full Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="John Doe" {...field} />
+                      <Input placeholder="Name" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -155,7 +163,7 @@ export default function AddParticipant() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="john.doe@example.com" {...field} />
+                      <Input placeholder="name@example.com" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -168,7 +176,10 @@ export default function AddParticipant() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>College</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={String(field.value)}>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={String(field.value)}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select a college" />
@@ -192,7 +203,10 @@ export default function AddParticipant() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Year</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue />
@@ -216,7 +230,7 @@ export default function AddParticipant() {
                     <FormItem>
                       <FormLabel>Phone (Optional)</FormLabel>
                       <FormControl>
-                        <Input placeholder="+91 9876543210" {...field} />
+                        <Input {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -229,7 +243,7 @@ export default function AddParticipant() {
                     <FormItem>
                       <FormLabel>HackerEarth User (Optional)</FormLabel>
                       <FormControl>
-                        <Input placeholder="johndoe-he" {...field} />
+                        <Input {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -237,7 +251,9 @@ export default function AddParticipant() {
                 />
               </div>
               <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? "Creating..." : "Create Participant"}
+                {form.formState.isSubmitting
+                  ? "Creating..."
+                  : "Create Participant"}
               </Button>
             </form>
           </Form>

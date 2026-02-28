@@ -38,6 +38,11 @@ export class CollegeService {
       this.logger.warn(`Duplicate college code: ${code}`, ctx);
       throw new ConflictException('College code already exists');
     }
+    const existingC = await this.prisma.college.findUnique({ where: { name } });
+    if (existingC) {
+      this.logger.warn(`Duplicate college Name: ${name}`, ctx);
+      throw new ConflictException('College name already exists');
+    }
 
     const college = await this.prisma.$transaction(async (tx) => {
       const createdCollege = await tx.college.create({ data: { code, name } });
