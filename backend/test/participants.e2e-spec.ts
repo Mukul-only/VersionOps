@@ -1,5 +1,4 @@
 import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { createTestApp } from './e2e-setup/app-setup';
 import { Express } from 'express';
@@ -8,6 +7,7 @@ import {
   PaginatedParticipantResponse,
 } from 'src/modules/participant/types/participants.types';
 import { Year, FestStatus } from '@prisma/client';
+import { setupTestAuth, authedRequest } from './e2e-setup/auth-setup';
 
 describe('Participant E2E', () => {
   let app: INestApplication;
@@ -20,6 +20,8 @@ describe('Participant E2E', () => {
     app = await createTestApp();
     prisma = app.get(PrismaService);
     httpServer = app.getHttpServer() as unknown as Express;
+
+    await setupTestAuth(httpServer, prisma);
 
     // Cleanup before tests
     await prisma.eventResult.deleteMany({});
@@ -51,7 +53,7 @@ describe('Participant E2E', () => {
 
   describe('POST /api/v1/participants', () => {
     it('should create a participant successfully', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .post('/api/v1/participants')
         .send({
           name: 'John Doe',
@@ -77,7 +79,7 @@ describe('Participant E2E', () => {
     });
 
     it('should reject duplicate email', async () => {
-      await request(httpServer)
+      await authedRequest(httpServer)
         .post('/api/v1/participants')
         .send({
           name: 'Jane Doe',
@@ -89,7 +91,7 @@ describe('Participant E2E', () => {
     });
 
     it('should reject non-existent college', async () => {
-      await request(httpServer)
+      await authedRequest(httpServer)
         .post('/api/v1/participants')
         .send({
           name: 'Alice Smith',
@@ -101,7 +103,7 @@ describe('Participant E2E', () => {
     });
 
     it('should reject invalid year', async () => {
-      await request(httpServer)
+      await authedRequest(httpServer)
         .post('/api/v1/participants')
         .send({
           name: 'Bob Wilson',
@@ -113,7 +115,7 @@ describe('Participant E2E', () => {
     });
 
     it('should reject missing required fields', async () => {
-      await request(httpServer)
+      await authedRequest(httpServer)
         .post('/api/v1/participants')
         .send({
           name: 'Charlie Brown',
@@ -123,7 +125,7 @@ describe('Participant E2E', () => {
     });
 
     it('should create participant without optional fields', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .post('/api/v1/participants')
         .send({
           name: 'Eve Adams',
@@ -145,7 +147,7 @@ describe('Participant E2E', () => {
   describe('GET /api/v1/participants', () => {
     beforeAll(async () => {
       // Create additional participants for testing
-      await request(httpServer).post('/api/v1/participants').send({
+      await authedRequest(httpServer).post('/api/v1/participants').send({
         name: 'Search Test User',
         email: 'search@example.com',
         year: Year.ONE,
@@ -153,7 +155,7 @@ describe('Participant E2E', () => {
         hackerearthUser: '@searchuser',
       });
 
-      await request(httpServer).post('/api/v1/participants').send({
+      await authedRequest(httpServer).post('/api/v1/participants').send({
         name: 'Another User',
         email: 'another@example.com',
         year: Year.TWO,
@@ -162,7 +164,7 @@ describe('Participant E2E', () => {
     });
 
     it('should fetch all participants with pagination', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .get('/api/v1/participants')
         .expect(200);
 
@@ -182,7 +184,7 @@ describe('Participant E2E', () => {
     });
 
     it('should support pagination with skip and take', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .get('/api/v1/participants?skip=1&take=1')
         .expect(200);
 
@@ -193,7 +195,7 @@ describe('Participant E2E', () => {
     });
 
     it('should search participants by name', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .get('/api/v1/participants?search=Search Test')
         .expect(200);
 
@@ -204,7 +206,7 @@ describe('Participant E2E', () => {
     });
 
     it('should search participants by hackerearthUser', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .get('/api/v1/participants?search=@searchuser')
         .expect(200);
 
@@ -215,7 +217,7 @@ describe('Participant E2E', () => {
     });
 
     it('should sort participants', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .get('/api/v1/participants?sortBy=name&order=asc')
         .expect(200);
 
@@ -227,7 +229,7 @@ describe('Participant E2E', () => {
     });
 
     it('should include relations when flag is true', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .get('/api/v1/participants?includeRelations=true')
         .expect(200);
 
@@ -238,7 +240,7 @@ describe('Participant E2E', () => {
     });
 
     it('should not include relations by default', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .get('/api/v1/participants')
         .expect(200);
 
@@ -255,7 +257,7 @@ describe('Participant E2E', () => {
 
     beforeAll(async () => {
       // Create a participant
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .post('/api/v1/participants')
         .send({
           name: 'Single Fetch User',
@@ -267,7 +269,7 @@ describe('Participant E2E', () => {
       participantId = (response.body as ParticipantResponse).id;
 
       // Create another for relations test
-      const response2 = await request(httpServer)
+      const response2 = await authedRequest(httpServer)
         .post('/api/v1/participants')
         .send({
           name: 'Relations Test User',
@@ -280,7 +282,7 @@ describe('Participant E2E', () => {
     });
 
     it('should fetch single participant by id', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .get(`/api/v1/participants/${participantId}`)
         .expect(200);
 
@@ -292,7 +294,7 @@ describe('Participant E2E', () => {
     });
 
     it('should include relations when flag is true', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .get(
           `/api/v1/participants/${participantWithRelationsId}?includeRelations=true`,
         )
@@ -305,7 +307,7 @@ describe('Participant E2E', () => {
     });
 
     it('should not include relations by default', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .get(`/api/v1/participants/${participantId}`)
         .expect(200);
 
@@ -316,7 +318,9 @@ describe('Participant E2E', () => {
     });
 
     it('should return 404 for non-existent participant', async () => {
-      await request(httpServer).get('/api/v1/participants/99999').expect(404);
+      await authedRequest(httpServer)
+        .get('/api/v1/participants/99999')
+        .expect(404);
     });
   });
 
@@ -324,7 +328,7 @@ describe('Participant E2E', () => {
     let participantId: number;
 
     beforeAll(async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .post('/api/v1/participants')
         .send({
           name: 'Update Test User',
@@ -339,7 +343,7 @@ describe('Participant E2E', () => {
     });
 
     it('should update participant name', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .patch(`/api/v1/participants/${participantId}`)
         .send({ name: 'Updated Name' })
         .expect(200);
@@ -352,13 +356,13 @@ describe('Participant E2E', () => {
     it('should update participant year and regenerate participantId', async () => {
       const oldParticipantId = (
         (
-          await request(httpServer)
+          await authedRequest(httpServer)
             .get(`/api/v1/participants/${participantId}`)
             .expect(200)
         ).body as ParticipantResponse
       ).participantId;
 
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .patch(`/api/v1/participants/${participantId}`)
         .send({ year: Year.TWO })
         .expect(200);
@@ -372,20 +376,20 @@ describe('Participant E2E', () => {
 
     it('should update email and reject if duplicate', async () => {
       // Update to new email
-      await request(httpServer)
+      await authedRequest(httpServer)
         .patch(`/api/v1/participants/${participantId}`)
         .send({ email: 'newemail@example.com' })
         .expect(200);
 
       // Try to update to an existing email
-      await request(httpServer)
+      await authedRequest(httpServer)
         .patch(`/api/v1/participants/${participantId}`)
         .send({ email: 'eve@example.com' }) // Email from earlier test
         .expect(409);
     });
 
     it('should update optional fields', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .patch(`/api/v1/participants/${participantId}`)
         .send({
           hackerearthUser: '@newhandle',
@@ -400,14 +404,14 @@ describe('Participant E2E', () => {
     });
 
     it('should return 404 for non-existent participant', async () => {
-      await request(httpServer)
+      await authedRequest(httpServer)
         .patch('/api/v1/participants/99999')
         .send({ name: 'New Name' })
         .expect(404);
     });
 
     it('should reject invalid data', async () => {
-      await request(httpServer)
+      await authedRequest(httpServer)
         .patch(`/api/v1/participants/${participantId}`)
         .send({ year: 'INVALID' })
         .expect(400);
@@ -417,7 +421,7 @@ describe('Participant E2E', () => {
   describe('DELETE /api/v1/participants/:id', () => {
     it('should delete participant', async () => {
       // Create a participant to delete
-      const createResponse = await request(httpServer)
+      const createResponse = await authedRequest(httpServer)
         .post('/api/v1/participants')
         .send({
           name: 'Delete Test User',
@@ -429,20 +433,20 @@ describe('Participant E2E', () => {
 
       const participantId = (createResponse.body as ParticipantResponse).id;
 
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .delete(`/api/v1/participants/${participantId}`)
         .expect(200);
 
       expect(response.body).toEqual({ success: true });
 
       // Verify it's deleted
-      await request(httpServer)
+      await authedRequest(httpServer)
         .get(`/api/v1/participants/${participantId}`)
         .expect(404);
     });
 
     it('should return 404 for non-existent participant', async () => {
-      await request(httpServer)
+      await authedRequest(httpServer)
         .delete('/api/v1/participants/99999')
         .expect(404);
     });
@@ -450,7 +454,7 @@ describe('Participant E2E', () => {
 
   describe('Edge Cases and Validation', () => {
     it('should handle special characters in names', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .post('/api/v1/participants')
         .send({
           name: "Jean-Luc O'Connor-Smith",
@@ -466,7 +470,7 @@ describe('Participant E2E', () => {
     });
 
     it('should reject invalid email format', async () => {
-      await request(httpServer)
+      await authedRequest(httpServer)
         .post('/api/v1/participants')
         .send({
           name: 'Invalid Email',
@@ -479,7 +483,7 @@ describe('Participant E2E', () => {
 
     it('should handle very long input gracefully', async () => {
       const longString = 'a'.repeat(300);
-      await request(httpServer)
+      await authedRequest(httpServer)
         .post('/api/v1/participants')
         .send({
           name: longString,

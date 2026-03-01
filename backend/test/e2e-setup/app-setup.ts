@@ -5,6 +5,7 @@ import {
   VersioningType,
 } from '@nestjs/common';
 import { AppModule } from 'src/app.module';
+import * as cookieParser from 'cookie-parser';
 
 export const createTestApp = async (): Promise<INestApplication> => {
   const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -19,6 +20,7 @@ export const createTestApp = async (): Promise<INestApplication> => {
       transform: true,
     }),
   );
+  app.use(cookieParser());
   app.enableVersioning({
     type: VersioningType.URI,
     prefix: 'api/v',
