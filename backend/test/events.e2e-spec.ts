@@ -1,5 +1,4 @@
 import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { createTestApp } from './e2e-setup/app-setup';
 import { Express } from 'express';
@@ -7,6 +6,7 @@ import {
   EventResponse,
   PaginatedEventResponse,
 } from 'src/modules/event/types/event.types';
+import { setupTestAuth, authedRequest } from './e2e-setup/auth-setup';
 
 describe('Event E2E', () => {
   let app: INestApplication;
@@ -17,6 +17,7 @@ describe('Event E2E', () => {
     app = await createTestApp();
     prisma = app.get(PrismaService);
     httpServer = app.getHttpServer() as unknown as Express;
+    await setupTestAuth(httpServer, prisma);
 
     // Cleanup before tests
     await prisma.eventResult.deleteMany({});
@@ -34,7 +35,7 @@ describe('Event E2E', () => {
 
   describe('POST /api/v1/events', () => {
     it('should create an event successfully', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .post('/api/v1/events')
         .send({
           name: 'Coding Challenge',
@@ -57,7 +58,7 @@ describe('Event E2E', () => {
     });
 
     it('should create event with default values for optional fields', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .post('/api/v1/events')
         .send({
           name: 'Quiz Competition',
@@ -72,7 +73,7 @@ describe('Event E2E', () => {
     });
 
     it('should reject duplicate event name', async () => {
-      await request(httpServer)
+      await authedRequest(httpServer)
         .post('/api/v1/events')
         .send({
           name: 'Coding Challenge', // Same name as first test
@@ -82,7 +83,7 @@ describe('Event E2E', () => {
     });
 
     it('should reject invalid team size', async () => {
-      await request(httpServer)
+      await authedRequest(httpServer)
         .post('/api/v1/events')
         .send({
           name: 'Invalid Event',
@@ -92,7 +93,7 @@ describe('Event E2E', () => {
     });
 
     it('should reject negative points', async () => {
-      await request(httpServer)
+      await authedRequest(httpServer)
         .post('/api/v1/events')
         .send({
           name: 'Negative Points Event',
@@ -102,7 +103,7 @@ describe('Event E2E', () => {
     });
 
     it('should reject missing required fields', async () => {
-      await request(httpServer)
+      await authedRequest(httpServer)
         .post('/api/v1/events')
         .send({
           // Missing name
@@ -115,12 +116,12 @@ describe('Event E2E', () => {
   describe('GET /api/v1/events', () => {
     beforeAll(async () => {
       // Create additional events for testing
-      await request(httpServer)
+      await authedRequest(httpServer)
         .post('/api/v1/events')
         .send({ name: 'Hackathon', teamSize: 4, participationPoints: 20 })
         .expect(201);
 
-      await request(httpServer)
+      await authedRequest(httpServer)
         .post('/api/v1/events')
         .send({
           name: 'Paper Presentation',
@@ -131,7 +132,7 @@ describe('Event E2E', () => {
     });
 
     it('should fetch all events with pagination', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .get('/api/v1/events')
         .expect(200);
 
@@ -150,7 +151,7 @@ describe('Event E2E', () => {
     });
 
     it('should support pagination with skip and take', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .get('/api/v1/events?skip=1&take=1')
         .expect(200);
 
@@ -161,7 +162,7 @@ describe('Event E2E', () => {
     });
 
     it('should search events by name', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .get('/api/v1/events?search=Hackathon')
         .expect(200);
 
@@ -172,7 +173,7 @@ describe('Event E2E', () => {
     });
 
     it('should sort events', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .get('/api/v1/events?sortBy=name&order=asc')
         .expect(200);
 
@@ -184,7 +185,7 @@ describe('Event E2E', () => {
     });
 
     it('should include relations when flag is true', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .get('/api/v1/events?includeRelations=true')
         .expect(200);
 
@@ -195,7 +196,7 @@ describe('Event E2E', () => {
     });
 
     it('should not include relations by default', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .get('/api/v1/events')
         .expect(200);
 
@@ -212,7 +213,7 @@ describe('Event E2E', () => {
 
     beforeAll(async () => {
       // Create an event
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .post('/api/v1/events')
         .send({
           name: 'Single Event',
@@ -224,7 +225,7 @@ describe('Event E2E', () => {
       eventId = (response.body as EventResponse).id;
 
       // Create another for relations test
-      const response2 = await request(httpServer)
+      const response2 = await authedRequest(httpServer)
         .post('/api/v1/events')
         .send({
           name: 'Relations Test Event',
@@ -236,7 +237,7 @@ describe('Event E2E', () => {
     });
 
     it('should fetch single event by id', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .get(`/api/v1/events/${eventId}`)
         .expect(200);
 
@@ -248,7 +249,7 @@ describe('Event E2E', () => {
     });
 
     it('should include relations when flag is true', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .get(`/api/v1/events/${eventWithRelationsId}?includeRelations=true`)
         .expect(200);
 
@@ -258,7 +259,7 @@ describe('Event E2E', () => {
     });
 
     it('should not include relations by default', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .get(`/api/v1/events/${eventId}`)
         .expect(200);
 
@@ -268,7 +269,7 @@ describe('Event E2E', () => {
     });
 
     it('should return 404 for non-existent event', async () => {
-      await request(httpServer).get('/api/v1/events/99999').expect(404);
+      await authedRequest(httpServer).get('/api/v1/events/99999').expect(404);
     });
   });
 
@@ -276,7 +277,7 @@ describe('Event E2E', () => {
     let eventId: number;
 
     beforeAll(async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .post('/api/v1/events')
         .send({
           name: 'Update Test Event',
@@ -291,7 +292,7 @@ describe('Event E2E', () => {
     });
 
     it('should update event name', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .patch(`/api/v1/events/${eventId}`)
         .send({ name: 'Updated Event Name' })
         .expect(200);
@@ -301,7 +302,7 @@ describe('Event E2E', () => {
     });
 
     it('should update team size', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .patch(`/api/v1/events/${eventId}`)
         .send({ teamSize: 4 })
         .expect(200);
@@ -311,7 +312,7 @@ describe('Event E2E', () => {
     });
 
     it('should update prize points', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .patch(`/api/v1/events/${eventId}`)
         .send({
           firstPrizePoints: 200,
@@ -327,7 +328,7 @@ describe('Event E2E', () => {
     });
 
     it('should update multiple fields at once', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .patch(`/api/v1/events/${eventId}`)
         .send({
           name: 'Completely Updated',
@@ -343,14 +344,14 @@ describe('Event E2E', () => {
     });
 
     it('should return 404 for non-existent event', async () => {
-      await request(httpServer)
+      await authedRequest(httpServer)
         .patch('/api/v1/events/99999')
         .send({ name: 'New Name' })
         .expect(404);
     });
 
     it('should reject invalid data', async () => {
-      await request(httpServer)
+      await authedRequest(httpServer)
         .patch(`/api/v1/events/${eventId}`)
         .send({ teamSize: 0 }) // Invalid team size
         .expect(400);
@@ -360,7 +361,7 @@ describe('Event E2E', () => {
   describe('DELETE /api/v1/events/:id', () => {
     it('should delete event without participations', async () => {
       // Create an event to delete
-      const createResponse = await request(httpServer)
+      const createResponse = await authedRequest(httpServer)
         .post('/api/v1/events')
         .send({
           name: 'Delete Test Event',
@@ -370,25 +371,29 @@ describe('Event E2E', () => {
 
       const eventId = (createResponse.body as EventResponse).id;
 
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .delete(`/api/v1/events/${eventId}`)
         .expect(200);
 
       expect(response.body).toEqual({ success: true });
 
       // Verify it's deleted
-      await request(httpServer).get(`/api/v1/events/${eventId}`).expect(404);
+      await authedRequest(httpServer)
+        .get(`/api/v1/events/${eventId}`)
+        .expect(404);
     });
 
     it('should return 404 for non-existent event', async () => {
-      await request(httpServer).delete('/api/v1/events/99999').expect(404);
+      await authedRequest(httpServer)
+        .delete('/api/v1/events/99999')
+        .expect(404);
     });
   });
 
   describe('Edge Cases and Validation', () => {
     it('should handle very long event names', async () => {
       const longName = 'A'.repeat(100);
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .post('/api/v1/events')
         .send({
           name: longName,
@@ -400,7 +405,7 @@ describe('Event E2E', () => {
     });
 
     it('should handle special characters in names', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .post('/api/v1/events')
         .send({
           name: "Code & 'Fun' @2024!",
@@ -412,7 +417,7 @@ describe('Event E2E', () => {
     });
 
     it('should handle large team sizes', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .post('/api/v1/events')
         .send({
           name: 'Mass Participation Event',
@@ -424,7 +429,7 @@ describe('Event E2E', () => {
     });
 
     it('should handle zero points', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .post('/api/v1/events')
         .send({
           name: 'Zero Points Event',

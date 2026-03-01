@@ -1,5 +1,4 @@
 import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { createTestApp } from './e2e-setup/app-setup';
 import { Express } from 'express';
@@ -8,6 +7,7 @@ import {
   PaginatedEventParticipationResponse,
 } from 'src/modules/event-participation/types/event-participation.types';
 import { Year } from '@prisma/client';
+import { setupTestAuth, authedRequest } from './e2e-setup/auth-setup';
 
 describe('EventParticipation E2E', () => {
   let app: INestApplication;
@@ -27,6 +27,7 @@ describe('EventParticipation E2E', () => {
     app = await createTestApp();
     prisma = app.get(PrismaService);
     httpServer = app.getHttpServer() as unknown as Express;
+    await setupTestAuth(httpServer, prisma);
 
     // Cleanup before tests
     await cleanDatabase();
@@ -123,7 +124,7 @@ describe('EventParticipation E2E', () => {
 
     describe('Solo Event (teamSize: 1)', () => {
       it('should allow creating a solo participation without teamId', async () => {
-        const response = await request(httpServer)
+        const response = await authedRequest(httpServer)
           .post('/api/v1/event-participations')
           .send({
             eventId: soloEventId,
@@ -138,7 +139,7 @@ describe('EventParticipation E2E', () => {
       });
 
       it('should allow creating a solo participation with teamId', async () => {
-        const response = await request(httpServer)
+        const response = await authedRequest(httpServer)
           .post('/api/v1/event-participations')
           .send({
             eventId: soloEventId,
@@ -154,7 +155,7 @@ describe('EventParticipation E2E', () => {
       });
 
       it('should allow multiple solo participations', async () => {
-        await request(httpServer)
+        await authedRequest(httpServer)
           .post('/api/v1/event-participations')
           .send({
             eventId: soloEventId,
@@ -163,7 +164,7 @@ describe('EventParticipation E2E', () => {
           })
           .expect(201);
 
-        await request(httpServer)
+        await authedRequest(httpServer)
           .post('/api/v1/event-participations')
           .send({
             eventId: soloEventId,
@@ -179,7 +180,7 @@ describe('EventParticipation E2E', () => {
 
       it('should allow creating team members up to the limit', async () => {
         // First member
-        await request(httpServer)
+        await authedRequest(httpServer)
           .post('/api/v1/event-participations')
           .send({
             eventId: teamEventId,
@@ -190,7 +191,7 @@ describe('EventParticipation E2E', () => {
           .expect(201);
 
         // Second member
-        await request(httpServer)
+        await authedRequest(httpServer)
           .post('/api/v1/event-participations')
           .send({
             eventId: teamEventId,
@@ -201,7 +202,7 @@ describe('EventParticipation E2E', () => {
           .expect(201);
 
         // Third member (reaches limit)
-        await request(httpServer)
+        await authedRequest(httpServer)
           .post('/api/v1/event-participations')
           .send({
             eventId: teamEventId,
@@ -212,7 +213,7 @@ describe('EventParticipation E2E', () => {
           .expect(201);
 
         // Fourth member (exceeds limit)
-        await request(httpServer)
+        await authedRequest(httpServer)
           .post('/api/v1/event-participations')
           .send({
             eventId: teamEventId,
@@ -227,7 +228,7 @@ describe('EventParticipation E2E', () => {
         const TEAM_B = 'HACKATHON-TEAM-B';
 
         // Team A - 3 members
-        await request(httpServer)
+        await authedRequest(httpServer)
           .post('/api/v1/event-participations')
           .send({
             eventId: teamEventId,
@@ -237,7 +238,7 @@ describe('EventParticipation E2E', () => {
           })
           .expect(201);
 
-        await request(httpServer)
+        await authedRequest(httpServer)
           .post('/api/v1/event-participations')
           .send({
             eventId: teamEventId,
@@ -247,7 +248,7 @@ describe('EventParticipation E2E', () => {
           })
           .expect(201);
 
-        await request(httpServer)
+        await authedRequest(httpServer)
           .post('/api/v1/event-participations')
           .send({
             eventId: teamEventId,
@@ -258,7 +259,7 @@ describe('EventParticipation E2E', () => {
           .expect(201);
 
         // Team B - 3 members
-        await request(httpServer)
+        await authedRequest(httpServer)
           .post('/api/v1/event-participations')
           .send({
             eventId: teamEventId,
@@ -269,7 +270,7 @@ describe('EventParticipation E2E', () => {
           .expect(201);
 
         // Try to add 4th to Team B (should fail)
-        await request(httpServer)
+        await authedRequest(httpServer)
           .post('/api/v1/event-participations')
           .send({
             eventId: teamEventId,
@@ -281,7 +282,7 @@ describe('EventParticipation E2E', () => {
       });
 
       it('should allow participations without teamId (individual entries)', async () => {
-        await request(httpServer)
+        await authedRequest(httpServer)
           .post('/api/v1/event-participations')
           .send({
             eventId: teamEventId,
@@ -290,7 +291,7 @@ describe('EventParticipation E2E', () => {
           })
           .expect(201);
 
-        await request(httpServer)
+        await authedRequest(httpServer)
           .post('/api/v1/event-participations')
           .send({
             eventId: teamEventId,
@@ -309,7 +310,7 @@ describe('EventParticipation E2E', () => {
 
     describe('POST /api/v1/event-participations', () => {
       it('should create event participation successfully', async () => {
-        const response = await request(httpServer)
+        const response = await authedRequest(httpServer)
           .post('/api/v1/event-participations')
           .send({
             eventId: anotherEventId,
@@ -329,14 +330,16 @@ describe('EventParticipation E2E', () => {
 
       it('should reject duplicate participant in same event', async () => {
         // First participation
-        await request(httpServer).post('/api/v1/event-participations').send({
-          eventId: anotherEventId,
-          participantId: testParticipantId,
-          dummyId: 'EC-001',
-        });
+        await authedRequest(httpServer)
+          .post('/api/v1/event-participations')
+          .send({
+            eventId: anotherEventId,
+            participantId: testParticipantId,
+            dummyId: 'EC-001',
+          });
 
         // Duplicate
-        await request(httpServer)
+        await authedRequest(httpServer)
           .post('/api/v1/event-participations')
           .send({
             eventId: anotherEventId,
@@ -348,14 +351,16 @@ describe('EventParticipation E2E', () => {
 
       it('should reject duplicate dummyId in same event', async () => {
         // First participation
-        await request(httpServer).post('/api/v1/event-participations').send({
-          eventId: anotherEventId,
-          participantId: testParticipantId,
-          dummyId: 'EC-001',
-        });
+        await authedRequest(httpServer)
+          .post('/api/v1/event-participations')
+          .send({
+            eventId: anotherEventId,
+            participantId: testParticipantId,
+            dummyId: 'EC-001',
+          });
 
         // Duplicate dummyId
-        await request(httpServer)
+        await authedRequest(httpServer)
           .post('/api/v1/event-participations')
           .send({
             eventId: anotherEventId,
@@ -367,14 +372,16 @@ describe('EventParticipation E2E', () => {
 
       it('should allow same dummyId in different events', async () => {
         // First event
-        await request(httpServer).post('/api/v1/event-participations').send({
-          eventId: anotherEventId,
-          participantId: testParticipantId,
-          dummyId: 'EC-001',
-        });
+        await authedRequest(httpServer)
+          .post('/api/v1/event-participations')
+          .send({
+            eventId: anotherEventId,
+            participantId: testParticipantId,
+            dummyId: 'EC-001',
+          });
 
         // Different event
-        await request(httpServer)
+        await authedRequest(httpServer)
           .post('/api/v1/event-participations')
           .send({
             eventId: soloEventId,
@@ -385,7 +392,7 @@ describe('EventParticipation E2E', () => {
       });
 
       it('should reject non-existent event', async () => {
-        await request(httpServer)
+        await authedRequest(httpServer)
           .post('/api/v1/event-participations')
           .send({
             eventId: 99999,
@@ -395,7 +402,7 @@ describe('EventParticipation E2E', () => {
       });
 
       it('should reject non-existent participant', async () => {
-        await request(httpServer)
+        await authedRequest(httpServer)
           .post('/api/v1/event-participations')
           .send({
             eventId: anotherEventId,
@@ -408,20 +415,24 @@ describe('EventParticipation E2E', () => {
     describe('GET /api/v1/event-participations', () => {
       beforeEach(async () => {
         // Create some test data
-        await request(httpServer).post('/api/v1/event-participations').send({
-          eventId: anotherEventId,
-          participantId: testParticipantId,
-          dummyId: 'GET-TEST-1',
-        });
-        await request(httpServer).post('/api/v1/event-participations').send({
-          eventId: anotherEventId,
-          participantId: anotherParticipantId,
-          dummyId: 'GET-TEST-2',
-        });
+        await authedRequest(httpServer)
+          .post('/api/v1/event-participations')
+          .send({
+            eventId: anotherEventId,
+            participantId: testParticipantId,
+            dummyId: 'GET-TEST-1',
+          });
+        await authedRequest(httpServer)
+          .post('/api/v1/event-participations')
+          .send({
+            eventId: anotherEventId,
+            participantId: anotherParticipantId,
+            dummyId: 'GET-TEST-2',
+          });
       });
 
       it('should fetch all participations with pagination', async () => {
-        const response = await request(httpServer)
+        const response = await authedRequest(httpServer)
           .get('/api/v1/event-participations')
           .expect(200);
 
@@ -431,7 +442,7 @@ describe('EventParticipation E2E', () => {
       });
 
       it('should support pagination', async () => {
-        const response = await request(httpServer)
+        const response = await authedRequest(httpServer)
           .get('/api/v1/event-participations?skip=1&take=1')
           .expect(200);
 
@@ -440,7 +451,7 @@ describe('EventParticipation E2E', () => {
       });
 
       it('should include relations when flag is true', async () => {
-        const response = await request(httpServer)
+        const response = await authedRequest(httpServer)
           .get('/api/v1/event-participations?includeRelations=true')
           .expect(200);
 
@@ -456,7 +467,7 @@ describe('EventParticipation E2E', () => {
       let participationId: number;
 
       beforeEach(async () => {
-        const response = await request(httpServer)
+        const response = await authedRequest(httpServer)
           .post('/api/v1/event-participations')
           .send({
             eventId: anotherEventId,
@@ -467,7 +478,7 @@ describe('EventParticipation E2E', () => {
       });
 
       it('should fetch single participation by id', async () => {
-        const response = await request(httpServer)
+        const response = await authedRequest(httpServer)
           .get(`/api/v1/event-participations/${participationId}`)
           .expect(200);
 
@@ -477,7 +488,7 @@ describe('EventParticipation E2E', () => {
       });
 
       it('should include relations when flag is true', async () => {
-        const response = await request(httpServer)
+        const response = await authedRequest(httpServer)
           .get(
             `/api/v1/event-participations/${participationId}?includeRelations=true`,
           )
@@ -489,7 +500,7 @@ describe('EventParticipation E2E', () => {
       });
 
       it('should return 404 for non-existent participation', async () => {
-        await request(httpServer)
+        await authedRequest(httpServer)
           .get('/api/v1/event-participations/99999')
           .expect(404);
       });
@@ -499,7 +510,7 @@ describe('EventParticipation E2E', () => {
       let participationId: number;
 
       beforeEach(async () => {
-        const response = await request(httpServer)
+        const response = await authedRequest(httpServer)
           .post('/api/v1/event-participations')
           .send({
             eventId: anotherEventId,
@@ -511,7 +522,7 @@ describe('EventParticipation E2E', () => {
       });
 
       it('should update teamId', async () => {
-        const response = await request(httpServer)
+        const response = await authedRequest(httpServer)
           .patch(`/api/v1/event-participations/${participationId}`)
           .send({ teamId: 'NEW-TEAM' })
           .expect(200);
@@ -522,7 +533,7 @@ describe('EventParticipation E2E', () => {
       });
 
       it('should update dummyId', async () => {
-        const response = await request(httpServer)
+        const response = await authedRequest(httpServer)
           .patch(`/api/v1/event-participations/${participationId}`)
           .send({ dummyId: 'UPDATED-DUMMY' })
           .expect(200);
@@ -534,14 +545,16 @@ describe('EventParticipation E2E', () => {
 
       it('should reject duplicate dummyId in same event', async () => {
         // Create another participation with a dummyId
-        await request(httpServer).post('/api/v1/event-participations').send({
-          eventId: anotherEventId,
-          participantId: testParticipantId,
-          dummyId: 'DUPLICATE-TEST',
-        });
+        await authedRequest(httpServer)
+          .post('/api/v1/event-participations')
+          .send({
+            eventId: anotherEventId,
+            participantId: testParticipantId,
+            dummyId: 'DUPLICATE-TEST',
+          });
 
         // Try to update to that dummyId
-        await request(httpServer)
+        await authedRequest(httpServer)
           .patch(`/api/v1/event-participations/${participationId}`)
           .send({ dummyId: 'DUPLICATE-TEST' })
           .expect(409);
@@ -550,7 +563,7 @@ describe('EventParticipation E2E', () => {
 
     describe('DELETE /api/v1/event-participations/:id', () => {
       it('should delete participation', async () => {
-        const createResponse = await request(httpServer)
+        const createResponse = await authedRequest(httpServer)
           .post('/api/v1/event-participations')
           .send({
             eventId: soloEventId,
@@ -563,17 +576,17 @@ describe('EventParticipation E2E', () => {
           createResponse.body as EventParticipationResponse
         ).id;
 
-        await request(httpServer)
+        await authedRequest(httpServer)
           .delete(`/api/v1/event-participations/${participationId}`)
           .expect(200);
 
-        await request(httpServer)
+        await authedRequest(httpServer)
           .get(`/api/v1/event-participations/${participationId}`)
           .expect(404);
       });
 
       it('should return 404 for non-existent participation', async () => {
-        await request(httpServer)
+        await authedRequest(httpServer)
           .delete('/api/v1/event-participations/99999')
           .expect(404);
       });
@@ -588,7 +601,7 @@ describe('EventParticipation E2E', () => {
     it('should handle very long dummyId', async () => {
       const longDummyId = 'A'.repeat(45);
 
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .post('/api/v1/event-participations')
         .send({
           eventId: soloEventId,
@@ -603,7 +616,7 @@ describe('EventParticipation E2E', () => {
     });
 
     it('should handle special characters in dummyId', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .post('/api/v1/event-participations')
         .send({
           eventId: soloEventId,
@@ -618,7 +631,7 @@ describe('EventParticipation E2E', () => {
     });
 
     it('should handle null values for optional fields', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .post('/api/v1/event-participations')
         .send({
           eventId: soloEventId,

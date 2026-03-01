@@ -15,6 +15,7 @@ import { EventResultModule } from './modules/event-result/event-result.module';
 import { LeaderboardModule } from './modules/leaderboard/leadeboard.module';
 import { UserModule } from './modules/user/user.module';
 import { AdminSeedService } from './prisma/seed/admin.seed';
+import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { AdminSeedService } from './prisma/seed/admin.seed';
     EventResultModule,
     LeaderboardModule,
     UserModule,
+    AuthModule,
     ThrottlerModule.forRoot({
       throttlers: [
         {

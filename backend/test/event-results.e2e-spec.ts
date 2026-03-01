@@ -1,5 +1,4 @@
 import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { createTestApp } from './e2e-setup/app-setup';
 import { Express } from 'express';
@@ -8,6 +7,7 @@ import {
   PaginatedEventResultResponse,
 } from 'src/modules/event-result/types/event-result.types';
 import { Year, Position } from '@prisma/client';
+import { setupTestAuth, authedRequest } from './e2e-setup/auth-setup';
 
 describe('EventResult E2E', () => {
   let app: INestApplication;
@@ -25,6 +25,7 @@ describe('EventResult E2E', () => {
     app = await createTestApp();
     prisma = app.get(PrismaService);
     httpServer = app.getHttpServer() as unknown as Express;
+    await setupTestAuth(httpServer, prisma);
   });
 
   afterAll(async () => {
@@ -128,7 +129,7 @@ describe('EventResult E2E', () => {
     });
 
     it('should create event result with FIRST position', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .post('/api/v1/event-results')
         .send({
           eventId: testEventId,
@@ -145,7 +146,7 @@ describe('EventResult E2E', () => {
     });
 
     it('should create event result with SECOND position', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .post('/api/v1/event-results')
         .send({
           eventId: testEventId,
@@ -159,7 +160,7 @@ describe('EventResult E2E', () => {
     });
 
     it('should create event result with THIRD position', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .post('/api/v1/event-results')
         .send({
           eventId: anotherEventId,
@@ -174,14 +175,14 @@ describe('EventResult E2E', () => {
 
     it('should reject duplicate result for same event and participant', async () => {
       // Create first result
-      await request(httpServer).post('/api/v1/event-results').send({
+      await authedRequest(httpServer).post('/api/v1/event-results').send({
         eventId: testEventId,
         participantId: testParticipantId,
         position: Position.FIRST,
       });
 
       // Try to create duplicate
-      await request(httpServer)
+      await authedRequest(httpServer)
         .post('/api/v1/event-results')
         .send({
           eventId: testEventId,
@@ -192,7 +193,7 @@ describe('EventResult E2E', () => {
     });
 
     it('should reject when participant not registered in event', async () => {
-      await request(httpServer)
+      await authedRequest(httpServer)
         .post('/api/v1/event-results')
         .send({
           eventId: testEventId,
@@ -203,7 +204,7 @@ describe('EventResult E2E', () => {
     });
 
     it('should reject non-existent event', async () => {
-      await request(httpServer)
+      await authedRequest(httpServer)
         .post('/api/v1/event-results')
         .send({
           eventId: 99999,
@@ -214,7 +215,7 @@ describe('EventResult E2E', () => {
     });
 
     it('should reject non-existent participant', async () => {
-      await request(httpServer)
+      await authedRequest(httpServer)
         .post('/api/v1/event-results')
         .send({
           eventId: testEventId,
@@ -225,7 +226,7 @@ describe('EventResult E2E', () => {
     });
 
     it('should reject invalid position value', async () => {
-      await request(httpServer)
+      await authedRequest(httpServer)
         .post('/api/v1/event-results')
         .send({
           eventId: testEventId,
@@ -241,17 +242,17 @@ describe('EventResult E2E', () => {
       await setupTestData();
 
       // Create results for testing
-      await request(httpServer).post('/api/v1/event-results').send({
+      await authedRequest(httpServer).post('/api/v1/event-results').send({
         eventId: anotherEventId,
         participantId: testParticipantId,
         position: Position.FIRST,
       });
-      await request(httpServer).post('/api/v1/event-results').send({
+      await authedRequest(httpServer).post('/api/v1/event-results').send({
         eventId: anotherEventId,
         participantId: anotherParticipantId,
         position: Position.SECOND,
       });
-      await request(httpServer).post('/api/v1/event-results').send({
+      await authedRequest(httpServer).post('/api/v1/event-results').send({
         eventId: anotherEventId,
         participantId: thirdParticipantId,
         position: Position.THIRD,
@@ -259,7 +260,7 @@ describe('EventResult E2E', () => {
     });
 
     it('should fetch all results with pagination', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .get('/api/v1/event-results')
         .expect(200);
 
@@ -269,7 +270,7 @@ describe('EventResult E2E', () => {
     });
 
     it('should support pagination with skip and take', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .get('/api/v1/event-results?skip=1&take=2')
         .expect(200);
 
@@ -278,7 +279,7 @@ describe('EventResult E2E', () => {
     });
 
     it('should include relations when flag is true', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .get('/api/v1/event-results?includeRelations=true')
         .expect(200);
 
@@ -290,7 +291,7 @@ describe('EventResult E2E', () => {
     });
 
     it('should filter by position', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .get(
           `/api/v1/event-results?filters=${JSON.stringify({ position: Position.FIRST })}`,
         )
@@ -303,7 +304,7 @@ describe('EventResult E2E', () => {
     });
 
     it('should filter by eventId', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .get(
           `/api/v1/event-results?filters=${JSON.stringify({ eventId: anotherEventId })}`,
         )
@@ -322,7 +323,7 @@ describe('EventResult E2E', () => {
     beforeEach(async () => {
       await setupTestData();
 
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .post('/api/v1/event-results')
         .send({
           eventId: testEventId,
@@ -333,7 +334,7 @@ describe('EventResult E2E', () => {
     });
 
     it('should fetch single result by id', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .get(`/api/v1/event-results/${resultId}`)
         .expect(200);
 
@@ -343,7 +344,7 @@ describe('EventResult E2E', () => {
     });
 
     it('should include relations when flag is true', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .get(`/api/v1/event-results/${resultId}?includeRelations=true`)
         .expect(200);
 
@@ -353,7 +354,9 @@ describe('EventResult E2E', () => {
     });
 
     it('should return 404 for non-existent result', async () => {
-      await request(httpServer).get('/api/v1/event-results/99999').expect(404);
+      await authedRequest(httpServer)
+        .get('/api/v1/event-results/99999')
+        .expect(404);
     });
   });
 
@@ -363,7 +366,7 @@ describe('EventResult E2E', () => {
     beforeEach(async () => {
       await setupTestData();
 
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .post('/api/v1/event-results')
         .send({
           eventId: testEventId,
@@ -374,7 +377,7 @@ describe('EventResult E2E', () => {
     });
 
     it('should update position from SECOND to FIRST', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .patch(`/api/v1/event-results/${resultId}`)
         .send({ position: Position.FIRST })
         .expect(200);
@@ -385,7 +388,7 @@ describe('EventResult E2E', () => {
     });
 
     it('should update event and participant', async () => {
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .patch(`/api/v1/event-results/${resultId}`)
         .send({
           eventId: anotherEventId,
@@ -400,14 +403,14 @@ describe('EventResult E2E', () => {
 
     it('should reject duplicate on update', async () => {
       // Create another result
-      await request(httpServer).post('/api/v1/event-results').send({
+      await authedRequest(httpServer).post('/api/v1/event-results').send({
         eventId: testEventId,
         participantId: testParticipantId,
         position: Position.FIRST,
       });
 
       // Try to update our result to conflict
-      await request(httpServer)
+      await authedRequest(httpServer)
         .patch(`/api/v1/event-results/${resultId}`)
         .send({
           eventId: testEventId,
@@ -417,21 +420,21 @@ describe('EventResult E2E', () => {
     });
 
     it('should reject update to non-existent event', async () => {
-      await request(httpServer)
+      await authedRequest(httpServer)
         .patch(`/api/v1/event-results/${resultId}`)
         .send({ eventId: 99999 })
         .expect(404);
     });
 
     it('should reject update to non-existent participant', async () => {
-      await request(httpServer)
+      await authedRequest(httpServer)
         .patch(`/api/v1/event-results/${resultId}`)
         .send({ participantId: 99999 })
         .expect(404);
     });
 
     it('should return 404 for non-existent result', async () => {
-      await request(httpServer)
+      await authedRequest(httpServer)
         .patch('/api/v1/event-results/99999')
         .send({ position: Position.FIRST })
         .expect(404);
@@ -444,7 +447,7 @@ describe('EventResult E2E', () => {
     beforeEach(async () => {
       await setupTestData();
 
-      const createResponse = await request(httpServer)
+      const createResponse = await authedRequest(httpServer)
         .post('/api/v1/event-results')
         .send({
           eventId: testEventId,
@@ -456,17 +459,17 @@ describe('EventResult E2E', () => {
     });
 
     it('should delete result', async () => {
-      await request(httpServer)
+      await authedRequest(httpServer)
         .delete(`/api/v1/event-results/${resultId}`)
         .expect(200);
 
-      await request(httpServer)
+      await authedRequest(httpServer)
         .get(`/api/v1/event-results/${resultId}`)
         .expect(404);
     });
 
     it('should return 404 for non-existent result', async () => {
-      await request(httpServer)
+      await authedRequest(httpServer)
         .delete('/api/v1/event-results/99999')
         .expect(404);
     });
@@ -479,21 +482,21 @@ describe('EventResult E2E', () => {
 
     it('should handle all three positions in same event', async () => {
       // Create FIRST
-      await request(httpServer).post('/api/v1/event-results').send({
+      await authedRequest(httpServer).post('/api/v1/event-results').send({
         eventId: anotherEventId,
         participantId: testParticipantId,
         position: Position.FIRST,
       });
 
       // Create SECOND
-      await request(httpServer).post('/api/v1/event-results').send({
+      await authedRequest(httpServer).post('/api/v1/event-results').send({
         eventId: anotherEventId,
         participantId: anotherParticipantId,
         position: Position.SECOND,
       });
 
       // Create THIRD
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .post('/api/v1/event-results')
         .send({
           eventId: anotherEventId,
@@ -509,14 +512,14 @@ describe('EventResult E2E', () => {
 
     it('should allow same participant to get different positions in different events', async () => {
       // Create FIRST in testEventId
-      await request(httpServer).post('/api/v1/event-results').send({
+      await authedRequest(httpServer).post('/api/v1/event-results').send({
         eventId: testEventId,
         participantId: testParticipantId,
         position: Position.FIRST,
       });
 
       // Create SECOND in anotherEventId
-      const response = await request(httpServer)
+      const response = await authedRequest(httpServer)
         .post('/api/v1/event-results')
         .send({
           eventId: anotherEventId,

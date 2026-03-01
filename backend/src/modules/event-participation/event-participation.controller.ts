@@ -8,6 +8,7 @@ import {
   Delete,
   Query,
   ParseIntPipe,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -24,8 +25,13 @@ import {
   UpdateEventParticipationDto,
 } from './dto';
 import { QueryOptionsDto } from 'src/common/dto/query-options.dto';
+import { JwtAuthGuard } from '../auth/gaurds/jwt-auth.gaurd';
+import { PermissionsGuard } from '../auth/gaurds/permission.gaurd';
+import { Permission } from '../auth/decorators/permission.decorator';
+import { PERMISSIONS } from '../auth/rbac/role-permissions.map';
 
 @ApiTags('Event Participations')
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller({ path: 'event-participations', version: '1' })
 export class EventParticipationController {
   constructor(private readonly service: EventParticipationService) {}
@@ -33,6 +39,7 @@ export class EventParticipationController {
   // ─────────────────────────────
   // BULK COPY PARTICIPANTS
   // ─────────────────────────────
+  @Permission(PERMISSIONS.ATTENDENCE_MANAGE)
   @Post('bulk-copy')
   @ApiOperation({
     summary: 'Bulk copy participants from one event to another',
@@ -52,6 +59,7 @@ export class EventParticipationController {
   // ─────────────────────────────
   // CREATE
   // ─────────────────────────────
+  @Permission(PERMISSIONS.ATTENDENCE_MANAGE)
   @Post()
   @ApiOperation({
     summary: 'Create event participation (assign participant to event)',
@@ -68,6 +76,7 @@ export class EventParticipationController {
   // ─────────────────────────────
   // GET ALL
   // ─────────────────────────────
+  @Permission(PERMISSIONS.ATTENDENCE_MANAGE)
   @Get()
   @ApiOperation({
     summary: 'Get all event participations with pagination and filtering',
@@ -83,6 +92,7 @@ export class EventParticipationController {
   // ─────────────────────────────
   // GET ONE
   // ─────────────────────────────
+  @Permission(PERMISSIONS.ATTENDENCE_MANAGE)
   @Get(':id')
   @ApiOperation({
     summary: 'Get single event participation by ID',
@@ -117,6 +127,7 @@ export class EventParticipationController {
   // ─────────────────────────────
   // UPDATE
   // ─────────────────────────────
+  @Permission(PERMISSIONS.ATTENDENCE_MANAGE)
   @Patch(':id')
   @ApiOperation({
     summary: 'Update event participation',
@@ -144,6 +155,7 @@ export class EventParticipationController {
   // ─────────────────────────────
   // DELETE
   // ─────────────────────────────
+  @Permission(PERMISSIONS.ATTENDENCE_MANAGE)
   @Delete(':id')
   @ApiOperation({
     summary: 'Delete event participation by ID',

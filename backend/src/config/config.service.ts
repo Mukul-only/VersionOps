@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as Joi from 'joi';
+import { StringValue } from 'ms';
 
 export interface AppConfig {
   DATABASE_URL: string;
@@ -15,8 +16,14 @@ export interface AppConfig {
   SUPER_ADMIN_PASSWORD: string;
   SUPER_ADMIN_NAME: string;
 
-  JWT_SECRET: string;
-  JWT_EXPIRES_IN: string;
+  JWT_ACCESS_SECRET: string;
+  JWT_ACCESS_EXPIRES_IN: StringValue;
+
+  AUTH_COOKIE_NAME: string;
+  AUTH_COOKIE_SECURE: boolean;
+  AUTH_COOKIE_SAMESITE: string;
+  AUTH_COOKIE_PATH: string;
+  AUTH_ADMIN_SECRET: string;
 
   LOG_LEVEL: 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
 }
@@ -49,8 +56,14 @@ export class ConfigService {
       SUPER_ADMIN_NAME: Joi.string().required(),
       SUPER_ADMIN_PASSWORD: Joi.string().min(8).required(),
 
-      JWT_SECRET: Joi.string().required(),
-      JWT_EXPIRES_IN: Joi.string().required(),
+      JWT_ACCESS_SECRET: Joi.string().required(),
+      JWT_ACCESS_EXPIRES_IN: Joi.string().required(),
+
+      AUTH_COOKIE_NAME: Joi.string().required(),
+      AUTH_COOKIE_SECURE: Joi.boolean().default(false),
+      AUTH_COOKIE_SAMESITE: Joi.string().required(),
+      AUTH_COOKIE_PATH: Joi.string().required(),
+      AUTH_ADMIN_SECRET: Joi.string().required(),
 
       LOG_LEVEL: Joi.string()
         .valid('fatal', 'error', 'warn', 'info', 'debug', 'trace')

@@ -8,6 +8,7 @@ import {
   Delete,
   Query,
   ParseIntPipe,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -24,8 +25,13 @@ import {
   EventResultResponse,
   PaginatedEventResultResponse,
 } from './types/event-result.types';
+import { JwtAuthGuard } from '../auth/gaurds/jwt-auth.gaurd';
+import { PermissionsGuard } from '../auth/gaurds/permission.gaurd';
+import { Permission } from '../auth/decorators/permission.decorator';
+import { PERMISSIONS } from '../auth/rbac/role-permissions.map';
 
 @ApiTags('Event Results')
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller({ path: 'event-results', version: '1' })
 export class EventResultController {
   constructor(private readonly eventResultService: EventResultService) {}
@@ -33,6 +39,7 @@ export class EventResultController {
   // ─────────────────────────────
   // CREATE
   // ─────────────────────────────
+  @Permission(PERMISSIONS.RESULT_MANAGE)
   @Post()
   @ApiOperation({
     summary: 'Create event result (assign position to participant)',
@@ -49,6 +56,7 @@ export class EventResultController {
   // ─────────────────────────────
   // GET ALL
   // ─────────────────────────────
+  @Permission(PERMISSIONS.RESULT_MANAGE)
   @Get()
   @ApiOperation({
     summary: 'Get all event results with pagination and filtering',
@@ -66,6 +74,7 @@ export class EventResultController {
   // ─────────────────────────────
   // GET ONE
   // ─────────────────────────────
+  @Permission(PERMISSIONS.RESULT_MANAGE)
   @Get(':id')
   @ApiOperation({ summary: 'Get a single event result by ID' })
   @ApiParam({
@@ -94,6 +103,7 @@ export class EventResultController {
   // ─────────────────────────────
   // UPDATE
   // ─────────────────────────────
+  @Permission(PERMISSIONS.RESULT_MANAGE)
   @Patch(':id')
   @ApiOperation({ summary: 'Update event result' })
   @ApiParam({
@@ -116,6 +126,7 @@ export class EventResultController {
   // ─────────────────────────────
   // DELETE
   // ─────────────────────────────
+  @Permission(PERMISSIONS.RESULT_MANAGE)
   @Delete(':id')
   @ApiOperation({ summary: 'Delete event result by ID' })
   @ApiParam({

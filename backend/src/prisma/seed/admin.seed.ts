@@ -3,7 +3,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { ConfigService } from 'src/config/config.service';
 import { LoggerService } from 'src/logger/logger.service';
 import { UserRole } from '@prisma/client';
-import * as bcrypt from 'bcrypt';
+import { hashPassword } from 'src/common/utils/auth/password.util';
 
 @Injectable()
 export class AdminSeedService implements OnModuleInit {
@@ -41,7 +41,7 @@ export class AdminSeedService implements OnModuleInit {
       return;
     }
 
-    const hashedPassword = await bcrypt.hash(adminPassword, 10);
+    const hashedPassword = await hashPassword(adminPassword);
 
     await this.prisma.user.create({
       data: {

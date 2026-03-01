@@ -8,6 +8,7 @@ import {
   Delete,
   Query,
   ParseIntPipe,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -19,8 +20,13 @@ import {
 import { CollegeService } from './college.service';
 import { CreateCollegeDto, UpdateCollegeDto } from './dto';
 import { QueryOptionsDto } from 'src/common/dto/query-options.dto';
+import { JwtAuthGuard } from '../auth/gaurds/jwt-auth.gaurd';
+import { PermissionsGuard } from '../auth/gaurds/permission.gaurd';
+import { Permission } from '../auth/decorators/permission.decorator';
+import { PERMISSIONS } from '../auth/rbac/role-permissions.map';
 
 @ApiTags('Colleges')
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller({ path: 'colleges', version: '1' })
 export class CollegeController {
   constructor(private readonly collegeService: CollegeService) {}
@@ -28,6 +34,7 @@ export class CollegeController {
   // ────────────────────────────────────────────────
   // CREATE COLLEGE
   // ────────────────────────────────────────────────
+  @Permission(PERMISSIONS.COLLEGE_CREATE)
   @Post()
   @ApiOperation({ summary: 'Create a new college' })
   @ApiResponse({ status: 201, description: 'College created successfully' })
@@ -39,6 +46,7 @@ export class CollegeController {
   // ────────────────────────────────────────────────
   // GET ALL COLLEGES
   // ────────────────────────────────────────────────
+  @Permission(PERMISSIONS.COLLEGE_READ)
   @Get()
   @ApiOperation({ summary: 'Get all colleges with filtering and pagination' })
   @ApiResponse({ status: 200, description: 'Colleges fetched successfully' })
@@ -49,6 +57,7 @@ export class CollegeController {
   // ────────────────────────────────────────────────
   // GET ONE COLLEGE
   // ────────────────────────────────────────────────
+  @Permission(PERMISSIONS.COLLEGE_READ)
   @Get(':id')
   @ApiOperation({ summary: 'Get a single college by ID' })
   @ApiParam({
@@ -75,6 +84,7 @@ export class CollegeController {
   // ────────────────────────────────────────────────
   // UPDATE COLLEGE
   // ────────────────────────────────────────────────
+  @Permission(PERMISSIONS.COLLEGE_UPDATE)
   @Patch(':id')
   @ApiOperation({ summary: 'Update an existing college' })
   @ApiParam({
@@ -94,6 +104,7 @@ export class CollegeController {
   // ────────────────────────────────────────────────
   // DELETE COLLEGE
   // ────────────────────────────────────────────────
+  @Permission(PERMISSIONS.COLLEGE_DELETE)
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a college by ID' })
   @ApiParam({

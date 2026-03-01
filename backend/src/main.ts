@@ -5,7 +5,10 @@ import { AppModule } from './app.module';
 import { ConfigService } from './config/config.service';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { LoggerService } from './logger/logger.service';
+
 import helmet from 'helmet';
+import * as cookieParser from 'cookie-parser';
+import * as express from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -18,28 +21,57 @@ async function bootstrap() {
   const port = configService.get('PORT');
   const nodeEnv = configService.get('NODE_ENV');
 
+  /* =========================================================
+     Body Size Limits
+  ========================================================= */
+  app.use(express.json({ limit: '2mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '2mb' }));
+
+  /* =========================================================
+     Global Prefix & Versioning
+  ========================================================= */
+  app.setGlobalPrefix('api');
+
+  app.enableVersioning({
+    type: VersioningType.URI, // /api/v1/...
+  });
+
+  /* =========================================================
+     Security Middlewares
+  ========================================================= */
+  app.use(helmet());
+
+  // REQUIRED for cookie-based JWT auth
+  app.use(cookieParser());
+
+  /* =========================================================
+     CORS (Cookie-Safe Setup)
+  ========================================================= */
   const allowedOrigins =
     configService
       .get('ALLOWED_ORIGINS')
       ?.split(',')
       .map((origin) => origin.trim()) ?? [];
 
-  app.setGlobalPrefix('api');
-
-  // --- Enable API Versioning ---
-  app.enableVersioning({
-    type: VersioningType.URI, // /v1/...
-  });
-
-  app.useGlobalFilters(new GlobalExceptionFilter(logger));
-
-  app.use(helmet());
-
   app.enableCors({
-    origin: allowedOrigins,
-    credentials: true,
+    origin: (
+      origin: string | undefined,
+      callback: (err: Error | null, allow?: boolean) => void,
+    ) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        logger.warn(`CORS blocked for origin: ${String(origin)}`);
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true, // REQUIRED for cookies
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   });
 
+  /* =========================================================
+     Global Pipes / Filters / Interceptors
+  ========================================================= */
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -48,16 +80,18 @@ async function bootstrap() {
     }),
   );
 
-  /**
-   * ---------------------------
-   * Swagger Setup
-   * ---------------------------
-   */
+  app.useGlobalFilters(new GlobalExceptionFilter(logger));
+
+  /* =========================================================
+     Swagger Setup
+  ========================================================= */
   if (nodeEnv !== 'production') {
     const config = new DocumentBuilder()
-      .setTitle('Your Project API')
-      .setDescription('API documentation')
+      .setTitle('Leaderboard API')
+      .setDescription('API documentation for Leaderboard System')
       .setVersion('1.0')
+      // For cookie-based auth, this enables the lock icon
+      .addCookieAuth('AUTH_COOKIE_NAME')
       .build();
 
     const document = SwaggerModule.createDocument(app, config);
@@ -71,6 +105,9 @@ async function bootstrap() {
     logger.info(`Swagger running on http://localhost:${port}/api/docs`);
   }
 
+  /* =========================================================
+     Start Server
+  ========================================================= */
   await app.listen(port);
 
   logger.info(`Server running on http://localhost:${port} [${nodeEnv}]`);
