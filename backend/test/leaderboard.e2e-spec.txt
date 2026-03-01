@@ -89,9 +89,9 @@ describe('Leaderboard E2E', () => {
         name: 'Hackathon',
         teamSize: 3,
         participationPoints: 20,
-        firstPrizePoints: 200,
-        secondPrizePoints: 100,
-        thirdPrizePoints: 50,
+        firstPrizePoints: 300,
+        secondPrizePoints: 150,
+        thirdPrizePoints: 90,
       })
       .expect(201);
     event2 = event2Response.body as EventResponse;
@@ -102,9 +102,9 @@ describe('Leaderboard E2E', () => {
         name: 'Quiz Competition',
         teamSize: 2,
         participationPoints: 5,
-        firstPrizePoints: 50,
-        secondPrizePoints: 25,
-        thirdPrizePoints: 10,
+        firstPrizePoints: 60,
+        secondPrizePoints: 30,
+        thirdPrizePoints: 20,
       })
       .expect(201);
     event3 = event3Response.body as EventResponse;
