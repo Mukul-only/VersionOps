@@ -8,6 +8,7 @@ import {
 import { QueryOptionsDto } from 'src/common/dto/query-options.dto';
 import { buildQueryArgs } from 'src/common/utils/query-builder.util';
 import { CollegeScore, College, Prisma } from '@prisma/client';
+import { AdjustScoreDto } from './adjust-score.dto';
 
 @Injectable()
 export class LeaderboardService {
@@ -161,6 +162,15 @@ export class LeaderboardService {
         }
       }
 
+      const adjustments = await tx.manualScoreAdjustment.findMany();
+
+      for (const adj of adjustments) {
+        const collegeScore = scoreMap.get(adj.collegeId);
+        if (!collegeScore) continue;
+
+        collegeScore.totalPoints += adj.points;
+      }
+
       for (const [collegeId, stats] of scoreMap.entries()) {
         await tx.collegeScore.create({
           data: {
@@ -214,6 +224,16 @@ export class LeaderboardService {
       items: items.map((i) => this.mapToResponse(i, includeRelations)),
       total,
     };
+  }
+
+  adjustScore(dto: AdjustScoreDto) {
+    return this.prisma.manualScoreAdjustment.create({
+      data: {
+        collegeId: dto.collegeId,
+        points: dto.points,
+        reason: dto.reason ?? null,
+      },
+    });
   }
 
   private mapToResponse(
