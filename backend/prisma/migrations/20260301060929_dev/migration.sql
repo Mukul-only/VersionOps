@@ -7,6 +7,9 @@ CREATE TYPE "Position" AS ENUM ('FIRST', 'SECOND', 'THIRD');
 -- CreateEnum
 CREATE TYPE "FestStatus" AS ENUM ('REGISTERED', 'CHECKED_IN', 'NO_SHOW');
 
+-- CreateEnum
+CREATE TYPE "UserRole" AS ENUM ('ADMIN', 'OPERATOR', 'DESK');
+
 -- CreateTable
 CREATE TABLE "colleges" (
     "id" SERIAL NOT NULL,
@@ -82,8 +85,35 @@ CREATE TABLE "college_scores" (
     CONSTRAINT "college_scores_pkey" PRIMARY KEY ("collegeId")
 );
 
+-- CreateTable
+CREATE TABLE "ManualScoreAdjustment" (
+    "id" SERIAL NOT NULL,
+    "collegeId" INTEGER NOT NULL,
+    "points" DOUBLE PRECISION NOT NULL,
+    "reason" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "ManualScoreAdjustment_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "User" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "password" TEXT NOT NULL,
+    "role" "UserRole" NOT NULL DEFAULT 'DESK',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "colleges_code_key" ON "colleges"("code");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "colleges_name_key" ON "colleges"("name");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "participants_participantId_key" ON "participants"("participantId");
@@ -106,6 +136,9 @@ CREATE UNIQUE INDEX "event_participations_eventId_dummyId_key" ON "event_partici
 -- CreateIndex
 CREATE UNIQUE INDEX "event_results_eventId_participantId_key" ON "event_results"("eventId", "participantId");
 
+-- CreateIndex
+CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+
 -- AddForeignKey
 ALTER TABLE "participants" ADD CONSTRAINT "participants_collegeId_fkey" FOREIGN KEY ("collegeId") REFERENCES "colleges"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
@@ -123,3 +156,6 @@ ALTER TABLE "event_results" ADD CONSTRAINT "event_results_participantId_fkey" FO
 
 -- AddForeignKey
 ALTER TABLE "college_scores" ADD CONSTRAINT "college_scores_collegeId_fkey" FOREIGN KEY ("collegeId") REFERENCES "colleges"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ManualScoreAdjustment" ADD CONSTRAINT "ManualScoreAdjustment_collegeId_fkey" FOREIGN KEY ("collegeId") REFERENCES "colleges"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

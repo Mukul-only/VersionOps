@@ -152,3 +152,20 @@ model ManualScoreAdjustment {
 
   college     College  @relation(fields: [collegeId], references: [id])
 }
+
+enum UserRole {
+  ADMIN
+  OPERATOR
+  DESK
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      UserRole @default(DESK)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
