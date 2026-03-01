@@ -8,6 +8,8 @@ import {
   LeaderboardEntry,
   PaginatedResponse,
   PaginationParams,
+  AuthResponse,
+  LoginPayload,
 } from './types';
 
 function buildQueryString(params: PaginationParams): string {
@@ -198,4 +200,31 @@ export const eventResultService = {
     fetchApi<{ success: boolean }>(`/event-results/${id}`, {
       method: 'DELETE',
     }),
+};
+
+// Auth
+export const authService = {
+  login: async (credentials: LoginPayload): Promise<AuthResponse> => {
+    return await fetchApi<AuthResponse>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(credentials),
+    });
+  },
+
+  logout: async (): Promise<void> => {
+    await fetchApi<{ message: string }>('/auth/logout', {
+      method: 'POST',
+    });
+  },
+
+  getCurrentUser: async (): Promise<AuthResponse> => {
+    try {
+      return await fetchApi<AuthResponse>('/auth/me');
+    } catch (error: any) {
+      if (error.message.includes('401') || error.message.toLowerCase().includes('unauthorized')) {
+        throw new Error('Unauthorized');
+      }
+      throw error;
+    }
+  },
 };

@@ -7,19 +7,28 @@ export async function fetchApi<T>(
   options: RequestInit = {}
 ): Promise<T> {
   const url = `${BASE_URL}${endpoint}`;
-  const headers = {
+  
+  const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...options.headers,
   };
 
   try {
-    const response = await fetch(url, { ...options, headers, cache: 'no-cache' });
+    const response = await fetch(url, { 
+      ...options, 
+      headers, 
+      credentials: 'include',
+      cache: 'no-cache' 
+    });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({
         message: 'An unknown error occurred',
       }));
-      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      const errorMessage = Array.isArray(errorData.message) 
+        ? errorData.message.join(', ') 
+        : (errorData.message || `HTTP error! status: ${response.status}`);
+      throw new Error(errorMessage);
     }
 
     // Handle 204 No Content or empty responses if necessary, though contract implies JSON responses

@@ -9,6 +9,7 @@ import {
   Command,
   X,
   ChevronDown,
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -17,6 +18,14 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { useEffect, useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const navItems = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard" },
@@ -54,6 +63,7 @@ const navItems = [
 export function AppSidebar({ onClose }: { onClose?: () => void }) {
   const location = useLocation();
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
+  const { user, logout } = useAuth();
 
   useEffect(() => {
     const activeSection = navItems.find(
@@ -151,7 +161,7 @@ export function AppSidebar({ onClose }: { onClose?: () => void }) {
         )}
       </nav>
 
-      <div className="p-3 border-t">
+      <div className="p-3 border-t space-y-2">
         <button
           onClick={() => document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true }))}
           className="flex items-center gap-2 w-full px-3 py-2 rounded-md text-xs text-muted-foreground hover:bg-accent transition-colors"
@@ -160,6 +170,35 @@ export function AppSidebar({ onClose }: { onClose?: () => void }) {
           <span>Search</span>
           <kbd className="ml-auto text-[10px] bg-secondary px-1.5 py-0.5 rounded font-mono">⌘K</kbd>
         </button>
+
+        {user && (
+          <div className="flex items-center gap-3 px-3 py-2 border rounded-md bg-muted/30">
+            <Avatar className="h-8 w-8 border">
+              <AvatarFallback className="text-[10px] bg-primary text-primary-foreground">
+                {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold truncate text-foreground">{user.name}</p>
+              <p className="text-[10px] text-muted-foreground truncate uppercase tracking-wider">{user.role}</p>
+            </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                  onClick={logout}
+                >
+                  <LogOut className="h-3.5 w-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Logout</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        )}
       </div>
     </aside>
   );

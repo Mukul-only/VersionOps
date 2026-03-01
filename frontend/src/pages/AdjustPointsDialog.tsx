@@ -20,13 +20,13 @@ interface AdjustPointsDialogProps {
 }
 
 export default function AdjustPointsDialog({ college, onSuccess, onOpenChange }: AdjustPointsDialogProps) {
-  const [points, setPoints] = useState(0);
+  const [points, setPoints] = useState("0");
   const [reason, setReason] = useState("");
 
   const handleSubmit = async () => {
     if (!college) return;
     try {
-      await leaderboardService.adjust(college.id, points, reason);
+      await leaderboardService.adjust(college.id, parseInt(points, 10) || 0, reason);
       toast.success("Points adjusted successfully!");
       onSuccess();
     } catch (error: unknown) {
@@ -47,9 +47,14 @@ export default function AdjustPointsDialog({ college, onSuccess, onOpenChange }:
             <Label htmlFor="points">Points</Label>
             <Input
               id="points"
-              type="number"
+              type="text"
               value={points}
-              onChange={(e) => setPoints(parseInt(e.target.value, 10))}
+              onChange={(e) => {
+                const { value } = e.target;
+                if (/^-?\d*$/.test(value)) {
+                  setPoints(value);
+                }
+              }}
             />
           </div>
           <div className="space-y-2">

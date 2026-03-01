@@ -89,3 +89,15 @@ export interface LeaderboardEntry {
   thirdPrizes: number;
   updatedAt: string;
 }
+
+export interface LoginPayload {
+  email: string;
+  password?: string;
+}
+
+export interface AuthResponse {
+  id: string;
+  name: string;
+  email: string;
+  role: 'ADMIN' | 'STAFF';
+}
