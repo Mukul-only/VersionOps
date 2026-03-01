@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { eventService } from "@/api/services";
 import { toast } from "sonner";
 import { useNavigate, useParams } from "react-router-dom";
+import Papa from "papaparse";
 
 const formSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters."),
@@ -30,6 +31,8 @@ export default function AddEvent() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const isEditMode = !!id;
+  const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -73,6 +76,91 @@ export default function AddEvent() {
     }
   }
 
+  const handleCsvFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files) {
+      setCsvFile(event.target.files[0]);
+    }
+  };
+
+  const handleCsvImport = async () => {
+    if (!csvFile) {
+      toast.error("Please select a CSV file to import.");
+      return;
+    }
+
+    setIsImporting(true);
+    Papa.parse(csvFile, {
+      skipEmptyLines: true,
+      complete: async (results) => {
+        const dataRows = results.data as string[][];
+        const header = dataRows[0]?.map(h => h.trim());
+        const eventData = dataRows.slice(1);
+
+        if (!header || header.length < 6) {
+            toast.error("Invalid CSV format. Please check the headers.");
+            setIsImporting(false);
+            return;
+        }
+
+        const events = eventData.map((row) => {
+            const event: { [key: string]: any } = {};
+            header.forEach((h, i) => {
+                event[h] = row[i];
+            });
+            return event;
+        });
+
+        const creationPromises = events
+          .filter((e) => e.name)
+          .map((event) => {
+            const parsedEvent = {
+                name: event.name,
+                teamSize: parseInt(event.teamSize, 10) || 1,
+                participationPoints: parseInt(event.participationPoints, 10) || 0,
+                firstPrizePoints: parseInt(event.firstPrizePoints, 10) || 0,
+                secondPrizePoints: parseInt(event.secondPrizePoints, 10) || 0,
+                thirdPrizePoints: parseInt(event.thirdPrizePoints, 10) || 0,
+            };
+            return eventService.create(parsedEvent);
+          });
+
+        const promiseResults = await Promise.allSettled(creationPromises);
+
+        let successfulImports = 0;
+        let failedImports = 0;
+
+        promiseResults.forEach((result) => {
+          if (result.status === "fulfilled") {
+            successfulImports++;
+          } else {
+            failedImports++;
+            console.error("Failed to import event:", result.reason);
+          }
+        });
+
+        if (successfulImports > 0) {
+          toast.success(
+            `${successfulImports} event(s) imported successfully!`
+          );
+        }
+        if (failedImports > 0) {
+          toast.warning(
+            `${failedImports} event(s) failed to import. Check console for details.`
+          );
+        }
+
+        setIsImporting(false);
+        if (successfulImports > 0) {
+            navigate("/events");
+        }
+      },
+      error: (error) => {
+        toast.error(`Error parsing CSV file: ${error.message}`);
+        setIsImporting(false);
+      },
+    });
+  };
+
   return (
     <div className="space-y-4">
       <div>
@@ -81,7 +169,8 @@ export default function AddEvent() {
           {isEditMode ? "Update the details for the event." : "Enter the details for the new event."}
         </p>
       </div>
-      <Card className="max-w-2xl">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <Card>
         <CardHeader>
           <CardTitle>Event Details</CardTitle>
         </CardHeader>
@@ -179,6 +268,45 @@ export default function AddEvent() {
           </Form>
         </CardContent>
       </Card>
+      {!isEditMode && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Import Events from CSV</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <p className="text-sm text-muted-foreground">
+                  To import a list of events, please upload a CSV file with the
+                  following format:
+                </p>
+                <pre className="mt-2 p-2 bg-gray-100 rounded-md text-sm">
+                  <code>
+                    name,teamSize,participationPoints,firstPrizePoints,secondPrizePoints,thirdPrizePoints
+                    <br />
+                    Code Sprint,1,10,100,50,25
+                    <br />
+                    Design Challenge,2,20,150,100,75
+                  </code>
+                </pre>
+              </div>
+              <div className="flex flex-col space-y-2">
+                <Input
+                  type="file"
+                  accept=".csv"
+                  onChange={handleCsvFileChange}
+                  disabled={isImporting}
+                />
+                <Button
+                  onClick={handleCsvImport}
+                  disabled={!csvFile || isImporting}
+                >
+                  {isImporting ? "Importing..." : "Import CSV"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   );
 }

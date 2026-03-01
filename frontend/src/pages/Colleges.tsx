@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Eye, Trash2, Pencil } from "lucide-react";
+import { Eye, Trash2, Pencil, PlusCircle } from "lucide-react";
 import { collegeService } from "@/api/services";
 import { College } from "@/api/types";
 import { toast } from "sonner";
@@ -18,6 +18,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import EditCollegeDialog from "./EditCollegeDialog";
+import AdjustPointsDialog from "./AdjustPointsDialog";
 import { Input } from "@/components/ui/input";
 
 export default function Colleges() {
@@ -25,6 +26,7 @@ export default function Colleges() {
   const [selectedCollege, setSelectedCollege] = useState<College | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [editingCollege, setEditingCollege] = useState<College | null>(null);
+  const [adjustingCollege, setAdjustingCollege] = useState<College | null>(null);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
@@ -52,6 +54,11 @@ export default function Colleges() {
 
   const handleEditSuccess = () => {
     setEditingCollege(null);
+    void loadColleges();
+  };
+
+  const handleAdjustSuccess = () => {
+    setAdjustingCollege(null);
     void loadColleges();
   };
 
@@ -96,7 +103,7 @@ export default function Colleges() {
               <TableHead className="w-16 text-center">🥈</TableHead>
               <TableHead className="w-16 text-center">🥉</TableHead>
               <TableHead className="w-28">Points</TableHead>
-              <TableHead className="w-32 text-right">Actions</TableHead>
+              <TableHead className="w-40 text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -112,6 +119,9 @@ export default function Colleges() {
                 <TableCell className="text-right">
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openDetails(c)}>
                     <Eye className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setAdjustingCollege(c)}>
+                    <PlusCircle className="h-4 w-4" />
                   </Button>
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingCollege(c)}>
                     <Pencil className="h-4 w-4" />
@@ -146,6 +156,12 @@ export default function Colleges() {
         college={editingCollege}
         onSuccess={handleEditSuccess}
         onOpenChange={(isOpen) => !isOpen && setEditingCollege(null)}
+      />
+
+      <AdjustPointsDialog
+        college={adjustingCollege}
+        onSuccess={handleAdjustSuccess}
+        onOpenChange={(isOpen) => !isOpen && setAdjustingCollege(null)}
       />
 
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>

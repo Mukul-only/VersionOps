@@ -176,7 +176,15 @@ export default function Participants() {
   };
 
   const bulkNoShow = async () => {
-    toast.error("API for bulk marking 'No Show' is not yet available.");
+    try {
+      const promises = Array.from(selected).map(id => participantService.noShow(id));
+      await Promise.all(promises);
+      toast.success(`${selected.size} participants marked as no-show`);
+      setSelected(new Set());
+      await loadParticipants();
+    } catch (error) {
+      toast.error("Some updates failed");
+    }
   };
 
   const deleteParticipant = async (participantId: number) => {
@@ -210,13 +218,13 @@ export default function Participants() {
     try {
       if (action === 'CHECK_IN') {
         await participantService.checkIn(participantId);
-        toast.success(`Participant status updated`);
-        await loadParticipants();
       } else if (action === 'NO_SHOW') {
-        toast.error("API for marking 'No Show' is not yet available.");
+        await participantService.noShow(participantId);
       } else if (action === 'RESET') {
-        toast.error("API for resetting status is not yet available.");
+        await participantService.resetStatus(participantId);
       }
+      toast.success(`Participant status updated`);
+      await loadParticipants();
     } catch (error: any) {
       toast.error(error.message || "Failed to update status");
     }
@@ -288,82 +296,84 @@ export default function Participants() {
           </div>
         )}
 
-        <div className="border rounded-lg overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-muted/50">
-                <TableHead className="w-10"><Checkbox checked={selected.size === participants.length && participants.length > 0} onCheckedChange={toggleAll} /></TableHead>
-                <TableHead className="w-24">ID</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>College</TableHead>
-                <TableHead className="w-16">Year</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="w-40 text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {participants.map((p) => (
-                <TableRow key={p.id} className={selected.has(p.id) ? "bg-primary/5" : ""}>
-                  <TableCell><Checkbox checked={selected.has(p.id)} onCheckedChange={() => toggleSelect(p.id)} /></TableCell>
-                  <TableCell className="font-mono text-xs">{p.participantId}</TableCell>
-                  <TableCell className="font-medium">{p.name}</TableCell>
-                  <TableCell>{p.college?.code}</TableCell>
-                  <TableCell>{p.year}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{p.email}</TableCell>
-                  <TableCell>
-                    {p.festStatus === 'NO_SHOW' ? <Badge variant="destructive" className="text-xs">No-Show</Badge>
-                    : p.festStatus === 'CHECKED_IN' ? <Badge className="bg-green-600 text-white text-xs">Checked In</Badge>
-                    : <Badge variant="secondary" className="text-xs">{p.festStatus}</Badge>}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center gap-1 justify-end">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => updateParticipantStatus(p.id, 'CHECK_IN')}><UserCheck className="h-4 w-4" /></Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Check-In</TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => updateParticipantStatus(p.id, 'NO_SHOW')}><UserX className="h-4 w-4" /></Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Mark No-Show</TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => updateParticipantStatus(p.id, 'RESET')}><RotateCcw className="h-4 w-4" /></Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Reset to Registered</TooltipContent>
-                      </Tooltip>
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDetailId(p.id)}><Eye className="h-4 w-4" /></Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEditClick(p)}><Pencil className="h-4 w-4" /></Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive"><Trash2 className="h-4 w-4" /></Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Are you sure you want to delete this participant?</AlertDialogTitle>
-                            <AlertDialogDescription>This action cannot be undone. This will permanently delete the participant "{p.name}".</AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => deleteParticipant(p.id)}>Yes, delete</AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {participants.length === 0 && (
+        <div className="border rounded-lg">
+          <div className="relative overflow-y-auto max-h-[calc(12*3.5rem+3.2rem)]">
+            <Table className="w-full">
+              <TableHeader className="sticky top-0 bg-muted/50 z-10">
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8">No participants found</TableCell>
+                  <TableHead className="w-[4%]"><Checkbox checked={selected.size === participants.length && participants.length > 0} onCheckedChange={toggleAll} /></TableHead>
+                  <TableHead className="w-[10%]">ID</TableHead>
+                  <TableHead className="w-[20%]">Name</TableHead>
+                  <TableHead className="w-[10%]">College</TableHead>
+                  <TableHead className="w-[8%]">Year</TableHead>
+                  <TableHead className="w-[20%]">Email</TableHead>
+                  <TableHead className="w-[10%]">Status</TableHead>
+                  <TableHead className="w-[18%] text-right">Actions</TableHead>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {participants.map((p) => (
+                  <TableRow key={p.id} className={selected.has(p.id) ? "bg-primary/5" : ""}>
+                    <TableCell><Checkbox checked={selected.has(p.id)} onCheckedChange={() => toggleSelect(p.id)} /></TableCell>
+                    <TableCell className="font-mono text-xs">{p.participantId}</TableCell>
+                    <TableCell className="font-medium">{p.name}</TableCell>
+                    <TableCell>{p.college?.code}</TableCell>
+                    <TableCell>{p.year}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground truncate">{p.email}</TableCell>
+                    <TableCell>
+                      {p.festStatus === 'NO_SHOW' ? <Badge variant="destructive" className="text-xs">No-Show</Badge>
+                      : p.festStatus === 'CHECKED_IN' ? <Badge className="bg-green-600 text-white text-xs">Checked In</Badge>
+                      : <Badge variant="secondary" className="text-xs">{p.festStatus}</Badge>}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center gap-1 justify-end">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => updateParticipantStatus(p.id, 'CHECK_IN')}><UserCheck className="h-4 w-4" /></Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Check-In</TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => updateParticipantStatus(p.id, 'NO_SHOW')}><UserX className="h-4 w-4" /></Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Mark No-Show</TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => updateParticipantStatus(p.id, 'RESET')}><RotateCcw className="h-4 w-4" /></Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Reset to Registered</TooltipContent>
+                        </Tooltip>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDetailId(p.id)}><Eye className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEditClick(p)}><Pencil className="h-4 w-4" /></Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive"><Trash2 className="h-4 w-4" /></Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Are you sure you want to delete this participant?</AlertDialogTitle>
+                              <AlertDialogDescription>This action cannot be undone. This will permanently delete the participant "{p.name}".</AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => deleteParticipant(p.id)}>Yes, delete</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {participants.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">No participants found</TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </div>
 
         <Dialog open={!!editingParticipant} onOpenChange={() => setEditingParticipant(null)}>

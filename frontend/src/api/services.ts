@@ -102,6 +102,16 @@ export const participantService = {
       method: 'POST',
     }),
 
+  noShow: (id: number) =>
+    fetchApi<Participant>(`/participants/${id}/no-show`, {
+      method: 'POST',
+    }),
+
+  resetStatus: (id: number) =>
+    fetchApi<Participant>(`/participants/${id}/registered`, {
+      method: 'POST',
+    }),
+
   update: (id: number, data: any) =>
     fetchApi<Participant>(`/participants/${id}`, {
       method: 'PATCH',
@@ -122,6 +132,12 @@ export const leaderboardService = {
   recalculate: () =>
     fetchApi<{ success: boolean }>('/leaderboard/recalculate', {
       method: 'POST',
+    }),
+
+  adjust: (collegeId: number, points: number, reason?: string) =>
+    fetchApi<{ success: boolean }>('/leaderboard/adjust', {
+      method: 'POST',
+      body: JSON.stringify({ collegeId, points, reason }),
     }),
 };
 
