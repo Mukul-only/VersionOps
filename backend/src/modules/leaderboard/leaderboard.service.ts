@@ -8,6 +8,7 @@ import {
 import { QueryOptionsDto } from 'src/common/dto/query-options.dto';
 import { buildQueryArgs } from 'src/common/utils/query-builder.util';
 import { CollegeScore, College, Prisma } from '@prisma/client';
+import { AdjustScoreDto } from './adjust-score.dto';
 
 @Injectable()
 export class LeaderboardService {
@@ -24,55 +25,160 @@ export class LeaderboardService {
         select: { id: true },
       });
 
+      // Initialize score map
+      const scoreMap = new Map<
+        number,
+        {
+          totalPoints: number;
+          firstPrizes: number;
+          secondPrizes: number;
+          thirdPrizes: number;
+        }
+      >();
+
       for (const college of colleges) {
-        const collegeId = college.id;
-
-        const participations = await tx.eventParticipation.findMany({
-          where: { participant: { collegeId } },
-          include: { event: true },
+        scoreMap.set(college.id, {
+          totalPoints: 0,
+          firstPrizes: 0,
+          secondPrizes: 0,
+          thirdPrizes: 0,
         });
+      }
 
-        const participationPoints = participations.reduce(
-          (sum, p) => sum + p.event.participationPoints,
-          0,
-        );
+      const participations = await tx.eventParticipation.findMany({
+        include: {
+          event: true,
+          participant: true,
+        },
+      });
 
-        const results = await tx.eventResult.findMany({
-          where: { participant: { collegeId } },
-          include: { event: true },
-        });
+      for (const p of participations) {
+        const collegeScore = scoreMap.get(p.participant.collegeId);
+        if (!collegeScore) continue;
 
-        let prizePoints = 0;
-        let firstPrizes = 0;
-        let secondPrizes = 0;
-        let thirdPrizes = 0;
+        collegeScore.totalPoints += p.event.participationPoints;
+      }
 
-        for (const r of results) {
-          switch (r.position) {
-            case Position.FIRST:
-              prizePoints += r.event.firstPrizePoints;
-              firstPrizes++;
-              break;
-            case Position.SECOND:
-              prizePoints += r.event.secondPrizePoints;
-              secondPrizes++;
-              break;
-            case Position.THIRD:
-              prizePoints += r.event.thirdPrizePoints;
-              thirdPrizes++;
-              break;
+      const results = await tx.eventResult.findMany({
+        include: {
+          event: true,
+          participant: true,
+        },
+      });
+
+      for (const r of results) {
+        const event = r.event;
+
+        let prizeValue = 0;
+
+        switch (r.position) {
+          case Position.FIRST:
+            prizeValue = event.firstPrizePoints;
+            break;
+          case Position.SECOND:
+            prizeValue = event.secondPrizePoints;
+            break;
+          case Position.THIRD:
+            prizeValue = event.thirdPrizePoints;
+            break;
+        }
+
+        // ───────── TEAM EVENT ─────────
+        if (event.teamSize > 1) {
+          const winningParticipation = await tx.eventParticipation.findUnique({
+            where: {
+              eventId_participantId: {
+                eventId: r.eventId,
+                participantId: r.participantId,
+              },
+            },
+          });
+
+          if (!winningParticipation?.teamId) continue;
+
+          const teamMembers = await tx.eventParticipation.findMany({
+            where: {
+              eventId: r.eventId,
+              teamId: winningParticipation.teamId,
+            },
+            include: {
+              participant: true,
+            },
+          });
+
+          const perMemberPrize = prizeValue / event.teamSize;
+
+          const uniqueColleges = new Set<number>();
+
+          for (const member of teamMembers) {
+            const collegeId = member.participant.collegeId;
+            const collegeScore = scoreMap.get(collegeId);
+            if (!collegeScore) continue;
+
+            // Add prize points per participant
+            collegeScore.totalPoints += perMemberPrize;
+
+            uniqueColleges.add(collegeId);
+          }
+
+          // Increment prize count once per unique college
+          for (const collegeId of uniqueColleges) {
+            const collegeScore = scoreMap.get(collegeId);
+            if (!collegeScore) continue;
+
+            switch (r.position) {
+              case Position.FIRST:
+                collegeScore.firstPrizes++;
+                break;
+              case Position.SECOND:
+                collegeScore.secondPrizes++;
+                break;
+              case Position.THIRD:
+                collegeScore.thirdPrizes++;
+                break;
+            }
           }
         }
 
-        const totalPoints = participationPoints + prizePoints;
+        // ───────── INDIVIDUAL EVENT ─────────
+        else {
+          const collegeId = r.participant.collegeId;
+          const collegeScore = scoreMap.get(collegeId);
+          if (!collegeScore) continue;
 
+          collegeScore.totalPoints += prizeValue;
+
+          switch (r.position) {
+            case Position.FIRST:
+              collegeScore.firstPrizes++;
+              break;
+            case Position.SECOND:
+              collegeScore.secondPrizes++;
+              break;
+            case Position.THIRD:
+              collegeScore.thirdPrizes++;
+              break;
+          }
+        }
+      }
+
+      const adjustments = await tx.manualScoreAdjustment.findMany();
+
+      for (const adj of adjustments) {
+        const collegeScore = scoreMap.get(adj.collegeId);
+        if (!collegeScore) continue;
+
+        collegeScore.totalPoints += adj.points;
+      }
+
+      for (const [collegeId, stats] of scoreMap.entries()) {
         await tx.collegeScore.create({
           data: {
             collegeId,
-            totalPoints,
-            firstPrizes,
-            secondPrizes,
-            thirdPrizes,
+            totalPoints: stats.totalPoints,
+            firstPrizes: stats.firstPrizes,
+            secondPrizes: stats.secondPrizes,
+            thirdPrizes: stats.thirdPrizes,
           },
         });
       }
@@ -81,9 +187,6 @@ export class LeaderboardService {
     });
   }
 
-  // ─────────────────────────────
-  // GET LEADERBOARD
-  // ─────────────────────────────
   // ─────────────────────────────
   // GET LEADERBOARD
   // ─────────────────────────────
@@ -122,6 +225,17 @@ export class LeaderboardService {
       total,
     };
   }
+
+  adjustScore(dto: AdjustScoreDto) {
+    return this.prisma.manualScoreAdjustment.create({
+      data: {
+        collegeId: dto.collegeId,
+        points: dto.points,
+        reason: dto.reason ?? null,
+      },
+    });
+  }
+
   private mapToResponse(
     score: CollegeScore & { college?: College },
     includeRelations: boolean,

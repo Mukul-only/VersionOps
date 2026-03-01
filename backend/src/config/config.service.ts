@@ -11,8 +11,9 @@ export interface AppConfig {
   FRONTEND_URL: string;
   ALLOWED_ORIGINS: string;
 
-  ADMIN_USERNAME: string;
-  ADMIN_PASSWORD: string;
+  SUPER_ADMIN_EMAIL: string;
+  SUPER_ADMIN_PASSWORD: string;
+  SUPER_ADMIN_NAME: string;
 
   JWT_SECRET: string;
   JWT_EXPIRES_IN: string;
@@ -44,8 +45,9 @@ export class ConfigService {
       FRONTEND_URL: Joi.string().required(),
       ALLOWED_ORIGINS: Joi.string().required(),
 
-      ADMIN_USERNAME: Joi.string().required(),
-      ADMIN_PASSWORD: Joi.string().required(),
+      SUPER_ADMIN_EMAIL: Joi.string().email().required(),
+      SUPER_ADMIN_NAME: Joi.string().required(),
+      SUPER_ADMIN_PASSWORD: Joi.string().min(8).required(),
 
       JWT_SECRET: Joi.string().required(),
       JWT_EXPIRES_IN: Joi.string().required(),

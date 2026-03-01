@@ -32,6 +32,7 @@ model College {
 
   participants Participant[]
   score        CollegeScore?
+  manualAdjustments ManualScoreAdjustment[]
 
   @@map("colleges")
 }
@@ -140,4 +141,31 @@ model CollegeScore {
   updatedAt      DateTime @updatedAt
 
   @@map("college_scores")
+}
+
+model ManualScoreAdjustment {
+  id          Int      @id @default(autoincrement())
+  collegeId   Int
+  points      Float
+  reason      String?  
+  createdAt   DateTime @default(now())
+
+  college     College  @relation(fields: [collegeId], references: [id])
+}
+
+enum UserRole {
+  ADMIN
+  OPERATOR
+  DESK
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      UserRole @default(DESK)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

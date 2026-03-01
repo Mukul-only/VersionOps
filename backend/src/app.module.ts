@@ -13,6 +13,8 @@ import { EventModule } from './modules/event/event.module';
 import { EventParticipationModule } from './modules/event-participation/event-participation.module';
 import { EventResultModule } from './modules/event-result/event-result.module';
 import { LeaderboardModule } from './modules/leaderboard/leadeboard.module';
+import { UserModule } from './modules/user/user.module';
+import { AdminSeedService } from './prisma/seed/admin.seed';
 
 @Module({
   imports: [
@@ -25,6 +27,7 @@ import { LeaderboardModule } from './modules/leaderboard/leadeboard.module';
     EventParticipationModule,
     EventResultModule,
     LeaderboardModule,
+    UserModule,
     ThrottlerModule.forRoot({
       throttlers: [
         {
@@ -41,6 +44,7 @@ import { LeaderboardModule } from './modules/leaderboard/leadeboard.module';
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
     },
+    AdminSeedService,
   ],
 })
 export class AppModule {}
