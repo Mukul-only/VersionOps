@@ -6,7 +6,7 @@ import {
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import * as bcrypt from 'bcrypt';
+import { hashPassword } from 'src/common/utils/auth/password.util';
 
 @Injectable()
 export class UserService {
@@ -21,7 +21,7 @@ export class UserService {
       throw new ConflictException('Email already exists');
     }
 
-    const hashedPassword = await bcrypt.hash(dto.password, 10);
+    const hashedPassword = await hashPassword(dto.password);
 
     const user = await this.prisma.user.create({
       data: {
@@ -63,7 +63,7 @@ export class UserService {
     let hashedPassword: string | undefined;
 
     if (dto.password) {
-      hashedPassword = await bcrypt.hash(dto.password, 10);
+      hashedPassword = await hashPassword(dto.password);
     }
 
     const updated = await this.prisma.user.update({

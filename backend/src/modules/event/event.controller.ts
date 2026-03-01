@@ -8,6 +8,7 @@ import {
   Delete,
   Query,
   ParseIntPipe,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -19,15 +20,21 @@ import {
 import { EventService } from './event.service';
 import { CreateEventDto, UpdateEventDto } from './dto';
 import { QueryOptionsDto } from 'src/common/dto/query-options.dto';
+import { JwtAuthGuard } from '../auth/gaurds/jwt-auth.gaurd';
+import { PermissionsGuard } from '../auth/gaurds/permission.gaurd';
+import { Permission } from '../auth/decorators/permission.decorator';
+import { PERMISSIONS } from '../auth/rbac/role-permissions.map';
 
 @ApiTags('Events')
 @Controller({ path: 'events', version: '1' })
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class EventController {
   constructor(private readonly eventService: EventService) {}
 
   // ────────────────────────────────────────────────
   // GET PARTICIPANTS FOR EVENT
   // ────────────────────────────────────────────────
+  @Permission(PERMISSIONS.EVENT_READ)
   @Get(':id/participants')
   @ApiOperation({ summary: 'Get participants for a specific event' })
   @ApiParam({
@@ -50,6 +57,7 @@ export class EventController {
   // ────────────────────────────────────────────────
   // CREATE EVENT
   // ────────────────────────────────────────────────
+  @Permission(PERMISSIONS.EVENT_CREATE)
   @Post()
   @ApiOperation({ summary: 'Create a new event' })
   @ApiResponse({ status: 201, description: 'Event created successfully' })
@@ -61,6 +69,7 @@ export class EventController {
   // ────────────────────────────────────────────────
   // GET ALL EVENTS
   // ────────────────────────────────────────────────
+  @Permission(PERMISSIONS.EVENT_READ)
   @Get()
   @ApiOperation({ summary: 'Get all events with filtering and pagination' })
   @ApiResponse({ status: 200, description: 'Events fetched successfully' })
@@ -71,6 +80,7 @@ export class EventController {
   // ────────────────────────────────────────────────
   // GET ONE EVENT
   // ────────────────────────────────────────────────
+  @Permission(PERMISSIONS.EVENT_READ)
   @Get(':id')
   @ApiOperation({ summary: 'Get a single event by ID' })
   @ApiParam({
@@ -97,6 +107,7 @@ export class EventController {
   // ────────────────────────────────────────────────
   // UPDATE EVENT
   // ────────────────────────────────────────────────
+  @Permission(PERMISSIONS.EVENT_UPDATE)
   @Patch(':id')
   @ApiOperation({ summary: 'Update an existing event' })
   @ApiParam({
@@ -116,6 +127,7 @@ export class EventController {
   // ────────────────────────────────────────────────
   // DELETE EVENT
   // ────────────────────────────────────────────────
+  @Permission(PERMISSIONS.EVENT_DELETE)
   @Delete(':id')
   @ApiOperation({ summary: 'Delete an event by ID' })
   @ApiParam({

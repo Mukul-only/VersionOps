@@ -8,6 +8,7 @@ import {
   Delete,
   Query,
   ParseIntPipe,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -25,8 +26,13 @@ import {
   BulkParticipantInput,
   BulkImportResult,
 } from './types/participants.types';
+import { JwtAuthGuard } from '../auth/gaurds/jwt-auth.gaurd';
+import { PermissionsGuard } from '../auth/gaurds/permission.gaurd';
+import { Permission } from '../auth/decorators/permission.decorator';
+import { PERMISSIONS } from '../auth/rbac/role-permissions.map';
 
 @ApiTags('Participants')
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller({ path: 'participants', version: '1' })
 export class ParticipantController {
   constructor(
@@ -37,6 +43,7 @@ export class ParticipantController {
   // ────────────────────────────────────────────────
   // BULK IMPORT PARTICIPANTS
   // ────────────────────────────────────────────────
+  @Permission(PERMISSIONS.PARTICIPANT_CREATE)
   @Post('bulk-import')
   @ApiOperation({ summary: 'Bulk import participants' })
   @ApiBody({
@@ -56,6 +63,7 @@ export class ParticipantController {
   // ────────────────────────────────────────────────
   // CHECK-IN PARTICIPANT
   // ────────────────────────────────────────────────
+  @Permission(PERMISSIONS.PARTICIPANT_UPDATE)
   @Post(':id/check-in')
   @ApiOperation({ summary: 'Check-in a participant' })
   @ApiParam({
@@ -78,6 +86,7 @@ export class ParticipantController {
   // ────────────────────────────────────────────────
   // MARK PARTICIPANT AS NO-SHOW
   // ────────────────────────────────────────────────
+  @Permission(PERMISSIONS.PARTICIPANT_UPDATE)
   @Post(':id/no-show')
   @ApiOperation({ summary: 'Mark participant as no-show' })
   @ApiParam({
@@ -100,6 +109,7 @@ export class ParticipantController {
   // ────────────────────────────────────────────────
   // MARK PARTICIPANT AS REGISTERED
   // ────────────────────────────────────────────────
+  @Permission(PERMISSIONS.PARTICIPANT_UPDATE)
   @Post(':id/registered')
   @ApiOperation({ summary: 'Mark participant as registered' })
   @ApiParam({
@@ -121,6 +131,7 @@ export class ParticipantController {
   // ────────────────────────────────────────────────
   // CREATE PARTICIPANT
   // ────────────────────────────────────────────────
+  @Permission(PERMISSIONS.PARTICIPANT_CREATE)
   @Post()
   @ApiOperation({ summary: 'Create a new participant' })
   @ApiResponse({ status: 201, description: 'Participant created successfully' })
@@ -132,6 +143,7 @@ export class ParticipantController {
   // ────────────────────────────────────────────────
   // GET ALL PARTICIPANTS
   // ────────────────────────────────────────────────
+  @Permission(PERMISSIONS.PARTICIPANT_READ)
   @Get()
   @ApiOperation({
     summary: 'Get all participants with filtering and pagination',
@@ -147,6 +159,7 @@ export class ParticipantController {
   // ────────────────────────────────────────────────
   // GET ONE PARTICIPANT
   // ────────────────────────────────────────────────
+  @Permission(PERMISSIONS.PARTICIPANT_READ)
   @Get(':id')
   @ApiOperation({ summary: 'Get a single participant by ID' })
   @ApiParam({
@@ -173,6 +186,7 @@ export class ParticipantController {
   // ────────────────────────────────────────────────
   // UPDATE PARTICIPANT
   // ────────────────────────────────────────────────
+  @Permission(PERMISSIONS.PARTICIPANT_UPDATE)
   @Patch(':id')
   @ApiOperation({ summary: 'Update an existing participant' })
   @ApiParam({
@@ -192,6 +206,7 @@ export class ParticipantController {
   // ────────────────────────────────────────────────
   // DELETE PARTICIPANT
   // ────────────────────────────────────────────────
+  @Permission(PERMISSIONS.PARTICIPANT_DELETE)
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a participant by ID' })
   @ApiParam({
