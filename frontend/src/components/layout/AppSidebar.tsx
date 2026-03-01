@@ -83,9 +83,9 @@ export function AppSidebar({ onClose }: { onClose?: () => void }) {
       <div className="p-4 border-b flex items-center justify-between">
         <div>
           <h1 className="text-lg font-bold tracking-tight text-foreground">
-            Fest Control
+            Version'26
           </h1>
-          <p className="text-xs text-muted-foreground">Admin Dashboard</p>
+          <p className="text-xs text-muted-foreground font-medium">Cognix</p>
         </div>
         {onClose && (
           <button onClick={onClose} className="p-1 rounded-md text-muted-foreground hover:bg-accent">

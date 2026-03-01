@@ -1,4 +1,4 @@
-import { ApiError } from './types';
+import { apiInterceptor } from './interceptor';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api/v1';
 
@@ -21,6 +21,23 @@ export async function fetchApi<T>(
       cache: 'no-cache' 
     });
 
+    if (response.status === 401) {
+      if (endpoint === '/auth/me') {
+        // Prevent redirect loop
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
+      } else {
+        apiInterceptor.handleUnauthorized();
+      }
+      throw new Error('Unauthorized');
+    }
+
+    if (response.status === 403) {
+      apiInterceptor.handleForbidden();
+      throw new Error('Forbidden');
+    }
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({
         message: 'An unknown error occurred',
@@ -31,7 +48,6 @@ export async function fetchApi<T>(
       throw new Error(errorMessage);
     }
 
-    // Handle 204 No Content or empty responses if necessary, though contract implies JSON responses
     if (response.status === 204) {
       return {} as T;
     }

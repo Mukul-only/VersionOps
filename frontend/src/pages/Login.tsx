@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
 const Login = () => {
@@ -12,15 +12,12 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { login } = useAuth();
-  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!email || !password) {
-      toast({
-        variant: "destructive",
-        title: "Error",
+      toast.error("Error", {
         description: "Please fill in all fields",
       });
       return;
@@ -28,9 +25,7 @@ const Login = () => {
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      toast({
-        variant: "destructive",
-        title: "Error",
+      toast.error("Error", {
         description: "Please enter a valid email address",
       });
       return;
@@ -39,15 +34,12 @@ const Login = () => {
     setIsSubmitting(true);
     try {
       await login({ email, password });
-      toast({
-        title: "Success",
+      toast.success("Success", {
         description: "Logged in successfully",
       });
     } catch (error: any) {
       console.error('Login error:', error);
-      toast({
-        variant: "destructive",
-        title: "Login Failed",
+      toast.error("Login Failed", {
         description: error.message || "Invalid credentials",
       });
     } finally {
@@ -59,10 +51,13 @@ const Login = () => {
     <div className="flex min-h-screen items-center justify-center bg-muted/50 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-2xl font-bold">Fest Control</CardTitle>
-          <CardDescription>
-            Enter your email and password to access the dashboard
+          <CardTitle className="text-3xl font-bold tracking-tight">Version'26</CardTitle>
+          <CardDescription className="text-lg font-medium text-primary">
+            Cognix
           </CardDescription>
+          <p className="text-sm text-muted-foreground mt-2">
+            Welcome to Version'26. Enter your email and password to access the dashboard.
+          </p>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
