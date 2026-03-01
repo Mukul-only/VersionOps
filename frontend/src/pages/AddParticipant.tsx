@@ -89,7 +89,6 @@ export default function AddParticipant() {
         }
         // Assuming CSV format: name,email,collegeCode, year,hackerearthUser, phone
         const lines = text.split("\n").slice(1); // Skip header
-        console.log({ lines });
         const data = lines
           .map((line) => {
             const [name, email, collegeCode, year, hackerearthUser, phone] =
