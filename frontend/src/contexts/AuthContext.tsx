@@ -1,16 +1,15 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { authService } from '../api/services';
-import { AuthResponse, LoginPayload } from '../api/types';
+import React, {useContext, useState, useEffect, useCallback} from 'react';
+import { authService } from '@/api/services';
+import { AuthResponse, LoginPayload } from '@/api/types';
+import { AuthContext, AuthContextType } from './AuthContextType';
 
-interface AuthContextType {
-  user: AuthResponse | null;
-  isLoading: boolean;
-  login: (credentials: LoginPayload) => Promise<void>;
-  logout: () => Promise<void>;
-  refreshUser: () => Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const useAuth = (): AuthContextType => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AuthResponse | null>(null);
@@ -28,17 +27,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   useEffect(() => {
-    refreshUser();
+    void refreshUser();
   }, [refreshUser]);
 
   const login = async (credentials: LoginPayload) => {
-    try {
-      const userData = await authService.login(credentials);
-      console.log('Login successful:', userData)
-      setUser(userData);
-    } catch (error) {
-      throw error;
-    }
+    const userData = await authService.login(credentials);
+    console.log('Login successful:', userData)
+    setUser(userData);
   };
 
   const logout = async () => {
@@ -56,12 +51,4 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       {children}
     </AuthContext.Provider>
   );
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
 };

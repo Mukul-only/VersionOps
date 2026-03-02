@@ -16,7 +16,7 @@ import { collegeService } from "@/api/services";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { College } from "@/api/types";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Papa from "papaparse";
 
 const formSchema = z.object({
@@ -56,10 +56,10 @@ export default function AddCollege({ college, onSuccess }: AddCollegeProps) {
     try {
       if (isEditMode && college) {
         const { code, ...updateData } = values;
-        await collegeService.update(college.id, updateData);
+        await collegeService.update(college.id, updateData as { name: string });
         toast.success("College updated successfully!");
       } else {
-        await collegeService.create(values);
+        await collegeService.create(values as { code: string; name: string });
         toast.success("College created successfully!");
       }
       if (onSuccess) {
@@ -104,7 +104,9 @@ export default function AddCollege({ college, onSuccess }: AddCollegeProps) {
 
         const creationPromises = colleges
           .filter((c) => c.code && c.name)
-          .map((college) => collegeService.create(college));
+          .map((college) =>
+            collegeService.create(college as { code: string; name: string })
+          );
 
         const promiseResults = await Promise.allSettled(creationPromises);
 

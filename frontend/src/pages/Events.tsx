@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -63,14 +63,47 @@ export default function Events() {
 
   const [pendingChanges, setPendingChanges] = useState<PendingChanges>({ participations: {} });
 
+  const loadEvents = useCallback(async () => {
+    try {
+      const response = await eventService.getAll({ take: 100, includeRelations: true });
+      setEvents(response.items);
+    } catch (error) {
+      toast.error("Failed to load events");
+    }
+  }, []);
+
+  const loadColleges = useCallback(async () => {
+    try {
+      const response = await collegeService.getAll({ take: 100 });
+      setColleges(response.items);
+    } catch (error) {
+      console.error("Failed to load colleges", error);
+    }
+  }, []);
+
   useEffect(() => {
-    loadEvents();
-    loadColleges();
+    void loadEvents();
+    void loadColleges();
+  }, [loadEvents, loadColleges]);
+
+  const loadEventDetails = useCallback(async (eventId: number) => {
+    try {
+      const [participationsRes, resultsRes] = await Promise.all([
+        eventParticipationService.getAll({ filters: JSON.stringify({ eventId }), includeRelations: true, take: 1000 }),
+        eventResultService.getAll({ filters: JSON.stringify({ eventId }), includeRelations: true, take: 100 })
+      ]);
+      setRoster(participationsRes.items);
+      setResults(resultsRes.items);
+      setSelectedParticipations([]);
+      setPendingChanges({ participations: {} });
+    } catch (error) {
+      toast.error("Failed to load event details");
+    }
   }, []);
 
   useEffect(() => {
     if (selectedEventId) {
-      loadEventDetails(selectedEventId);
+      void loadEventDetails(selectedEventId);
     } else {
       setRoster([]);
       setResults([]);
@@ -78,44 +111,9 @@ export default function Events() {
       setSearchResults([]);
       setPendingChanges({ participations: {} });
     }
-  }, [selectedEventId]);
+  }, [selectedEventId, loadEventDetails]);
 
-  useEffect(() => {
-    if (selectedEventId) {
-      loadDefaultParticipants();
-    }
-  }, [roster, selectedEventId]);
-
-  useEffect(() => {
-    if (searchQuery.trim()) {
-      const delayDebounceFn = setTimeout(() => {
-        searchParticipants();
-      }, 300);
-      return () => clearTimeout(delayDebounceFn);
-    } else {
-      setSearchResults([]);
-    }
-  }, [searchQuery, selectedEventId]);
-
-  const loadEvents = async () => {
-    try {
-      const response = await eventService.getAll({ take: 100, includeRelations: true });
-      setEvents(response.items);
-    } catch (error) {
-      toast.error("Failed to load events");
-    }
-  };
-
-  const loadColleges = async () => {
-    try {
-      const response = await collegeService.getAll({ take: 100 });
-      setColleges(response.items);
-    } catch (error) {
-      console.error("Failed to load colleges", error);
-    }
-  };
-
-  const loadDefaultParticipants = async () => {
+  const loadDefaultParticipants = useCallback(async () => {
     try {
       const countResponse = await participantService.getAll({ take: 1 });
       const totalParticipants = countResponse.total;
@@ -141,24 +139,15 @@ export default function Events() {
     } catch (error) {
       console.error("Failed to load random default participants", error);
     }
-  };
+  }, [roster]);
 
-  const loadEventDetails = async (eventId: number) => {
-    try {
-      const [participationsRes, resultsRes] = await Promise.all([
-        eventParticipationService.getAll({ filters: JSON.stringify({ eventId }), includeRelations: true, take: 1000 }),
-        eventResultService.getAll({ filters: JSON.stringify({ eventId }), includeRelations: true, take: 100 })
-      ]);
-      setRoster(participationsRes.items);
-      setResults(resultsRes.items);
-      setSelectedParticipations([]);
-      setPendingChanges({ participations: {} });
-    } catch (error) {
-      toast.error("Failed to load event details");
+  useEffect(() => {
+    if (selectedEventId) {
+      void loadDefaultParticipants();
     }
-  };
+  }, [roster, selectedEventId, loadDefaultParticipants]);
 
-  const searchParticipants = async () => {
+  const searchParticipants = useCallback(async () => {
     try {
       const response = await participantService.getAll({
         search: searchQuery,
@@ -173,7 +162,18 @@ export default function Events() {
     } catch (error) {
       console.error("Search failed", error);
     }
-  };
+  }, [searchQuery, roster]);
+
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      const delayDebounceFn = setTimeout(() => {
+        void searchParticipants();
+      }, 300);
+      return () => clearTimeout(delayDebounceFn);
+    } else {
+      setSearchResults([]);
+    }
+  }, [searchQuery, selectedEventId, searchParticipants]);
 
   const handleEditClick = (event: FestEvent) => {
     navigate(`/events/edit/${event.id}`);
@@ -183,7 +183,7 @@ export default function Events() {
     setCheckInDetails(prev => ({
         ...prev,
         [participantId]: {
-            ...(prev[participantId] || {}),
+            ...(prev[participantId] || { dummyId: '', teamId: '' }),
             [field]: value,
         },
     }));
@@ -206,9 +206,10 @@ export default function Events() {
           return newDetails;
       });
       setSearchQuery("");
-      loadEventDetails(selectedEventId);
-    } catch (error: any) {
-      toast.error(error.message || "Failed to mark present");
+      await loadEventDetails(selectedEventId);
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : "Failed to mark present";
+        toast.error(errorMessage);
     }
   };
 
@@ -217,9 +218,10 @@ export default function Events() {
     try {
       await eventParticipationService.delete(participationId);
       toast.success("Participant removed");
-      loadEventDetails(selectedEventId);
-    } catch (error: any) {
-      toast.error(error.message || "Failed to remove participant");
+      await loadEventDetails(selectedEventId);
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : "Failed to remove participant";
+        toast.error(errorMessage);
     }
   };
 
@@ -246,28 +248,26 @@ export default function Events() {
       if (r.participantId === participantId) return { ...r, position: newPosition };
       if (otherResultWithNewPosition && r.id === otherResultWithNewPosition.id) return { ...r, position: null };
       return r;
-    });
+    }).filter((r): r is EventResult & { position: Position } => r.position !== null);
+    
     if (!currentResult && newPosition) {
-        const newResult = { 
+        const newResult: EventResult = {
             id: -1, // temp id
             eventId: selectedEventId, 
             participantId, 
             position: newPosition,
             createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
         };
         optimisticResults.push(newResult);
     }
-    setResults(optimisticResults.filter(r => r.position !== null));
+    setResults(optimisticResults);
 
 
     try {
-      // 1. If another participant has the new position, unassign it from them first.
       if (otherResultWithNewPosition) {
         await eventResultService.delete(otherResultWithNewPosition.id);
       }
 
-      // 2. Assign the new position or remove the existing one.
       if (newPosition) {
         if (currentResult) {
           await eventResultService.update(currentResult.id, { position: newPosition });
@@ -281,10 +281,10 @@ export default function Events() {
           toast.success("Position removed");
         }
       }
-    } catch (error: any) {
-      toast.error(error.message || "Failed to update position");
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : "Failed to update position";
+        toast.error(errorMessage);
     } finally {
-      // Re-fetch the results to ensure data consistency
       const resultsRes = await eventResultService.getAll({ filters: JSON.stringify({ eventId: selectedEventId }), includeRelations: true, take: 100 });
       setResults(resultsRes.items);
     }
@@ -305,9 +305,10 @@ export default function Events() {
     try {
       await Promise.all(participationPromises);
       toast.success("Participant details updated successfully!");
-      loadEventDetails(selectedEventId); 
-    } catch (error: any) {
-      toast.error(error.message || "Failed to save some changes.");
+      await loadEventDetails(selectedEventId); 
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : "Failed to save some changes.";
+        toast.error(errorMessage);
     }
   };
 
@@ -315,9 +316,10 @@ export default function Events() {
     try {
       await eventService.delete(eventId);
       toast.success("Event deleted successfully");
-      loadEvents();
-    } catch (error: any) {
-      toast.error(error.message || "Failed to delete event");
+      await loadEvents();
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : "Failed to delete event";
+        toast.error(errorMessage);
     }
   };
   
@@ -337,8 +339,9 @@ export default function Events() {
       toast.success(`Copied ${participantIdsToCopy.length} participants successfully.`);
       setIsBulkCopyDialogOpen(false);
       setSelectedParticipations([]);
-    } catch (error: any) {
-      toast.error(error.message || "Failed to copy participants.");
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : "Failed to copy participants.";
+        toast.error(errorMessage);
     }
   };
 
@@ -432,7 +435,7 @@ export default function Events() {
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => deleteEvent(ev.id)}>
+                          <AlertDialogAction onClick={() => void deleteEvent(ev.id)}>
                             Yes, delete
                           </AlertDialogAction>
                         </AlertDialogFooter>
@@ -555,7 +558,7 @@ export default function Events() {
                         />
                       </TableCell>
                       <TableCell>
-                        <Button size="icon" variant="default" className="h-7 w-7" onClick={() => markPresent(p.id)}>
+                        <Button size="icon" variant="default" className="h-7 w-7" onClick={() => void markPresent(p.id)}>
                           <UserCheck className="h-4 w-4" />
                         </Button>
                       </TableCell>
@@ -576,7 +579,7 @@ export default function Events() {
               size="sm"
               className="h-8 text-xs"
               disabled={!hasPendingChanges}
-              onClick={handleParticipationUpdate}
+              onClick={() => void handleParticipationUpdate()}
             >
               <Save className="h-3.5 w-3.5 mr-1.5" />
               Update Details
@@ -637,7 +640,7 @@ export default function Events() {
                       <TableCell className="font-mono text-xs">{r.participant?.participantId}</TableCell>
                       <TableCell className="text-sm">{r.participant?.name}</TableCell>
                       <TableCell className="text-sm">{r.participant?.college?.code}</TableCell>
-                      <TableCell className="font-mono text-xs">{r.participant?.hackerearthId}</TableCell>
+                      <TableCell className="font-mono text-xs">{r.participant?.hackerearthUser}</TableCell>
                       <TableCell>
                         <Input
                           className="h-7 w-20 text-xs font-mono"
@@ -655,7 +658,7 @@ export default function Events() {
                       <TableCell>
                         <Select
                           value={result?.position || "none"}
-                          onValueChange={(val) => handlePositionChange(r.participantId, val === "none" ? null : val as Position)}
+                          onValueChange={(val) => void handlePositionChange(r.participantId, val === "none" ? null : val as Position)}
                         >
                           <SelectTrigger className="h-7 w-24 text-xs">
                             <SelectValue />
@@ -684,7 +687,7 @@ export default function Events() {
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => removeFromEvent(r.id)}>Remove</AlertDialogAction>
+                              <AlertDialogAction onClick={() => void removeFromEvent(r.id)}>Remove</AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
@@ -720,7 +723,7 @@ function BulkCopyDialog({ open, onOpenChange, events, onConfirm, disabled }: Bul
 
   const handleConfirm = () => {
     if (targetEventId) {
-      onConfirm(Number(targetEventId));
+      void onConfirm(Number(targetEventId));
     } else {
       toast.warning("Please select a target event.");
     }

@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppLayout } from "./components/layout/AppLayout";
 import { AuthProvider } from "./contexts/AuthContext";
-import { ProtectedRoute, PublicRoute } from "./components/auth/RouteGuards";
+import { ProtectedRoute, PublicRoute, RbacRoute } from "./components/auth/RouteGuards";
 import Dashboard from "./pages/Dashboard";
 import Participants from "./pages/Participants";
 import AddParticipant from "./pages/AddParticipant";
@@ -16,54 +16,119 @@ import Results from "./pages/Results";
 import Leaderboard from "./pages/Leaderboard";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
-import { PopupProvider } from "./components/popup";
-import PopupHandler from "./components/PopupHandler";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
-      <PopupProvider>
-        <PopupHandler />
-        <TooltipProvider>
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route
-                path="/login"
-                element={
-                  <PublicRoute>
-                    <Login />
-                  </PublicRoute>
-                }
-              />
-              <Route
-                path="/*"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout>
-                      <Routes>
-                        <Route path="/" element={<Dashboard />} />
-                        <Route path="/participants" element={<Participants />} />
-                        <Route path="/participants/add" element={<AddParticipant />} />
-                        <Route path="/colleges" element={<Colleges />} />
-                        <Route path="/colleges/add" element={<AddCollege />} />
-                        <Route path="/events" element={<Events />} />
-                        <Route path="/events/add" element={<AddEvent />} />
-                        <Route path="/events/edit/:id" element={<AddEvent />} />
-                        <Route path="/results" element={<Results />} />
-                        <Route path="/leaderboard" element={<Leaderboard />} />
-                        <Route path="*" element={<NotFound />} />
-                      </Routes>
-                    </AppLayout>
-                  </ProtectedRoute>
-                }
-              />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </PopupProvider>
+      <TooltipProvider>
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route
+              path="/login"
+              element={
+                <PublicRoute>
+                  <Login />
+                </PublicRoute>
+              }
+            />
+            <Route
+              path="/*"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Routes>
+                      <Route
+                        path="/"
+                        element={
+                          <RbacRoute path="/">
+                            <Dashboard />
+                          </RbacRoute>
+                        }
+                      />
+                      <Route
+                        path="/participants"
+                        element={
+                          <RbacRoute path="/participants">
+                            <Participants />
+                          </RbacRoute>
+                        }
+                      />
+                      <Route
+                        path="/participants/add"
+                        element={
+                          <RbacRoute path="/participants/add">
+                            <AddParticipant />
+                          </RbacRoute>
+                        }
+                      />
+                      <Route
+                        path="/colleges"
+                        element={
+                          <RbacRoute path="/colleges">
+                            <Colleges />
+                          </RbacRoute>
+                        }
+                      />
+                      <Route
+                        path="/colleges/add"
+                        element={
+                          <RbacRoute path="/colleges/add">
+                            <AddCollege />
+                          </RbacRoute>
+                        }
+                      />
+                      <Route
+                        path="/events"
+                        element={
+                          <RbacRoute path="/events">
+                            <Events />
+                          </RbacRoute>
+                        }
+                      />
+                      <Route
+                        path="/events/add"
+                        element={
+                          <RbacRoute path="/events/add">
+                            <AddEvent />
+                          </RbacRoute>
+                        }
+                      />
+                      <Route
+                        path="/events/edit/:id"
+                        element={
+                          <RbacRoute path="/events/edit/:id">
+                            <AddEvent />
+                          </RbacRoute>
+                        }
+                      />
+                      <Route
+                        path="/results"
+                        element={
+                          <RbacRoute path="/results">
+                            <Results />
+                          </RbacRoute>
+                        }
+                      />
+                      <Route
+                        path="/leaderboard"
+                        element={
+                          <RbacRoute path="/leaderboard">
+                            <Leaderboard />
+                          </RbacRoute>
+                        }
+                      />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
     </AuthProvider>
   </QueryClientProvider>
 );

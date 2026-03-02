@@ -1,32 +1,50 @@
 import React from 'react';
-import { Lock } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
-import { usePopup } from '@/hooks/use-popup';
+import {
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  IconButton,
+  Theme,
+  Typography
+} from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
 
-const UnauthorizedPopup: React.FC = () => {
-  const navigate = useNavigate();
-  const { hidePopup } = usePopup();
+interface UnauthorizedPopupProps {
+  open: boolean;
+  onClose: () => void;
+}
 
-  const handleLogin = () => {
-    hidePopup();
-    navigate('/login');
-  };
-
+const UnauthorizedPopup: React.FC<UnauthorizedPopupProps> = ({ open, onClose }) => {
   return (
-    <div className="text-center p-8 max-w-md w-full">
-      <Lock className="mx-auto h-16 w-16 text-destructive animate-shake" />
-      <h1 className="mt-6 text-4xl font-bold tracking-tight">401 – Unauthorized</h1>
-      <p className="mt-4 text-lg text-muted-foreground">
-        You are not authorized to view this page. Please log in with valid credentials.
-      </p>
-      <div className="mt-8 flex justify-center gap-4">
-        <Button onClick={handleLogin}>Go to Login</Button>
-        <Button variant="outline" onClick={hidePopup}>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <DialogTitle>
+        Unauthorized
+        <IconButton
+          aria-label="close"
+          onClick={onClose}
+          sx={{
+            position: 'absolute',
+            right: 8,
+            top: 8,
+            color: (theme: Theme) => theme.palette.grey[500],
+          }}
+        >
+          <CloseIcon />
+        </IconButton>
+      </DialogTitle>
+      <DialogContent dividers>
+        <Typography gutterBottom>
+          You are not authorized to view this page. Please log in.
+        </Typography>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose} color="primary">
           Close
         </Button>
-      </div>
-    </div>
+      </DialogActions>
+    </Dialog>
   );
 };
 

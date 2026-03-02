@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { AppRole, hasPermission, ROUTE_PERMISSIONS } from "@/lib/rbac";
+import { useAuth } from "@/contexts/AuthContext";
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Users, CalendarDays, Building2, LayoutDashboard, Trophy, Medal } from "lucide-react";
 import { participantService } from "@/api/services";
@@ -19,6 +21,14 @@ export function GlobalSearch() {
   const [query, setQuery] = useState("");
   const [participants, setParticipants] = useState<Participant[]>([]);
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const role = user?.role as AppRole | undefined;
+
+  const canNavigate = (path: string) => {
+    const required = ROUTE_PERMISSIONS[path];
+    if (!required) return true;
+    return hasPermission(role, required);
+  };
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -68,22 +78,30 @@ export function GlobalSearch() {
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
         <CommandGroup heading="Pages">
-          {pages.map((page) => (
-            <CommandItem
-              key={page.path}
-              onSelect={() => { navigate(page.path); setOpen(false); }}
-            >
-              <page.icon className="mr-2 h-4 w-4" />
-              {page.name}
-            </CommandItem>
-          ))}
+          {pages
+            .filter((page) => canNavigate(page.path))
+            .map((page) => (
+              <CommandItem
+                key={page.path}
+                onSelect={() => {
+                  navigate(page.path);
+                  setOpen(false);
+                }}
+              >
+                <page.icon className="mr-2 h-4 w-4" />
+                {page.name}
+              </CommandItem>
+            ))}
         </CommandGroup>
-        {participants.length > 0 && (
+        {participants.length > 0 && canNavigate("/participants") && (
           <CommandGroup heading="Participants">
             {participants.map((p) => (
               <CommandItem
                 key={p.id}
-                onSelect={() => { navigate("/participants"); setOpen(false); }}
+                onSelect={() => {
+                  navigate("/participants");
+                  setOpen(false);
+                }}
               >
                 <Users className="mr-2 h-4 w-4" />
                 <span className="font-mono text-xs mr-2">{p.participantId}</span>

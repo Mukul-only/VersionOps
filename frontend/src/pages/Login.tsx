@@ -37,10 +37,14 @@ const Login = () => {
       toast.success("Success", {
         description: "Logged in successfully",
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Login error:', error);
+      let errorMessage = "Invalid credentials";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
       toast.error("Login Failed", {
-        description: error.message || "Invalid credentials",
+        description: errorMessage,
       });
     } finally {
       setIsSubmitting(false);

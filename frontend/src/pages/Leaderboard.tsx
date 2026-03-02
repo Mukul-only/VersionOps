@@ -51,8 +51,8 @@ export default function Leaderboard() {
           <h2 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-[#6A0DAD] to-[#1E90FF] bg-clip-text text-transparent">Leaderboard</h2>
           <p className="text-sm text-muted-foreground">College rankings and performance</p>
         </div>
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           onClick={recalculate}
           className="mr-12 border-[#6A0DAD] text-[#6A0DAD] hover:bg-[#6A0DAD] hover:text-white transition-all duration-300"
         >
