@@ -63,7 +63,7 @@ export default function Participants() {
 
       const response = await participantService.getAll({
         search: search,
-        take: 50,
+        take: 150,
         includeRelations: true,
         filters: JSON.stringify(activeFilters),
       });
