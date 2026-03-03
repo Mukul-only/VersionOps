@@ -442,6 +442,7 @@ export default function Events() {
         fromEventId: selectedEventId,
         toEventId: toEventId,
         participantIds: participantIdsToCopy,
+      }, {
         suppressForbiddenRedirect: true,
         suppressErrorToast: true
       });
