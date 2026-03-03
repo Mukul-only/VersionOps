@@ -15,6 +15,7 @@ import {
 export interface PaginationParams extends BasePaginationParams {
   suppressRedirect?: boolean;
   suppressForbiddenRedirect?: boolean;
+  suppressErrorToast?: boolean;
 }
 
 function buildQueryString(params: PaginationParams): string {
@@ -29,15 +30,19 @@ function buildQueryString(params: PaginationParams): string {
   return query.toString() ? `?${query.toString()}` : '';
 }
 
-const getFetchOptions = (params: PaginationParams): FetchApiOptions => ({
+const getFetchOptions = (params: PaginationParams | FetchApiOptions): FetchApiOptions => ({
   suppressRedirect: params.suppressRedirect,
   suppressForbiddenRedirect: params.suppressForbiddenRedirect,
+  suppressErrorToast: params.suppressErrorToast,
 });
 
 // Events
 export const eventService = {
   getAll: (params: PaginationParams = {}) =>
     fetchApi<PaginatedResponse<FestEvent>>(`/events${buildQueryString(params)}`, getFetchOptions(params)),
+
+  getOne: (id: number, params: PaginationParams = {}) =>
+    fetchApi<FestEvent>(`/events/${id}${buildQueryString(params)}`, getFetchOptions(params)),
 
   getById: (id: number, includeRelations = false, options: FetchApiOptions = {}) =>
     fetchApi<FestEvent>(`/events/${id}?includeRelations=${includeRelations}`, options),
@@ -250,7 +255,10 @@ export const authService = {
 
   getCurrentUser: async (): Promise<AuthResponse> => {
     try {
-      return await fetchApi<AuthResponse>('/auth/me');
+      return await fetchApi<AuthResponse>('/auth/me', { 
+        suppressErrorToast: true,
+        suppressRedirect: true 
+      });
     } catch (error: any) {
       if (error.message.includes('401') || error.message.toLowerCase().includes('unauthorized')) {
         throw new Error('Unauthorized');

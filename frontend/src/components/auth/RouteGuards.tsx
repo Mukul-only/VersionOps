@@ -3,7 +3,6 @@ import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { AppRole, getFirstAccessibleRoute, hasPermission, ROUTE_PERMISSIONS } from '@/lib/rbac';
 import ForbiddenPopup from "@/components/error-pages/ForbiddenPopup.tsx";
-import UnauthorizedPopup from "@/components/error-pages/UnauthorizedPopup.tsx";
 
 export const RbacRoute: React.FC<{ path: string; children: React.ReactNode }> = ({ path, children }) => {
   const { user } = useAuth();
@@ -34,19 +33,6 @@ export const RbacRoute: React.FC<{ path: string; children: React.ReactNode }> = 
 export const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isLoading } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
-  const [isUnauthorizedOpen, setUnauthorizedOpen] = useState(false);
-
-  const handleClose = () => {
-    setUnauthorizedOpen(false);
-    navigate('/login', { state: { from: location } });
-  };
-
-  useEffect(() => {
-    if (!isLoading && !user) {
-      setUnauthorizedOpen(true);
-    }
-  }, [isLoading, user]);
 
   if (isLoading) {
     return (
@@ -56,12 +42,11 @@ export const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ childr
     );
   }
 
-  return (
-    <>
-      {isUnauthorizedOpen && <UnauthorizedPopup open={isUnauthorizedOpen} onClose={handleClose} />}
-      {user ? children : null}
-    </>
-  );
+  if (!user) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  return <>{children}</>;
 };
 
 export const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {

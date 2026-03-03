@@ -148,6 +148,7 @@ export default function Participants() {
     setDetailParticipant(null);
     try {
       const data = await participantService.getById(id, true);
+      // console.log(data)
       setDetailParticipant(data || null);
     } catch (error: any) {
       if (error?.response?.status === 403) {

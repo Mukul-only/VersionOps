@@ -1,51 +1,64 @@
-import { apiInterceptor } from './interceptor';
+import { toast } from 'sonner';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api/v1';
 
 async function handleApiResponse<T>(
-  response: Response,
-  options: { suppressRedirect?: boolean; suppressForbiddenRedirect?: boolean }
+    response: Response,
+    options: { suppressRedirect?: boolean; suppressForbiddenRedirect?: boolean; suppressErrorToast?: boolean } = {}
 ): Promise<T> {
+  // Handle No Content explicitly
+  if (response.status === 204) {
+    return {} as T;
+  }
+
+  // Handle OK responses
+  if (response.ok) {
+    return response.json();
+  }
+
+  // Handle Unauthorized
   if (response.status === 401) {
-    if (!options.suppressRedirect) {
-      apiInterceptor.handleUnauthorized();
+    if (!options.suppressRedirect && window.location.pathname !== '/login') {
+      window.location.href = '/login';
+      return Promise.reject(new Error('Redirecting to login'));
     }
     const error = new Error('Unauthorized');
     (error as any).response = response;
     throw error;
   }
 
+  // Handle Forbidden
   if (response.status === 403) {
-    if (!options.suppressForbiddenRedirect) {
-      apiInterceptor.handleForbidden();
+    if (!options.suppressForbiddenRedirect && !options.suppressErrorToast) {
+      toast.error('You are not allowed to access this page');
     }
     const error = new Error('Forbidden');
     (error as any).response = response;
     throw error;
   }
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: 'An unknown error occurred',
-    }));
-    const errorMessage = Array.isArray(errorData.message)
-      ? errorData.message.join(', ')
-      : (errorData.message || `HTTP error! status: ${response.status}`);
-    const error = new Error(errorMessage);
-    (error as any).response = response;
-    throw error;
+  // Handle other errors
+  const errorData = await response.json().catch(() => ({ message: 'An unknown error occurred' }));
+  const errorMessage =
+      (Array.isArray(errorData.message) ? errorData.message.join(', ') :
+          errorData.message) ||
+      errorData.detail ||
+      `HTTP error! status: ${response.status}`;
+
+  if (!options.suppressErrorToast) {
+    toast.error(errorMessage);
   }
 
-  if (response.status === 204) {
-    return {} as T;
-  }
-
-  return await response.json();
+  const error = new Error(errorMessage);
+  (error as any).response = response;
+  throw error;
 }
+
 
 export interface FetchApiOptions extends RequestInit {
   suppressRedirect?: boolean;
   suppressForbiddenRedirect?: boolean;
+  suppressErrorToast?: boolean;
 }
 
 export async function fetchApi<T>(
@@ -69,10 +82,13 @@ export async function fetchApi<T>(
 
     return await handleApiResponse(response, { 
       suppressRedirect: options.suppressRedirect,
-      suppressForbiddenRedirect: options.suppressForbiddenRedirect 
+      suppressForbiddenRedirect: options.suppressForbiddenRedirect,
+      suppressErrorToast: options.suppressErrorToast
     });
   } catch (error) {
-    console.error(`API call failed: ${endpoint}`, error);
+    if (!options.suppressErrorToast && !(error instanceof Error && error.message === 'Forbidden')) {
+      toast.error(error instanceof Error ? error.message : 'An unknown error occurred');
+    }
     throw error;
   }
 }

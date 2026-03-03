@@ -52,6 +52,7 @@ export const ROLE_PERMISSIONS: Record<AppRole, readonly AppPermission[] | readon
         PERMISSIONS.PARTICIPANT_UPDATE,
         PERMISSIONS.PARTICIPANT_READ,
         PERMISSIONS.ATTENDENCE_MANAGE,
+        PERMISSIONS.EVENT_READ,
     ],
     DESK: [
         PERMISSIONS.COLLEGE_CREATE,
@@ -60,6 +61,7 @@ export const ROLE_PERMISSIONS: Record<AppRole, readonly AppPermission[] | readon
         PERMISSIONS.PARTICIPANT_CREATE,
         PERMISSIONS.PARTICIPANT_UPDATE,
         PERMISSIONS.PARTICIPANT_READ,
+        PERMISSIONS.EVENT_READ,
     ],
 };
 

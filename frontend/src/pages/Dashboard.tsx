@@ -38,7 +38,7 @@ export default function Dashboard() {
 
   const loadLeaderboard = useCallback(async () => {
     try {
-      const response = await leaderboardService.get({ take: 5, includeRelations: true, suppressRedirect: true });
+      const response = await leaderboardService.get({ take: 5, includeRelations: true, suppressRedirect: true, suppressErrorToast: true });
       setTopColleges(response.items);
     } catch (error: unknown) {
       if (error instanceof Error && (error.message === 'Unauthorized' || error.message === 'Forbidden')) {

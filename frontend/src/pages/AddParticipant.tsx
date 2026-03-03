@@ -91,9 +91,9 @@ export default function AddParticipant() {
         const lines = text.split("\n").slice(1); // Skip header
         const data = lines
           .map((line) => {
-            const [name, email, collegeCode, year, hackerearthUser, phone] =
+            const [name, email, collegeCode, year, phone, hackerearthUser] =
               line.split(",");
-            return { name, email, collegeCode, year, hackerearthUser, phone };
+            return { name, email, collegeCode, year, phone, hackerearthUser };
           })
           .filter((d) => d.email); // Basic validation
         const result = await participantService.bulkImport(data);

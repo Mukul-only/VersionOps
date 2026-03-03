@@ -45,6 +45,7 @@ type PendingChanges = {
 export default function Events() {
   const [events, setEvents] = useState<FestEvent[]>([]);
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<FestEvent | null>(null);
   const [roster, setRoster] = useState<EventParticipation[]>([]);
   const [results, setResults] = useState<EventResult[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -52,6 +53,10 @@ export default function Events() {
   const [collegeFilter, setCollegeFilter] = useState<string>("all");
   const [colleges, setColleges] = useState<College[]>([]);
   const navigate = useNavigate();
+
+  const [detailsDenied, setDetailsDenied] = useState(false);
+  const [participantsDenied, setParticipantsDenied] = useState(false);
+  const [resultsDenied, setResultsDenied] = useState(false);
 
   const [checkInDetails, setCheckInDetails] = useState<{ [participantId: number]: { dummyId: string; teamId: string } }>({});
 
@@ -65,19 +70,29 @@ export default function Events() {
 
   const loadEvents = useCallback(async () => {
     try {
-      const response = await eventService.getAll({ take: 100, includeRelations: true });
-      setEvents(response.items);
-    } catch (error) {
+      const response = await eventService.getAll({ 
+        take: 100, 
+        includeRelations: true,
+        suppressForbiddenRedirect: true,
+        suppressErrorToast: true
+      });
+      setEvents(response.items || []);
+    } catch (error: any) {
+      if (error?.response?.status === 403) return;
       toast.error("Failed to load events");
     }
   }, []);
 
   const loadColleges = useCallback(async () => {
     try {
-      const response = await collegeService.getAll({ take: 100 });
-      setColleges(response.items);
-    } catch (error) {
-      console.error("Failed to load colleges", error);
+      const response = await collegeService.getAll({ 
+        take: 100,
+        suppressForbiddenRedirect: true,
+        suppressErrorToast: true
+      });
+      setColleges(response.items || []);
+    } catch (error: any) {
+      if (error?.response?.status === 403) return;
     }
   }, []);
 
@@ -87,24 +102,58 @@ export default function Events() {
   }, [loadEvents, loadColleges]);
 
   const loadEventDetails = useCallback(async (eventId: number) => {
-    try {
-      const [participationsRes, resultsRes] = await Promise.all([
-        eventParticipationService.getAll({ filters: JSON.stringify({ eventId }), includeRelations: true, take: 1000 }),
-        eventResultService.getAll({ filters: JSON.stringify({ eventId }), includeRelations: true, take: 100 })
-      ]);
-      setRoster(participationsRes.items);
-      setResults(resultsRes.items);
-      setSelectedParticipations([]);
-      setPendingChanges({ participations: {} });
-    } catch (error) {
-      toast.error("Failed to load event details");
+    setDetailsDenied(false);
+    setParticipantsDenied(false);
+    setResultsDenied(false);
+
+    const apiOptions = {
+        suppressForbiddenRedirect: true,
+        suppressErrorToast: true,
+    };
+
+    const [detailsResult, participationsResult, resultsResult] = await Promise.allSettled([
+        eventService.getOne(eventId, { ...apiOptions, includeRelations: true }),
+        eventParticipationService.getAll({ filters: JSON.stringify({ eventId }), ...apiOptions, includeRelations: true, take: 1000 }),
+        eventResultService.getAll({ filters: JSON.stringify({ eventId }), ...apiOptions, includeRelations: true, take: 100 })
+    ]);
+
+    if (detailsResult.status === 'fulfilled') {
+        setSelectedEvent(detailsResult.value);
+    } else if ((detailsResult.reason as any)?.response?.status === 403) {
+        setDetailsDenied(true);
     }
+
+    if (participationsResult.status === 'fulfilled') {
+        setRoster(participationsResult.value.items || []);
+    } else if ((participationsResult.reason as any)?.response?.status === 403) {
+        setParticipantsDenied(true);
+        setRoster([]);
+    }
+
+    if (resultsResult.status === 'fulfilled') {
+        setResults(resultsResult.value.items || []);
+    } else if ((resultsResult.reason as any)?.response?.status === 403) {
+        setResultsDenied(true);
+        setResults([]);
+    }
+
+    const hasNon403Error = [detailsResult, participationsResult, resultsResult].some(
+        (r) => r.status === 'rejected' && (r.reason as any)?.response?.status !== 403
+    );
+
+    if (hasNon403Error) {
+        toast.error("Failed to load some event data.");
+    }
+
+    setSelectedParticipations([]);
+    setPendingChanges({ participations: {} });
   }, []);
 
   useEffect(() => {
     if (selectedEventId) {
       void loadEventDetails(selectedEventId);
     } else {
+      setSelectedEvent(null);
       setRoster([]);
       setResults([]);
       setDefaultParticipants([]);
@@ -114,8 +163,12 @@ export default function Events() {
   }, [selectedEventId, loadEventDetails]);
 
   const loadDefaultParticipants = useCallback(async () => {
+    const apiOptions = {
+      suppressForbiddenRedirect: true,
+      suppressErrorToast: true,
+    };
     try {
-      const countResponse = await participantService.getAll({ take: 1 });
+      const countResponse = await participantService.getAll({ take: 1, ...apiOptions });
       const totalParticipants = countResponse.total;
 
       if (totalParticipants > 0) {
@@ -127,40 +180,43 @@ export default function Events() {
           take: take,
           skip: randomSkip,
           includeRelations: true,
+          ...apiOptions
         });
 
-        const rosterIds = new Set(roster.map(r => r.participantId));
-        const filtered = response.items.filter(p => !rosterIds.has(p.id));
+        const rosterIds = new Set((roster || []).map(r => r.participantId));
+        const filtered = (response.items || []).filter(p => !rosterIds.has(p.id));
         
         setDefaultParticipants(filtered.slice(0, 10));
       } else {
         setDefaultParticipants([]);
       }
-    } catch (error) {
-      console.error("Failed to load random default participants", error);
+    } catch (error: any) {
+      if (error?.response?.status === 403) return;
     }
   }, [roster]);
 
   useEffect(() => {
-    if (selectedEventId) {
+    if (selectedEventId && !participantsDenied) {
       void loadDefaultParticipants();
     }
-  }, [roster, selectedEventId, loadDefaultParticipants]);
+  }, [roster, selectedEventId, loadDefaultParticipants, participantsDenied]);
 
   const searchParticipants = useCallback(async () => {
     try {
       const response = await participantService.getAll({
         search: searchQuery,
         take: 20,
-        includeRelations: true
+        includeRelations: true,
+        suppressForbiddenRedirect: true,
+        suppressErrorToast: true
       });
 
-      const rosterIds = new Set(roster.map(r => r.participantId));
-      const filtered = response.items.filter(p => !rosterIds.has(p.id));
+      const rosterIds = new Set((roster || []).map(r => r.participantId));
+      const filtered = (response.items || []).filter(p => !rosterIds.has(p.id));
       
       setSearchResults(filtered);
-    } catch (error) {
-      console.error("Search failed", error);
+    } catch (error: any) {
+      if (error?.response?.status === 403) return;
     }
   }, [searchQuery, roster]);
 
@@ -198,6 +254,10 @@ export default function Events() {
         participantId,
         dummyId: details?.dummyId || undefined,
         teamId: details?.teamId || undefined
+      },
+      {
+        suppressForbiddenRedirect: true,
+        suppressErrorToast: true
       });
       toast.success("Participant marked present");
       setCheckInDetails(prev => {
@@ -207,21 +267,32 @@ export default function Events() {
       });
       setSearchQuery("");
       await loadEventDetails(selectedEventId);
-    } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : "Failed to mark present";
-        toast.error(errorMessage);
+    } catch (error: any) {
+        if (error?.response?.status === 403) {
+            return;
+        } else {
+            const errorMessage = error instanceof Error ? error.message : "Failed to mark present";
+            toast.error(errorMessage);
+        }
     }
   };
 
   const removeFromEvent = async (participationId: number) => {
     if (!selectedEventId) return;
     try {
-      await eventParticipationService.delete(participationId);
+      await eventParticipationService.delete(participationId, {
+        suppressForbiddenRedirect: true,
+        suppressErrorToast: true
+      });
       toast.success("Participant removed");
       await loadEventDetails(selectedEventId);
-    } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : "Failed to remove participant";
-        toast.error(errorMessage);
+    } catch (error: any) {
+        if (error?.response?.status === 403) {
+            return;
+        } else {
+            const errorMessage = error instanceof Error ? error.message : "Failed to remove participant";
+            toast.error(errorMessage);
+        }
     }
   };
 
@@ -241,10 +312,10 @@ export default function Events() {
   const handlePositionChange = async (participantId: number, newPosition: Position | null) => {
     if (!selectedEventId) return;
 
-    const currentResult = results.find(r => r.participantId === participantId);
-    const otherResultWithNewPosition = newPosition ? results.find(r => r.position === newPosition) : null;
+    const currentResult = (results || []).find(r => r.participantId === participantId);
+    const otherResultWithNewPosition = newPosition ? (results || []).find(r => r.position === newPosition) : null;
 
-    const optimisticResults = results.map(r => {
+    const optimisticResults = (results || []).map(r => {
       if (r.participantId === participantId) return { ...r, position: newPosition };
       if (otherResultWithNewPosition && r.id === otherResultWithNewPosition.id) return { ...r, position: null };
       return r;
@@ -262,39 +333,64 @@ export default function Events() {
     }
     setResults(optimisticResults);
 
+    const apiOptions = {
+      suppressForbiddenRedirect: true,
+      suppressErrorToast: true,
+    };
 
     try {
       if (otherResultWithNewPosition) {
-        await eventResultService.delete(otherResultWithNewPosition.id);
+        await eventResultService.delete(otherResultWithNewPosition.id, apiOptions);
       }
 
       if (newPosition) {
         if (currentResult) {
-          await eventResultService.update(currentResult.id, { position: newPosition });
+          await eventResultService.update(currentResult.id, { position: newPosition }, apiOptions);
         } else {
-          await eventResultService.create({ eventId: selectedEventId, participantId, position: newPosition });
+          await eventResultService.create({ eventId: selectedEventId, participantId, position: newPosition, ...apiOptions });
         }
         toast.success(`Position updated to ${newPosition}`);
       } else {
         if (currentResult) {
-          await eventResultService.delete(currentResult.id);
+          await eventResultService.delete(currentResult.id, apiOptions);
           toast.success("Position removed");
         }
       }
-    } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : "Failed to update position";
-        toast.error(errorMessage);
+    } catch (error: any) {
+        if (error?.response?.status === 403) {
+            return;
+        } else {
+            const errorMessage = error instanceof Error ? error.message : "Failed to update position";
+            toast.error(errorMessage);
+        }
     } finally {
-      const resultsRes = await eventResultService.getAll({ filters: JSON.stringify({ eventId: selectedEventId }), includeRelations: true, take: 100 });
-      setResults(resultsRes.items);
+      try {
+        const resultsRes = await eventResultService.getAll({ 
+          filters: JSON.stringify({ eventId: selectedEventId }), 
+          includeRelations: true, 
+          take: 100,
+          ...apiOptions
+        });
+        setResults(resultsRes.items || []);
+      } catch (error: any) {
+        if (error?.response?.status === 403) {
+          setResultsDenied(true);
+          setResults([]);
+        }
+      }
     }
   };
 
   const handleParticipationUpdate = async () => {
     if (!selectedEventId) return;
 
+    const apiOptions = {
+      suppressForbiddenRedirect: true,
+      suppressErrorToast: true,
+    };
+
     const participationPromises = Object.entries(pendingChanges.participations).map(([id, data]) =>
-      eventParticipationService.update(Number(id), data)
+      eventParticipationService.update(Number(id), data, apiOptions)
     );
 
     if (participationPromises.length === 0) {
@@ -306,27 +402,38 @@ export default function Events() {
       await Promise.all(participationPromises);
       toast.success("Participant details updated successfully!");
       await loadEventDetails(selectedEventId); 
-    } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : "Failed to save some changes.";
-        toast.error(errorMessage);
+    } catch (error: any) {
+        if (error?.response?.status === 403) {
+            return;
+        } else {
+            const errorMessage = error instanceof Error ? error.message : "Failed to save some changes.";
+            toast.error(errorMessage);
+        }
     }
   };
 
   const deleteEvent = async (eventId: number) => {
     try {
-      await eventService.delete(eventId);
+      await eventService.delete(eventId, {
+        suppressForbiddenRedirect: true,
+        suppressErrorToast: true
+      });
       toast.success("Event deleted successfully");
       await loadEvents();
-    } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : "Failed to delete event";
-        toast.error(errorMessage);
+    } catch (error: any) {
+        if (error?.response?.status === 403) {
+            return;
+        } else {
+            const errorMessage = error instanceof Error ? error.message : "Failed to delete event";
+            toast.error(errorMessage);
+        }
     }
   };
   
   const handleBulkCopy = async (toEventId: number) => {
     if (!selectedEventId || selectedParticipations.length === 0) return;
 
-    const participantIdsToCopy = roster
+    const participantIdsToCopy = (roster || [])
       .filter(r => selectedParticipations.includes(r.id))
       .map(r => r.participantId);
 
@@ -334,14 +441,20 @@ export default function Events() {
       await eventParticipationService.bulkCopy({
         fromEventId: selectedEventId,
         toEventId: toEventId,
-        participantIds: participantIdsToCopy
+        participantIds: participantIdsToCopy,
+        suppressForbiddenRedirect: true,
+        suppressErrorToast: true
       });
       toast.success(`Copied ${participantIdsToCopy.length} participants successfully.`);
       setIsBulkCopyDialogOpen(false);
       setSelectedParticipations([]);
-    } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : "Failed to copy participants.";
-        toast.error(errorMessage);
+    } catch (error: any) {
+        if (error?.response?.status === 403) {
+            return;
+        } else {
+            const errorMessage = error instanceof Error ? error.message : "Failed to copy participants.";
+            toast.error(errorMessage);
+        }
     }
   };
 
@@ -361,9 +474,7 @@ export default function Events() {
     );
   };
 
-  const selectedEvent = events.find((e) => e.id === selectedEventId);
-
-  const filteredRoster = roster.filter(r => {
+  const filteredRoster = (roster || []).filter(r => {
     const searchTerm = rosterSearchQuery.toLowerCase();
     const participant = r.participant;
     if (!participant) return false;
@@ -377,8 +488,8 @@ export default function Events() {
 
   const baseList = searchQuery.trim() ? searchResults : defaultParticipants;
   const participantsToShow = collegeFilter === "all"
-    ? baseList
-    : baseList.filter(p => p.college?.code === collegeFilter);
+    ? (baseList || [])
+    : (baseList || []).filter(p => p.college?.code === collegeFilter);
   
   const hasPendingChanges = Object.keys(pendingChanges.participations).length > 0;
 
@@ -387,7 +498,7 @@ export default function Events() {
       <div className="space-y-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Events</h2>
-          <p className="text-sm text-muted-foreground">{events.length} events</p>
+          <p className="text-sm text-muted-foreground">{(events || []).length} events</p>
         </div>
         <div className="border rounded-lg overflow-hidden">
           <Table>
@@ -402,7 +513,7 @@ export default function Events() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {events.map((ev) => (
+              {(events || []).map((ev) => (
                 <TableRow key={ev.id}>
                   <TableCell className="font-medium" onClick={() => setSelectedEventId(ev.id)}>{ev.name}</TableCell>
                   <TableCell onClick={() => setSelectedEventId(ev.id)}>{ev.teamSize}</TableCell>
@@ -458,254 +569,266 @@ export default function Events() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1">
-          <h2 className="text-2xl font-bold tracking-tight">{selectedEvent?.name}</h2>
-          <p className="text-sm text-muted-foreground">
-            Team size: {selectedEvent?.teamSize} · Participation pts: {selectedEvent?.participationPoints}
-          </p>
+          <h2 className="text-2xl font-bold tracking-tight">{selectedEvent?.name || "Event"}</h2>
+          {!detailsDenied && (
+            <p className="text-sm text-muted-foreground">
+              Team size: {selectedEvent?.teamSize} · Participation pts: {selectedEvent?.participationPoints}
+            </p>
+          )}
         </div>
       </div>
 
-      <div className="border rounded-lg p-4 bg-muted/30 grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div>
-          <p className="text-xs text-muted-foreground">Team Size</p>
-          <p className="text-lg font-bold">{selectedEvent?.teamSize}</p>
+      {!detailsDenied && (
+        <div className="border rounded-lg p-4 bg-muted/30 grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div>
+            <p className="text-xs text-muted-foreground">Team Size</p>
+            <p className="text-lg font-bold">{selectedEvent?.teamSize}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Present</p>
+            <p className="text-lg font-bold">{(roster || []).length}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Participation Pts</p>
+            <p className="text-lg font-bold">{selectedEvent?.participationPoints}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Prize Pts (1/2/3)</p>
+            <p className="text-lg font-bold font-mono">
+              {selectedEvent?.firstPrizePoints}/{selectedEvent?.secondPrizePoints}/{selectedEvent?.thirdPrizePoints}
+            </p>
+          </div>
         </div>
-        <div>
-          <p className="text-xs text-muted-foreground">Present</p>
-          <p className="text-lg font-bold">{roster.length}</p>
-        </div>
-        <div>
-          <p className="text-xs text-muted-foreground">Participation Pts</p>
-          <p className="text-lg font-bold">{selectedEvent?.participationPoints}</p>
-        </div>
-        <div>
-          <p className="text-xs text-muted-foreground">Prize Pts (1/2/3)</p>
-          <p className="text-lg font-bold font-mono">
-            {selectedEvent?.firstPrizePoints}/{selectedEvent?.secondPrizePoints}/{selectedEvent?.thirdPrizePoints}
-          </p>
-        </div>
-      </div>
+      )}
 
-      <div className="border rounded-lg">
-        <div className="p-3 border-b bg-muted/30">
-          <h3 className="text-sm font-semibold flex items-center gap-2">
-            <UserCheck className="h-4 w-4" /> Mark Participant Present
-          </h3>
-        </div>
-        <div className="p-3 space-y-3">
-          <div className="flex gap-2 flex-wrap">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-              <Input
-                placeholder="Search by name or ID..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8 h-9 text-sm"
-              />
+      {!participantsDenied && (
+        <>
+          <div className="border rounded-lg">
+            <div className="p-3 border-b bg-muted/30">
+              <h3 className="text-sm font-semibold flex items-center gap-2">
+                <UserCheck className="h-4 w-4" /> Mark Participant Present
+              </h3>
             </div>
-            <Select value={collegeFilter} onValueChange={setCollegeFilter}>
-              <SelectTrigger className="w-28 h-9 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Colleges</SelectItem>
-                {colleges.map((c) => (
-                  <SelectItem key={c.id} value={c.code}>{c.code}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="border rounded-md h-56 overflow-auto">
-            <Table>
-              <TableHeader className="sticky top-0 bg-background">
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>College</TableHead>
-                  <TableHead className="w-24">Dummy ID</TableHead>
-                  <TableHead className="w-20">Team ID</TableHead>
-                  <TableHead className="w-20"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {participantsToShow.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center text-muted-foreground py-4 text-sm">
-                      {searchQuery.trim() ? "No participants found." : "No participants to show."}
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  participantsToShow.map((p) => (
-                    <TableRow key={p.id}>
-                      <TableCell className="font-mono text-xs">{p.participantId}</TableCell>
-                      <TableCell className="text-sm">{p.name}</TableCell>
-                      <TableCell className="text-sm">{p.college?.code}</TableCell>
-                      <TableCell>
-                        <Input
-                          className="h-7 w-20 text-xs font-mono"
-                          placeholder="Opt."
-                          value={checkInDetails[p.id]?.dummyId || ''}
-                          onChange={(e) => handleCheckInChange(p.id, 'dummyId', e.target.value)}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          className="h-7 w-16 text-xs font-mono"
-                          placeholder="Opt."
-                          value={checkInDetails[p.id]?.teamId || ''}
-                          onChange={(e) => handleCheckInChange(p.id, 'teamId', e.target.value)}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Button size="icon" variant="default" className="h-7 w-7" onClick={() => void markPresent(p.id)}>
-                          <UserCheck className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </div>
-      </div>
-
-      <div className="border rounded-lg">
-        <div className="p-3 border-b bg-muted/30 flex items-center justify-between flex-wrap gap-2">
-          <h3 className="text-sm font-semibold">Present Participants ({filteredRoster.length})</h3>
-          <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              className="h-8 text-xs"
-              disabled={!hasPendingChanges}
-              onClick={() => void handleParticipationUpdate()}
-            >
-              <Save className="h-3.5 w-3.5 mr-1.5" />
-              Update Details
-            </Button>
-            <BulkCopyDialog
-              open={isBulkCopyDialogOpen}
-              onOpenChange={setIsBulkCopyDialogOpen}
-              events={events.filter(e => e.id !== selectedEventId)}
-              onConfirm={handleBulkCopy}
-              disabled={selectedParticipations.length === 0}
-            />
-            <div className="relative w-64">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-              <Input
-                placeholder="Search in roster..."
-                value={rosterSearchQuery}
-                onChange={(e) => setRosterSearchQuery(e.target.value)}
-                className="pl-8 h-8 text-sm"
-              />
-            </div>
-          </div>
-        </div>
-        <div className="h-56 overflow-auto">
-          <Table>
-            <TableHeader className="sticky top-0 bg-background">
-              <TableRow>
-                <TableHead className="w-10">
-                  <Checkbox
-                    checked={selectedParticipations.length === filteredRoster.length && filteredRoster.length > 0}
-                    onCheckedChange={toggleSelectAll}
+            <div className="p-3 space-y-3">
+              <div className="flex gap-2 flex-wrap">
+                <div className="relative flex-1 min-w-[200px]">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by name or ID..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-8 h-9 text-sm"
                   />
-                </TableHead>
-                <TableHead>ID</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>College</TableHead>
-                <TableHead>HackerEarth ID</TableHead>
-                <TableHead>Dummy ID</TableHead>
-                <TableHead>Team</TableHead>
-                <TableHead>Position</TableHead>
-                <TableHead className="w-20"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredRoster.map((r) => {
-                  const result = results.find(res => res.participantId === r.participantId);
-                  const pendingParticipation = pendingChanges.participations[r.id] || {};
-                  const dummyIdValue = pendingParticipation.dummyId !== undefined ? pendingParticipation.dummyId : (r.dummyId || '');
-                  const teamIdValue = pendingParticipation.teamId !== undefined ? pendingParticipation.teamId : (r.teamId || '');
+                </div>
+                <Select value={collegeFilter} onValueChange={setCollegeFilter}>
+                  <SelectTrigger className="w-28 h-9 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Colleges</SelectItem>
+                    {(colleges || []).map((c) => (
+                      <SelectItem key={c.id} value={c.code}>{c.code}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-                  return (
-                    <TableRow key={r.id} data-state={selectedParticipations.includes(r.id) && "selected"}>
-                      <TableCell>
-                        <Checkbox
-                          checked={selectedParticipations.includes(r.id)}
-                          onCheckedChange={() => toggleSelectOne(r.id)}
-                        />
-                      </TableCell>
-                      <TableCell className="font-mono text-xs">{r.participant?.participantId}</TableCell>
-                      <TableCell className="text-sm">{r.participant?.name}</TableCell>
-                      <TableCell className="text-sm">{r.participant?.college?.code}</TableCell>
-                      <TableCell className="font-mono text-xs">{r.participant?.hackerearthUser}</TableCell>
-                      <TableCell>
-                        <Input
-                          className="h-7 w-20 text-xs font-mono"
-                          value={dummyIdValue}
-                          onChange={(e) => handleFieldChange(r.id, 'dummyId', e.target.value)}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          className="h-7 w-16 text-xs font-mono"
-                          value={teamIdValue}
-                          onChange={(e) => handleFieldChange(r.id, 'teamId', e.target.value)}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Select
-                          value={result?.position || "none"}
-                          onValueChange={(val) => void handlePositionChange(r.participantId, val === "none" ? null : val as Position)}
-                        >
-                          <SelectTrigger className="h-7 w-24 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">—</SelectItem>
-                            <SelectItem value="FIRST">🥇 1st</SelectItem>
-                            <SelectItem value="SECOND">🥈 2nd</SelectItem>
-                            <SelectItem value="THIRD">🥉 3rd</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive">
-                              <Trash2 className="h-4 w-4" />
+              <div className="border rounded-md h-56 overflow-auto">
+                <Table>
+                  <TableHeader className="sticky top-0 bg-background">
+                    <TableRow>
+                      <TableHead>ID</TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead>College</TableHead>
+                      <TableHead className="w-24">Dummy ID</TableHead>
+                      <TableHead className="w-20">Team ID</TableHead>
+                      <TableHead className="w-20"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {participantsToShow.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center text-muted-foreground py-4 text-sm">
+                          {searchQuery.trim() ? "No participants found." : "No participants to show."}
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      participantsToShow.map((p) => (
+                        <TableRow key={p.id}>
+                          <TableCell className="font-mono text-xs">{p.participantId}</TableCell>
+                          <TableCell className="text-sm">{p.name}</TableCell>
+                          <TableCell className="text-sm">{p.college?.code}</TableCell>
+                          <TableCell>
+                            <Input
+                              className="h-7 w-20 text-xs font-mono"
+                              placeholder="Opt."
+                              value={checkInDetails[p.id]?.dummyId || ''}
+                              onChange={(e) => handleCheckInChange(p.id, 'dummyId', e.target.value)}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              className="h-7 w-16 text-xs font-mono"
+                              placeholder="Opt."
+                              value={checkInDetails[p.id]?.teamId || ''}
+                              onChange={(e) => handleCheckInChange(p.id, 'teamId', e.target.value)}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Button size="icon" variant="default" className="h-7 w-7" onClick={() => void markPresent(p.id)}>
+                              <UserCheck className="h-4 w-4" />
                             </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Remove participant?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Remove {r.participant?.name} from {selectedEvent?.name}?
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => void removeFromEvent(r.id)}>Remove</AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          </div>
+
+          <div className="border rounded-lg">
+            <div className="p-3 border-b bg-muted/30 flex items-center justify-between flex-wrap gap-2">
+              <h3 className="text-sm font-semibold">Present Participants ({filteredRoster.length})</h3>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  className="h-8 text-xs"
+                  disabled={!hasPendingChanges}
+                  onClick={() => void handleParticipationUpdate()}
+                >
+                  <Save className="h-3.5 w-3.5 mr-1.5" />
+                  Update Details
+                </Button>
+                <BulkCopyDialog
+                  open={isBulkCopyDialogOpen}
+                  onOpenChange={setIsBulkCopyDialogOpen}
+                  events={(events || []).filter(e => e.id !== selectedEventId)}
+                  onConfirm={handleBulkCopy}
+                  disabled={selectedParticipations.length === 0}
+                />
+                <div className="relative w-64">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input
+                    placeholder="Search in roster..."
+                    value={rosterSearchQuery}
+                    onChange={(e) => setRosterSearchQuery(e.target.value)}
+                    className="pl-8 h-8 text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="h-56 overflow-auto">
+              <Table>
+                <TableHeader className="sticky top-0 bg-background">
+                  <TableRow>
+                    <TableHead className="w-10">
+                      <Checkbox
+                        checked={selectedParticipations.length === filteredRoster.length && filteredRoster.length > 0}
+                        onCheckedChange={toggleSelectAll}
+                      />
+                    </TableHead>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>College</TableHead>
+                    <TableHead>HackerEarth ID</TableHead>
+                    <TableHead>Dummy ID</TableHead>
+                    <TableHead>Team</TableHead>
+                    <TableHead>Position</TableHead>
+                    <TableHead className="w-20"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredRoster.map((r) => {
+                      const result = (results || []).find(res => res.participantId === r.participantId);
+                      const pendingParticipation = pendingChanges.participations[r.id] || {};
+                      const dummyIdValue = pendingParticipation.dummyId !== undefined ? pendingParticipation.dummyId : (r.dummyId || '');
+                      const teamIdValue = pendingParticipation.teamId !== undefined ? pendingParticipation.teamId : (r.teamId || '');
+
+                      return (
+                        <TableRow key={r.id} data-state={selectedParticipations.includes(r.id) && "selected"}>
+                          <TableCell>
+                            <Checkbox
+                              checked={selectedParticipations.includes(r.id)}
+                              onCheckedChange={() => toggleSelectOne(r.id)}
+                            />
+                          </TableCell>
+                          <TableCell className="font-mono text-xs">{r.participant?.participantId}</TableCell>
+                          <TableCell className="text-sm">{r.participant?.name}</TableCell>
+                          <TableCell className="text-sm">{r.participant?.college?.code}</TableCell>
+                          <TableCell className="font-mono text-xs">{r.participant?.hackerearthUser}</TableCell>
+                          <TableCell>
+                            <Input
+                              className="h-7 w-20 text-xs font-mono"
+                              value={dummyIdValue}
+                              onChange={(e) => handleFieldChange(r.id, 'dummyId', e.target.value)}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              className="h-7 w-16 text-xs font-mono"
+                              value={teamIdValue}
+                              onChange={(e) => handleFieldChange(r.id, 'teamId', e.target.value)}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            {resultsDenied ? (
+                                <span className="text-xs text-muted-foreground">—</span>
+                            ) : (
+                                <Select
+                                    value={result?.position || "none"}
+                                    onValueChange={(val) => void handlePositionChange(r.participantId, val === "none" ? null : val as Position)}
+                                >
+                                    <SelectTrigger className="h-7 w-24 text-xs">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="none">—</SelectItem>
+                                        <SelectItem value="FIRST">🥇 1st</SelectItem>
+                                        <SelectItem value="SECOND">🥈 2nd</SelectItem>
+                                        <SelectItem value="THIRD">🥉 3rd</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Remove participant?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Remove {r.participant?.name} from {selectedEvent?.name}?
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => void removeFromEvent(r.id)}>Remove</AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </TableCell>
+                        </TableRow>
+                      );
+                  })}
+                  {filteredRoster.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                        {(roster || []).length > 0 ? "No participants found in your search." : "No participants marked present yet."}
                       </TableCell>
                     </TableRow>
-                  );
-              })}
-              {filteredRoster.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
-                    {roster.length > 0 ? "No participants found in your search." : "No participants marked present yet."}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </div>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -750,7 +873,7 @@ function BulkCopyDialog({ open, onOpenChange, events, onConfirm, disabled }: Bul
               <SelectValue placeholder="Select an event..." />
             </SelectTrigger>
             <SelectContent>
-              {events.map(event => (
+              {(events || []).map(event => (
                 <SelectItem key={event.id} value={String(event.id)}>
                   {event.name}
                 </SelectItem>
