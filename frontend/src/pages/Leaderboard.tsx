@@ -13,15 +13,18 @@ export default function Leaderboard() {
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    loadLeaderboard();
+    void loadLeaderboard();
   }, []);
 
   const loadLeaderboard = async () => {
     try {
-      const response = await leaderboardService.get({ take: 100, includeRelations: true });
+      const response =
+          await leaderboardService.get(
+              { take: 100, includeRelations: true, suppressErrorToast: true, suppressRedirect: true, suppressForbiddenRedirect: true });
       setLeaderboard(response.items);
     } catch (error) {
-      toast.error("Failed to load leaderboard");
+      if(error.message === "Unauthorized" || error.message === "Forbidden"){ /* empty */ }
+      else toast.error("Failed to load leaderboard");
     }
   };
 
@@ -29,7 +32,7 @@ export default function Leaderboard() {
     try {
       await leaderboardService.recalculate();
       toast.success("Leaderboard recalculated!");
-      loadLeaderboard();
+      void loadLeaderboard();
     } catch (error) {
       toast.error("Failed to recalculate leaderboard");
     }
