@@ -357,7 +357,7 @@ export default function Events() {
         if (currentResult) {
           await eventResultService.update(currentResult.id, { position: newPosition }, apiOptions);
         } else {
-          await eventResultService.create({ eventId: selectedEventId, participantId, position: newPosition, ...apiOptions });
+          await eventResultService.create({ eventId: selectedEventId, participantId, position: newPosition},{ ...apiOptions });
         }
         console.log(`Position updated to ${newPosition}`);
       } else {
@@ -505,6 +505,7 @@ export default function Events() {
       (r.teamId && r.teamId.toLowerCase().includes(searchTerm))
     );
   });
+
 
   const baseList = searchQuery.trim() ? searchResults : defaultParticipants;
   const participantsToShow = collegeFilter === "all"
