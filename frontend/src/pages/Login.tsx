@@ -17,7 +17,7 @@ const Login = () => {
     e.preventDefault();
     
     if (!email || !password) {
-      toast.error("Error", {
+      console.error("Error", {
         description: "Please fill in all fields",
       });
       return;
@@ -25,7 +25,7 @@ const Login = () => {
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      toast.error("Error", {
+      console.error("Error", {
         description: "Please enter a valid email address",
       });
       return;
@@ -34,7 +34,7 @@ const Login = () => {
     setIsSubmitting(true);
     try {
       await login({ email, password });
-      toast.success("Success", {
+      console.log("Success", {
         description: "Logged in successfully",
       });
     } catch (error) {
@@ -43,7 +43,7 @@ const Login = () => {
       if (error instanceof Error) {
         errorMessage = error.message;
       }
-      toast.error("Login Failed", {
+      console.error("Login Failed", {
         description: errorMessage,
       });
     } finally {

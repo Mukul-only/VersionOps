@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { participantService, collegeService } from "@/api/services";
-import { toast } from "sonner";
+ ;
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import { College } from "@/api/types";
@@ -57,7 +57,7 @@ export default function AddParticipant() {
         const response = await collegeService.getAll({ take: 500 }); // Fetch a large number of colleges
         setColleges(response.items);
       } catch (error) {
-        toast.error("Failed to load colleges for selection.");
+        console.error("Failed to load colleges for selection.");
       }
     }
     fetchColleges();
@@ -66,10 +66,10 @@ export default function AddParticipant() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       await participantService.create(values);
-      toast.success("Participant created successfully!");
+      console.log("Participant created successfully!");
       navigate("/participants");
     } catch (error: any) {
-      toast.error(error.message || "Failed to create participant");
+      console.error(error.message || "Failed to create participant");
     }
   }
 
@@ -84,7 +84,7 @@ export default function AddParticipant() {
       try {
         const text = e.target?.result;
         if (typeof text !== "string") {
-          toast.error("Could not read file.");
+          console.error("Could not read file.");
           return;
         }
         // Assuming CSV format: name,email,collegeCode, year,hackerearthUser, phone
@@ -97,7 +97,7 @@ export default function AddParticipant() {
           })
           .filter((d) => d.email); // Basic validation
         const result = await participantService.bulkImport(data);
-        toast.success(
+        console.log(
           `Bulk import finished: ${result.inserted} inserted, ${result.failed} failed.`,
         );
         if (result.failed > 0) {
@@ -106,7 +106,7 @@ export default function AddParticipant() {
         }
         navigate("/participants");
       } catch (error: any) {
-        toast.error(error.message || "Failed to process bulk import.");
+        console.error(error.message || "Failed to process bulk import.");
       }
     };
     reader.readAsText(file);

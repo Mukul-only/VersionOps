@@ -14,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { eventService } from "@/api/services";
-import { toast } from "sonner";
+ ;
 import { useNavigate, useParams } from "react-router-dom";
 import Papa from "papaparse";
 
@@ -53,7 +53,7 @@ export default function AddEvent() {
           const event = await eventService.getById(parseInt(id));
           form.reset(event);
         } catch (error) {
-          toast.error("Failed to fetch event details");
+          console.error("Failed to fetch event details");
           navigate("/events");
         }
       };
@@ -65,14 +65,14 @@ export default function AddEvent() {
     try {
       if (isEditMode) {
         await eventService.update(parseInt(id), values);
-        toast.success("Event updated successfully!");
+        console.log("Event updated successfully!");
       } else {
         await eventService.create(values);
-        toast.success("Event created successfully!");
+        console.log("Event created successfully!");
       }
       navigate("/events");
     } catch (error: any) {
-      toast.error(error.message || `Failed to ${isEditMode ? 'update' : 'create'} event`);
+      console.error(error.message || `Failed to ${isEditMode ? 'update' : 'create'} event`);
     }
   }
 
@@ -84,7 +84,7 @@ export default function AddEvent() {
 
   const handleCsvImport = async () => {
     if (!csvFile) {
-      toast.error("Please select a CSV file to import.");
+      console.error("Please select a CSV file to import.");
       return;
     }
 
@@ -97,7 +97,7 @@ export default function AddEvent() {
         const eventData = dataRows.slice(1);
 
         if (!header || header.length < 6) {
-            toast.error("Invalid CSV format. Please check the headers.");
+            console.error("Invalid CSV format. Please check the headers.");
             setIsImporting(false);
             return;
         }
@@ -139,12 +139,12 @@ export default function AddEvent() {
         });
 
         if (successfulImports > 0) {
-          toast.success(
+          console.log(
             `${successfulImports} event(s) imported successfully!`
           );
         }
         if (failedImports > 0) {
-          toast.warning(
+          console.warn(
             `${failedImports} event(s) failed to import. Check console for details.`
           );
         }
@@ -155,7 +155,7 @@ export default function AddEvent() {
         }
       },
       error: (error) => {
-        toast.error(`Error parsing CSV file: ${error.message}`);
+        console.error(`Error parsing CSV file: ${error.message}`);
         setIsImporting(false);
       },
     });

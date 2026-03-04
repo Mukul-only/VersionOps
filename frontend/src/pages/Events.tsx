@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, ArrowLeft, Users, UserCheck, Pencil, Trash2, Copy, Save } from "lucide-react";
-import { toast } from "sonner";
+ ;
 import {
   AlertDialog,
   AlertDialogAction,
@@ -79,7 +79,7 @@ export default function Events() {
       setEvents(response.items || []);
     } catch (error: any) {
       if (error?.response?.status === 403) return;
-      toast.error("Failed to load events");
+      console.error("Failed to load events");
     }
   }, []);
 
@@ -142,7 +142,7 @@ export default function Events() {
     );
 
     if (hasNon403Error) {
-        toast.error("Failed to load some event data.");
+        console.error("Failed to load some event data.");
     }
 
     setSelectedParticipations([]);
@@ -259,7 +259,7 @@ export default function Events() {
         suppressForbiddenRedirect: true,
         suppressErrorToast: true
       });
-      toast.success("Participant marked present");
+      console.log("Participant marked present");
       setCheckInDetails(prev => {
           const newDetails = { ...prev };
           delete newDetails[participantId];
@@ -272,7 +272,7 @@ export default function Events() {
             return;
         } else {
             const errorMessage = error instanceof Error ? error.message : "Failed to mark present";
-            toast.error(errorMessage);
+            console.error(errorMessage);
         }
     }
   };
@@ -284,14 +284,14 @@ export default function Events() {
         suppressForbiddenRedirect: true,
         suppressErrorToast: true
       });
-      toast.success("Participant removed");
+      console.log("Participant removed");
       await loadEventDetails(selectedEventId);
     } catch (error: any) {
         if (error?.response?.status === 403) {
             return;
         } else {
             const errorMessage = error instanceof Error ? error.message : "Failed to remove participant";
-            toast.error(errorMessage);
+            console.error(errorMessage);
         }
     }
   };
@@ -349,11 +349,11 @@ export default function Events() {
         } else {
           await eventResultService.create({ eventId: selectedEventId, participantId, position: newPosition, ...apiOptions });
         }
-        toast.success(`Position updated to ${newPosition}`);
+        console.log(`Position updated to ${newPosition}`);
       } else {
         if (currentResult) {
           await eventResultService.delete(currentResult.id, apiOptions);
-          toast.success("Position removed");
+          console.log("Position removed");
         }
       }
     } catch (error: any) {
@@ -361,7 +361,7 @@ export default function Events() {
             return;
         } else {
             const errorMessage = error instanceof Error ? error.message : "Failed to update position";
-            toast.error(errorMessage);
+            console.error(errorMessage);
         }
     } finally {
       try {
@@ -394,20 +394,20 @@ export default function Events() {
     );
 
     if (participationPromises.length === 0) {
-      toast.info("No changes to save.");
+      console.log("No changes to save.");
       return;
     }
 
     try {
       await Promise.all(participationPromises);
-      toast.success("Participant details updated successfully!");
+      console.log("Participant details updated successfully!");
       await loadEventDetails(selectedEventId); 
     } catch (error: any) {
         if (error?.response?.status === 403) {
             return;
         } else {
             const errorMessage = error instanceof Error ? error.message : "Failed to save some changes.";
-            toast.error(errorMessage);
+            console.error(errorMessage);
         }
     }
   };
@@ -418,14 +418,14 @@ export default function Events() {
         suppressForbiddenRedirect: true,
         suppressErrorToast: true
       });
-      toast.success("Event deleted successfully");
+      console.log("Event deleted successfully");
       await loadEvents();
     } catch (error: any) {
         if (error?.response?.status === 403) {
             return;
         } else {
             const errorMessage = error instanceof Error ? error.message : "Failed to delete event";
-            toast.error(errorMessage);
+            console.error(errorMessage);
         }
     }
   };
@@ -446,7 +446,7 @@ export default function Events() {
         suppressForbiddenRedirect: true,
         suppressErrorToast: true
       });
-      toast.success(`Copied ${participantIdsToCopy.length} participants successfully.`);
+      console.log(`Copied ${participantIdsToCopy.length} participants successfully.`);
       setIsBulkCopyDialogOpen(false);
       setSelectedParticipations([]);
     } catch (error: any) {
@@ -454,7 +454,7 @@ export default function Events() {
             return;
         } else {
             const errorMessage = error instanceof Error ? error.message : "Failed to copy participants.";
-            toast.error(errorMessage);
+            console.error(errorMessage);
         }
     }
   };
@@ -849,7 +849,7 @@ function BulkCopyDialog({ open, onOpenChange, events, onConfirm, disabled }: Bul
     if (targetEventId) {
       void onConfirm(Number(targetEventId));
     } else {
-      toast.warning("Please select a target event.");
+      console.warn("Please select a target event.");
     }
   };
 

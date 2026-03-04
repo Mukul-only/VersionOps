@@ -13,7 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { collegeService } from "@/api/services";
-import { toast } from "sonner";
+ ;
 import { useNavigate } from "react-router-dom";
 import { College } from "@/api/types";
 import React, { useEffect, useState } from "react";
@@ -57,10 +57,10 @@ export default function AddCollege({ college, onSuccess }: AddCollegeProps) {
       if (isEditMode && college) {
         const { code, ...updateData } = values;
         await collegeService.update(college.id, updateData as { name: string });
-        toast.success("College updated successfully!");
+        console.log("College updated successfully!");
       } else {
         await collegeService.create(values as { code: string; name: string });
-        toast.success("College created successfully!");
+        console.log("College created successfully!");
       }
       if (onSuccess) {
         onSuccess();
@@ -69,7 +69,7 @@ export default function AddCollege({ college, onSuccess }: AddCollegeProps) {
       }
     } catch (error: unknown) {
       if (error instanceof Error) {
-        toast.error(
+        console.error(
           error.message || `Failed to ${isEditMode ? "update" : "create"} college`
         );
       }
@@ -84,7 +84,7 @@ export default function AddCollege({ college, onSuccess }: AddCollegeProps) {
 
   const handleCsvImport = async () => {
     if (!csvFile) {
-      toast.error("Please select a CSV file to import.");
+      console.error("Please select a CSV file to import.");
       return;
     }
 
@@ -123,12 +123,12 @@ export default function AddCollege({ college, onSuccess }: AddCollegeProps) {
         });
 
         if (successfulImports > 0) {
-          toast.success(
+          console.log(
             `${successfulImports} college(s) imported successfully!`
           );
         }
         if (failedImports > 0) {
-          toast.warning(
+          console.warn(
             `${failedImports} college(s) failed to import. Check console for details.`
           );
         }
@@ -143,7 +143,7 @@ export default function AddCollege({ college, onSuccess }: AddCollegeProps) {
         }
       },
       error: (error) => {
-        toast.error(`Error parsing CSV file: ${error.message}`);
+        console.error(`Error parsing CSV file: ${error.message}`);
         setIsImporting(false);
       },
     });

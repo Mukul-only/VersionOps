@@ -3,7 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RefreshCw, Search } from "lucide-react";
-import { toast } from "sonner";
+ ;
 import { leaderboardService } from "@/api/services";
 import { LeaderboardEntry } from "@/api/types";
 import { cn } from "@/lib/utils";
@@ -24,17 +24,17 @@ export default function Leaderboard() {
       setLeaderboard(response.items);
     } catch (error) {
       if(error.message === "Unauthorized" || error.message === "Forbidden"){ /* empty */ }
-      else toast.error("Failed to load leaderboard");
+      else console.error("Failed to load leaderboard");
     }
   };
 
   const recalculate = async () => {
     try {
       await leaderboardService.recalculate();
-      toast.success("Leaderboard recalculated!");
+      console.log("Leaderboard recalculated!");
       void loadLeaderboard();
     } catch (error) {
-      toast.error("Failed to recalculate leaderboard");
+      console.error("Failed to recalculate leaderboard");
     }
   };
 

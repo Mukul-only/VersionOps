@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Users, UserCheck, Building2, CalendarDays, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
+ ;
 import { useAuth } from "@/contexts/AuthContext";
 import { AppRole, hasPermission, ROUTE_PERMISSIONS } from "@/lib/rbac";
 import {
@@ -111,10 +111,10 @@ export default function Dashboard() {
   const recalculateLeaderboard = async () => {
     try {
       await leaderboardService.recalculate();
-      toast.success("Leaderboard recalculated!");
+      console.log("Leaderboard recalculated!");
       await loadLeaderboard();
     } catch (error: unknown) {
-      toast.error("Failed to recalculate");
+      console.error("Failed to recalculate");
     }
   };
 

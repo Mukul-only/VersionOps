@@ -6,7 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Search, UserCheck, UserX, Eye, Trash2, Pencil, RotateCcw } from "lucide-react";
-import { toast } from "sonner";
+ ;
 import { participantService, collegeService, eventService } from "@/api/services";
 import { Participant, College, FestEvent } from "@/api/types";
 import {
@@ -80,7 +80,7 @@ export default function Participants() {
         setParticipants([]);
         return;
       }
-      toast.error("Failed to load participants");
+      console.error("Failed to load participants");
       setParticipants([]);
     }
   }, [search, filters]);
@@ -100,7 +100,7 @@ export default function Participants() {
         setParticipants([]);
         setParticipantsAccessDenied(true);
       } else {
-        toast.error("Failed to load participants");
+        console.error("Failed to load participants");
         setParticipants([]);
       }
     }
@@ -113,7 +113,7 @@ export default function Participants() {
         setColleges([]);
         setCollegesAccessDenied(true);
       } else {
-        toast.error("Failed to load colleges");
+        console.error("Failed to load colleges");
         setColleges([]);
       }
     }
@@ -126,7 +126,7 @@ export default function Participants() {
         setEvents([]);
         setEventsAccessDenied(true);
       } else {
-        toast.error("Failed to load events");
+        console.error("Failed to load events");
         setEvents([]);
       }
     }
@@ -156,7 +156,7 @@ export default function Participants() {
         setDetailParticipant(null);
         return;
       }
-      toast.error("Failed to load participant details");
+      console.error("Failed to load participant details");
       setDetailParticipant(null);
     }
   }, []);
@@ -184,15 +184,15 @@ export default function Participants() {
     try {
       const { college, ...payload } = participantData;
       await participantService.update(editingParticipant.id, payload);
-      toast.success("Participant updated successfully");
+      console.log("Participant updated successfully");
       setEditingParticipant(null);
       await loadParticipants();
     } catch (error: any) {
       if (error?.response?.status === 403) {
-        toast.error("You do not have permission to perform this action.");
+        console.error("You do not have permission to perform this action.");
         return;
       }
-      toast.error(error.message || "Failed to update participant");
+      console.error(error.message || "Failed to update participant");
     }
   };
 
@@ -220,15 +220,15 @@ export default function Participants() {
     try {
       const promises = Array.from(selected).map(id => participantService.checkIn(id));
       await Promise.all(promises);
-      toast.success(`${selected.size} participants checked in`);
+      console.log(`${selected.size} participants checked in`);
       setSelected(new Set());
       await loadParticipants();
     } catch (error: any) {
       if (error?.response?.status === 403) {
-        toast.error("You do not have permission to perform this action.");
+        console.error("You do not have permission to perform this action.");
         return;
       }
-      toast.error("Some check-ins failed");
+      console.error("Some check-ins failed");
     }
   };
 
@@ -236,29 +236,29 @@ export default function Participants() {
     try {
       const promises = Array.from(selected).map(id => participantService.noShow(id));
       await Promise.all(promises);
-      toast.success(`${selected.size} participants marked as no-show`);
+      console.log(`${selected.size} participants marked as no-show`);
       setSelected(new Set());
       await loadParticipants();
     } catch (error: any) {
       if (error?.response?.status === 403) {
-        toast.error("You do not have permission to perform this action.");
+        console.error("You do not have permission to perform this action.");
         return;
       }
-      toast.error("Some updates failed");
+      console.error("Some updates failed");
     }
   };
 
   const deleteParticipant = async (participantId: number) => {
     try {
       await participantService.delete(participantId);
-      toast.success("Participant deleted successfully");
+      console.log("Participant deleted successfully");
       await loadParticipants();
     } catch (error: any) {
       if (error?.response?.status === 403) {
-        toast.error("You do not have permission to perform this action.");
+        console.error("You do not have permission to perform this action.");
         return;
       }
-      toast.error(error.message || "Failed to delete participant");
+      console.error(error.message || "Failed to delete participant");
     }
   };
 
@@ -285,14 +285,14 @@ export default function Participants() {
       } else if (action === 'RESET') {
         await participantService.resetStatus(participantId);
       }
-      toast.success(`Participant status updated`);
+      console.log(`Participant status updated`);
       await loadParticipants();
     } catch (error: any) {
       if (error?.response?.status === 403) {
-        toast.error("You do not have permission to perform this action.");
+        console.error("You do not have permission to perform this action.");
         return;
       }
-      toast.error(error.message || "Failed to update status");
+      console.error(error.message || "Failed to update status");
     }
   };
 

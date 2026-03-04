@@ -5,7 +5,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Eye, Trash2, Pencil, PlusCircle } from "lucide-react";
 import { collegeService } from "@/api/services";
 import { College } from "@/api/types";
-import { toast } from "sonner";
+ ;
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,7 +38,7 @@ export default function Colleges() {
       const response = await collegeService.getAll({ take: 100, includeRelations: true, search });
       setColleges(response.items);
     } catch (error) {
-      toast.error("Failed to load colleges");
+      console.error("Failed to load colleges");
     }
   };
 
@@ -48,7 +48,7 @@ export default function Colleges() {
       setSelectedCollege(details);
       setIsSheetOpen(true);
     } catch (error) {
-      toast.error("Failed to load college details");
+      console.error("Failed to load college details");
     }
   };
 
@@ -65,11 +65,11 @@ export default function Colleges() {
   const deleteCollege = async (collegeId: number) => {
     try {
       await collegeService.delete(collegeId);
-      toast.success("College deleted successfully");
+      console.log("College deleted successfully");
       void loadColleges();
     } catch (error: unknown) {
       if (error instanceof Error) {
-        toast.error(error.message || "Failed to delete college");
+        console.error(error.message || "Failed to delete college");
       }
     }
   };

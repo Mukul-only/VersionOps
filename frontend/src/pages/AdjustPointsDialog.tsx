@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { College } from "@/api/types";
 import { leaderboardService } from "@/api/services";
 import { useState } from "react";
-import { toast } from "sonner";
+ ;
 
 interface AdjustPointsDialogProps {
   college: College | null;
@@ -27,11 +27,11 @@ export default function AdjustPointsDialog({ college, onSuccess, onOpenChange }:
     if (!college) return;
     try {
       await leaderboardService.adjust(college.id, parseInt(points, 10) || 0, reason);
-      toast.success("Points adjusted successfully!");
+      console.log("Points adjusted successfully!");
       onSuccess();
     } catch (error: unknown) {
       if (error instanceof Error) {
-        toast.error(error.message || "Failed to adjust points");
+        console.error(error.message || "Failed to adjust points");
       }
     }
   };

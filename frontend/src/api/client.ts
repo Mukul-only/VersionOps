@@ -1,5 +1,4 @@
-import { toast } from 'sonner';
-
+  
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api/v1';
 
 async function handleApiResponse<T>(
@@ -30,7 +29,7 @@ async function handleApiResponse<T>(
   // Handle Forbidden
   if (response.status === 403) {
     if (!options.suppressForbiddenRedirect && !options.suppressErrorToast) {
-      toast.error('You are not allowed to access this page');
+      console.error('You are not allowed to access this page');
     }
     const error = new Error('Forbidden');
     (error as any).response = response;
@@ -46,7 +45,7 @@ async function handleApiResponse<T>(
       `HTTP error! status: ${response.status}`;
 
   if (!options.suppressErrorToast) {
-    toast.error(errorMessage);
+    console.error(errorMessage);
   }
 
   const error = new Error(errorMessage);
@@ -87,7 +86,7 @@ export async function fetchApi<T>(
     });
   } catch (error) {
     if (!options.suppressErrorToast && !(error instanceof Error && error.message === 'Forbidden')) {
-      toast.error(error instanceof Error ? error.message : 'An unknown error occurred');
+      console.error(error instanceof Error ? error.message : 'An unknown error occurred');
     }
     throw error;
   }

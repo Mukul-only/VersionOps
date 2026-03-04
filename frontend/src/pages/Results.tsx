@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "sonner";
 import { eventService, eventParticipationService, eventResultService } from "@/api/services";
 import { FestEvent, EventParticipation, EventResult } from "@/api/types";
 import { Badge } from "@/components/ui/badge";
@@ -30,7 +29,7 @@ export default function Results() {
       const response = await eventService.getAll({ take: 100 });
       setEvents(response.items);
     } catch (error) {
-      toast.error("Failed to load events");
+      console.error("Failed to load events");
     }
   };
 
@@ -57,7 +56,7 @@ export default function Results() {
       
       setResults(resultsRes.items);
     } catch (error) {
-      toast.error("Failed to load event data");
+      console.error("Failed to load event data");
     }
   };
 
