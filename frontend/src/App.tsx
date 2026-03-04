@@ -15,6 +15,7 @@ import Results from "./pages/Results";
 import Leaderboard from "./pages/Leaderboard";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
+import { Toaster } from "@/components/ui/sonner";
 
 const queryClient = new QueryClient();
 
@@ -126,6 +127,7 @@ const App = () => (
             />
           </Routes>
         </BrowserRouter>
+        <Toaster />
       </TooltipProvider>
     </AuthProvider>
   </QueryClientProvider>

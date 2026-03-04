@@ -3,10 +3,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RefreshCw, Search } from "lucide-react";
- ;
 import { leaderboardService } from "@/api/services";
 import { LeaderboardEntry } from "@/api/types";
 import { cn } from "@/lib/utils";
+import {mapped_toast} from "@/lib/toast_map.ts";
 
 export default function Leaderboard() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
@@ -23,18 +23,24 @@ export default function Leaderboard() {
               { take: 100, includeRelations: true, suppressErrorToast: true, suppressRedirect: true, suppressForbiddenRedirect: true });
       setLeaderboard(response.items);
     } catch (error) {
-      if(error.message === "Unauthorized" || error.message === "Forbidden"){ /* empty */ }
-      else console.error("Failed to load leaderboard");
+      if(error.message === "Unauthorized" || error.message === "Forbidden"){
+        mapped_toast('you do have access to leaderboard', 'warning', true)
+      }
+      else {
+        mapped_toast("Failed to load leaderboard", "error");
+        console.error("Failed to load leaderboard", error);
+      }
     }
   };
 
   const recalculate = async () => {
     try {
       await leaderboardService.recalculate();
-      console.log("Leaderboard recalculated!");
+      mapped_toast("Leaderboard recalculated", "success");
       void loadLeaderboard();
     } catch (error) {
-      console.error("Failed to recalculate leaderboard");
+      mapped_toast("Failed to recalculate leaderboard", "error");
+      console.error("Failed to recalculate leaderboard", error);
     }
   };
 

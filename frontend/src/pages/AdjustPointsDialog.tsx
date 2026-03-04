@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { College } from "@/api/types";
 import { leaderboardService } from "@/api/services";
 import { useState } from "react";
+import {mapped_toast} from "@/lib/toast_map.ts";
  ;
 
 interface AdjustPointsDialogProps {
@@ -27,11 +28,16 @@ export default function AdjustPointsDialog({ college, onSuccess, onOpenChange }:
     if (!college) return;
     try {
       await leaderboardService.adjust(college.id, parseInt(points, 10) || 0, reason);
-      console.log("Points adjusted successfully!");
+      mapped_toast('Points adjusted successfully.', 'success')
       onSuccess();
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.error(error.message || "Failed to adjust points");
+    } catch (error: any) {
+      if(error.response.status === 403) {
+        mapped_toast('You do not have permission to perform this action.', 'warning')
+        return;
+      }
+      else {
+        mapped_toast('Failed to adjust points.', 'error')
+        console.error("Failed to adjust points", error);
       }
     }
   };

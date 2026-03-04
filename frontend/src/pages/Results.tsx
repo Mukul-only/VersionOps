@@ -4,6 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { eventService, eventParticipationService, eventResultService } from "@/api/services";
 import { FestEvent, EventParticipation, EventResult } from "@/api/types";
 import { Badge } from "@/components/ui/badge";
+import {mapped_toast} from "@/lib/toast_map.ts";
 
 export default function Results() {
   const [events, setEvents] = useState<FestEvent[]>([]);
@@ -12,12 +13,12 @@ export default function Results() {
   const [results, setResults] = useState<EventResult[]>([]);
 
   useEffect(() => {
-    loadEvents();
+    void loadEvents();
   }, []);
 
   useEffect(() => {
     if (selectedEventId) {
-      loadEventData(parseInt(selectedEventId));
+      void loadEventData(parseInt(selectedEventId));
     } else {
       setParticipations([]);
       setResults([]);
@@ -29,7 +30,12 @@ export default function Results() {
       const response = await eventService.getAll({ take: 100 });
       setEvents(response.items);
     } catch (error) {
-      console.error("Failed to load events");
+      if((error as any)?.response?.status === 403) {
+        mapped_toast('You do not have access to events data.', 'warning', true)
+        return;
+      }
+      mapped_toast('Failed to load events.', 'error')
+      console.error("Failed to load events", error)
     }
   };
 
@@ -56,6 +62,11 @@ export default function Results() {
       
       setResults(resultsRes.items);
     } catch (error) {
+      if((error as any)?.response?.status === 403) {
+        mapped_toast('You do not have access to event data.', 'warning', true)
+        return;
+      }
+      mapped_toast('Failed to load event data.', 'error')
       console.error("Failed to load event data");
     }
   };

@@ -18,6 +18,7 @@ import { useNavigate } from "react-router-dom";
 import { College } from "@/api/types";
 import React, { useEffect, useState } from "react";
 import Papa from "papaparse";
+import {mapped_toast} from "@/lib/toast_map.ts";
 
 const formSchema = z.object({
   code: z.string().min(2, "Code must be at least 2 characters.").max(10),
@@ -57,22 +58,23 @@ export default function AddCollege({ college, onSuccess }: AddCollegeProps) {
       if (isEditMode && college) {
         const { code, ...updateData } = values;
         await collegeService.update(college.id, updateData as { name: string });
-        console.log("College updated successfully!");
+        mapped_toast('College updated successfully.', 'success')
       } else {
         await collegeService.create(values as { code: string; name: string });
-        console.log("College created successfully!");
+        mapped_toast('College created successfully.', 'success')
       }
       if (onSuccess) {
         onSuccess();
       } else {
         navigate("/colleges");
       }
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.error(
-          error.message || `Failed to ${isEditMode ? "update" : "create"} college`
-        );
+    } catch (error) {
+      if (error?.response?.status === 403) {
+        mapped_toast('You do not have permission to perform this action.', 'warning')
+        return;
       }
+      mapped_toast('Failed to save college.', 'error')
+      console.error("Failed to save college", error);
     }
   }
 
@@ -84,7 +86,7 @@ export default function AddCollege({ college, onSuccess }: AddCollegeProps) {
 
   const handleCsvImport = async () => {
     if (!csvFile) {
-      console.error("Please select a CSV file to import.");
+      mapped_toast('Please select a CSV file to import.', 'warning')
       return;
     }
 
@@ -122,15 +124,13 @@ export default function AddCollege({ college, onSuccess }: AddCollegeProps) {
           }
         });
 
+
         if (successfulImports > 0) {
-          console.log(
-            `${successfulImports} college(s) imported successfully!`
-          );
+          mapped_toast(`${successfulImports} colleges imported successfully.`, 'success')
         }
         if (failedImports > 0) {
-          console.warn(
-            `${failedImports} college(s) failed to import. Check console for details.`
-          );
+          mapped_toast(`${failedImports} colleges failed to import.`, 'error')
+          console.error(`${failedImports} colleges failed to import.`);
         }
 
         setIsImporting(false);
@@ -143,7 +143,8 @@ export default function AddCollege({ college, onSuccess }: AddCollegeProps) {
         }
       },
       error: (error) => {
-        console.error(`Error parsing CSV file: ${error.message}`);
+        mapped_toast('Error parsing CSV file.', 'error')
+        console.error(`Error parsing CSV file: `, error);
         setIsImporting(false);
       },
     });

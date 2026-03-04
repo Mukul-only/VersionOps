@@ -17,6 +17,7 @@ import { eventService } from "@/api/services";
  ;
 import { useNavigate, useParams } from "react-router-dom";
 import Papa from "papaparse";
+import {mapped_toast} from "@/lib/toast_map.ts";
 
 const formSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters."),
@@ -53,11 +54,16 @@ export default function AddEvent() {
           const event = await eventService.getById(parseInt(id));
           form.reset(event);
         } catch (error) {
+            if (error?.response?.status === 403) {
+                mapped_toast('You do not access to some of the data.', "warning", true);
+                return;
+            }
+            mapped_toast('Failed to fetch event details.', 'error')
           console.error("Failed to fetch event details");
           navigate("/events");
         }
       };
-      fetchEvent();
+      void fetchEvent();
     }
   }, [id, isEditMode, form, navigate]);
 
@@ -65,14 +71,19 @@ export default function AddEvent() {
     try {
       if (isEditMode) {
         await eventService.update(parseInt(id), values);
-        console.log("Event updated successfully!");
+        mapped_toast('Event updated successfully.', 'success')
       } else {
         await eventService.create(values);
-        console.log("Event created successfully!");
+        mapped_toast('Event created successfully.', 'success')
       }
       navigate("/events");
     } catch (error: any) {
-      console.error(error.message || `Failed to ${isEditMode ? 'update' : 'create'} event`);
+        if (error?.response?.status === 403) {
+            mapped_toast('You do not have permission to perform this action.', 'warning')
+            return;
+        }
+        mapped_toast('Failed to save event.', 'error')
+      console.error(`Failed to ${isEditMode ? 'update' : 'create'} event`, error);
     }
   }
 
@@ -84,7 +95,7 @@ export default function AddEvent() {
 
   const handleCsvImport = async () => {
     if (!csvFile) {
-      console.error("Please select a CSV file to import.");
+        mapped_toast('Please select a CSV file to import.', 'warning')
       return;
     }
 
@@ -97,7 +108,7 @@ export default function AddEvent() {
         const eventData = dataRows.slice(1);
 
         if (!header || header.length < 6) {
-            console.error("Invalid CSV format. Please check the headers.");
+            mapped_toast('Invalid CSV format. Please check the headers.', 'error')
             setIsImporting(false);
             return;
         }
@@ -139,14 +150,10 @@ export default function AddEvent() {
         });
 
         if (successfulImports > 0) {
-          console.log(
-            `${successfulImports} event(s) imported successfully!`
-          );
+            mapped_toast(`${successfulImports} event(s) imported successfully!`, 'success')
         }
         if (failedImports > 0) {
-          console.warn(
-            `${failedImports} event(s) failed to import. Check console for details.`
-          );
+            mapped_toast(`${failedImports} event(s) failed to import.`, 'error')
         }
 
         setIsImporting(false);
@@ -155,7 +162,8 @@ export default function AddEvent() {
         }
       },
       error: (error) => {
-        console.error(`Error parsing CSV file: ${error.message}`);
+          mapped_toast('Error parsing CSV file.', 'error')
+        console.error(`Error parsing CSV file: ${error}`);
         setIsImporting(false);
       },
     });

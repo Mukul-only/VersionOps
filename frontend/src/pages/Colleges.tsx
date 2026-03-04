@@ -20,6 +20,7 @@ import {
 import EditCollegeDialog from "./EditCollegeDialog";
 import AdjustPointsDialog from "./AdjustPointsDialog";
 import { Input } from "@/components/ui/input";
+import {mapped_toast} from "@/lib/toast_map.ts";
 
 export default function Colleges() {
   const [colleges, setColleges] = useState<College[]>([]);
@@ -38,7 +39,12 @@ export default function Colleges() {
       const response = await collegeService.getAll({ take: 100, includeRelations: true, search });
       setColleges(response.items);
     } catch (error) {
-      console.error("Failed to load colleges");
+      if (error?.response?.status === 403) {
+        mapped_toast('You do not have access to colleges data.', 'warning', true)
+        return;
+      }
+      mapped_toast('Failed to load colleges.', 'error')
+      console.error("Failed to load colleges", error);
     }
   };
 
@@ -48,7 +54,12 @@ export default function Colleges() {
       setSelectedCollege(details);
       setIsSheetOpen(true);
     } catch (error) {
-      console.error("Failed to load college details");
+      if (error?.response?.status === 403) {
+        mapped_toast('You do not have permission to perform this action.', 'warning')
+        return;
+      }
+      mapped_toast('Failed to load college details.', 'error')
+      console.error("Failed to load college details", error);
     }
   };
 
@@ -67,10 +78,13 @@ export default function Colleges() {
       await collegeService.delete(collegeId);
       console.log("College deleted successfully");
       void loadColleges();
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.error(error.message || "Failed to delete college");
+    } catch (error) {
+      if (error?.response?.status === 403) {
+        mapped_toast('You do not have permission to perform this action.', 'warning')
+        return;
       }
+      mapped_toast('Failed to delete college.', 'error')
+      console.error("Failed to delete college", error);
     }
   };
 

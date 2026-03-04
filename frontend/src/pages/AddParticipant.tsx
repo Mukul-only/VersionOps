@@ -25,6 +25,7 @@ import { useNavigate } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import { College } from "@/api/types";
 import { Upload } from "lucide-react";
+import {mapped_toast} from "@/lib/toast_map.ts";
 
 const yearEnum = z.enum(["ONE", "TWO"]);
 
@@ -84,7 +85,7 @@ export default function AddParticipant() {
       try {
         const text = e.target?.result;
         if (typeof text !== "string") {
-          console.error("Could not read file.");
+            mapped_toast('Could not read file.', 'error')
           return;
         }
         // Assuming CSV format: name,email,collegeCode, year,hackerearthUser, phone
@@ -97,16 +98,15 @@ export default function AddParticipant() {
           })
           .filter((d) => d.email); // Basic validation
         const result = await participantService.bulkImport(data);
-        console.log(
-          `Bulk import finished: ${result.inserted} inserted, ${result.failed} failed.`,
-        );
         if (result.failed > 0) {
           // TODO: Display detailed errors to the user
-          console.error("Failed imports:", result.errors);
+            mapped_toast(`Bulk import finished: ${result.inserted} inserted, ${result.failed} failed.`, 'warning')
         }
+        else mapped_toast(`Bulk import finished: ${result.inserted} inserted`, "success")
         navigate("/participants");
       } catch (error: any) {
-        console.error(error.message || "Failed to process bulk import.");
+          mapped_toast('Failed to process bulk import.', 'error')
+        console.error("Failed to process bulk import.", error);
       }
     };
     reader.readAsText(file);

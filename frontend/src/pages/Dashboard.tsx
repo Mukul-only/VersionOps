@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Users, UserCheck, Building2, CalendarDays, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
- ;
+
 import { useAuth } from "@/contexts/AuthContext";
 import { AppRole, hasPermission, ROUTE_PERMISSIONS } from "@/lib/rbac";
 import {
@@ -14,6 +14,7 @@ import {
   PaginationParams,
 } from "@/api/services";
 import { LeaderboardEntry, PaginatedResponse, Participant, College, FestEvent } from "@/api/types";
+import {mapped_toast} from "@/lib/toast_map.ts";
 
 type Stats = {
   totalParticipants: number;
@@ -42,10 +43,11 @@ export default function Dashboard() {
       setTopColleges(response.items);
     } catch (error: unknown) {
       if (error instanceof Error && (error.message === 'Unauthorized' || error.message === 'Forbidden')) {
-        console.warn("Unauthorized access to leaderboard");
+        mapped_toast(`${error.message} access to leaderboard data`, "error", true);
         setTopColleges(null);
       } else {
-        console.error("Failed to load leaderboard", error);
+        mapped_toast("Failed to load leaderboard data", "error");
+        console.error("Failed to load leaderboard data", error);
         setTopColleges(null);
       }
     }
@@ -59,7 +61,7 @@ export default function Dashboard() {
         return await serviceCall({ take: 1, suppressRedirect: true });
       } catch (err: unknown) {
         if (err instanceof Error && (err.message === 'Unauthorized' || err.message === 'Forbidden')) {
-          console.warn(`Unauthorized access to a stats endpoint.`);
+          mapped_toast(`${err.message} access to a stats endpoint.`, "error", true);
           return null;
         }
         throw err;
@@ -83,7 +85,13 @@ export default function Dashboard() {
           });
           checkedInCount = checkedInRes.total;
         } catch (e: unknown) {
-          console.warn("Could not fetch checked-in count with filter", e);
+          if (e instanceof Error && (e.message === 'Unauthorized' || e.message === 'Forbidden')) {
+            mapped_toast(`${e.message} access to a stats endpoint.`, "error", true);
+            return;
+          }else {
+            mapped_toast("Could not fetch checked-in count with filter", "error");
+            console.error("Could not fetch checked-in count with filter", e);
+          }
         }
       }
 
@@ -98,7 +106,7 @@ export default function Dashboard() {
         setStats(null);
       }
     } catch (error: unknown) {
-      console.error("Failed to load stats", error);
+      mapped_toast("Failed to load stats", "error", true);
       setStats(null);
     }
   }, []);
@@ -111,10 +119,10 @@ export default function Dashboard() {
   const recalculateLeaderboard = async () => {
     try {
       await leaderboardService.recalculate();
-      console.log("Leaderboard recalculated!");
+      mapped_toast("Leaderboard recalculated!", "success");
       await loadLeaderboard();
     } catch (error: unknown) {
-      console.error("Failed to recalculate");
+      mapped_toast("Failed to recalculate", "error");
     }
   };
 

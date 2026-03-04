@@ -30,6 +30,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { eventService, participantService, eventParticipationService, eventResultService, collegeService } from "@/api/services";
 import { FestEvent, EventParticipation, Participant, EventResult, College } from "@/api/types";
+import {mapped_toast} from "@/lib/toast_map.ts";
 
 type Position = "FIRST" | "SECOND" | "THIRD";
 
@@ -78,8 +79,12 @@ export default function Events() {
       });
       setEvents(response.items || []);
     } catch (error: any) {
-      if (error?.response?.status === 403) return;
-      console.error("Failed to load events");
+      if (error?.response?.status === 403) {
+        mapped_toast('you do have access to events', 'warning', true)
+        return;
+      }
+      mapped_toast("Failed to load events", "error");
+      console.error("Failed to load events", error);
     }
   }, []);
 
@@ -142,6 +147,7 @@ export default function Events() {
     );
 
     if (hasNon403Error) {
+        mapped_toast("Failed to load some event data.", "error");
         console.error("Failed to load some event data.");
     }
 
@@ -259,7 +265,7 @@ export default function Events() {
         suppressForbiddenRedirect: true,
         suppressErrorToast: true
       });
-      console.log("Participant marked present");
+      mapped_toast('Participant marked present', 'success')
       setCheckInDetails(prev => {
           const newDetails = { ...prev };
           delete newDetails[participantId];
@@ -269,8 +275,10 @@ export default function Events() {
       await loadEventDetails(selectedEventId);
     } catch (error: any) {
         if (error?.response?.status === 403) {
+            mapped_toast('you do not have permission to mark participant present', 'warning', true)
             return;
         } else {
+            mapped_toast('Failed to mark participant present', 'error')
             const errorMessage = error instanceof Error ? error.message : "Failed to mark present";
             console.error(errorMessage);
         }
@@ -284,12 +292,14 @@ export default function Events() {
         suppressForbiddenRedirect: true,
         suppressErrorToast: true
       });
-      console.log("Participant removed");
+      mapped_toast('Participant removed', 'success')
       await loadEventDetails(selectedEventId);
     } catch (error: any) {
         if (error?.response?.status === 403) {
+            mapped_toast('you do not have permission to remove participant', 'warning', true)
             return;
         } else {
+            mapped_toast('Failed to remove participant', 'error')
             const errorMessage = error instanceof Error ? error.message : "Failed to remove participant";
             console.error(errorMessage);
         }
@@ -358,8 +368,10 @@ export default function Events() {
       }
     } catch (error: any) {
         if (error?.response?.status === 403) {
+            mapped_toast('you do not have permission to update position', 'warning')
             return;
         } else {
+            mapped_toast('Failed to update position', 'error')
             const errorMessage = error instanceof Error ? error.message : "Failed to update position";
             console.error(errorMessage);
         }
@@ -374,9 +386,11 @@ export default function Events() {
         setResults(resultsRes.items || []);
       } catch (error: any) {
         if (error?.response?.status === 403) {
+          mapped_toast('you do not have permission to update position', 'warning', true)
           setResultsDenied(true);
           setResults([]);
         }
+
       }
     }
   };
@@ -400,12 +414,13 @@ export default function Events() {
 
     try {
       await Promise.all(participationPromises);
-      console.log("Participant details updated successfully!");
-      await loadEventDetails(selectedEventId); 
+      mapped_toast('Participant details updated', 'success')
+      await loadEventDetails(selectedEventId);
     } catch (error: any) {
         if (error?.response?.status === 403) {
             return;
         } else {
+            mapped_toast('Failed to save some changes', 'error')
             const errorMessage = error instanceof Error ? error.message : "Failed to save some changes.";
             console.error(errorMessage);
         }
@@ -418,12 +433,14 @@ export default function Events() {
         suppressForbiddenRedirect: true,
         suppressErrorToast: true
       });
-      console.log("Event deleted successfully");
+      mapped_toast('Event deleted successfully', 'success')
       await loadEvents();
     } catch (error: any) {
         if (error?.response?.status === 403) {
+            mapped_toast('you do not have permission to delete event', 'warning')
             return;
         } else {
+            mapped_toast('Failed to delete event', 'error')
             const errorMessage = error instanceof Error ? error.message : "Failed to delete event";
             console.error(errorMessage);
         }
@@ -446,13 +463,15 @@ export default function Events() {
         suppressForbiddenRedirect: true,
         suppressErrorToast: true
       });
-      console.log(`Copied ${participantIdsToCopy.length} participants successfully.`);
+      mapped_toast('Participants copied successfully', 'success')
       setIsBulkCopyDialogOpen(false);
       setSelectedParticipations([]);
     } catch (error: any) {
         if (error?.response?.status === 403) {
+            mapped_toast('you do not have permission to copy participants', 'warning')
             return;
         } else {
+            mapped_toast('Failed to copy participants', 'error')
             const errorMessage = error instanceof Error ? error.message : "Failed to copy participants.";
             console.error(errorMessage);
         }
@@ -849,7 +868,7 @@ function BulkCopyDialog({ open, onOpenChange, events, onConfirm, disabled }: Bul
     if (targetEventId) {
       void onConfirm(Number(targetEventId));
     } else {
-      console.warn("Please select a target event.");
+      mapped_toast('Please select a target event.', 'warning')
     }
   };
 

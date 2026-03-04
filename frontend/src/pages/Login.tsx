@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import {mapped_toast} from "@/lib/toast_map.ts";
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -38,7 +39,7 @@ const Login = () => {
         description: "Logged in successfully",
       });
     } catch (error) {
-      console.error('Login error:', error);
+      mapped_toast('Invalid credentials', 'error')
       let errorMessage = "Invalid credentials";
       if (error instanceof Error) {
         errorMessage = error.message;

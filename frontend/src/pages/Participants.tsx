@@ -32,6 +32,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {z} from "zod";
+import {mapped_toast} from "@/lib/toast_map.ts";
 
 const yearEnum = z.enum(["ONE", "TWO"]);
 
@@ -76,12 +77,15 @@ export default function Participants() {
       setParticipantsAccessDenied(false);
     } catch (error: any) {
       if (error?.response?.status === 403) {
+        mapped_toast('You do not have access to participants data.', 'warning', true)
         setParticipantsAccessDenied(true);
         setParticipants([]);
         return;
+      }else {
+        mapped_toast('Failed to load participants.', 'error')
+        console.error("Failed to load participants", error);
+        setParticipants([]);
       }
-      console.error("Failed to load participants");
-      setParticipants([]);
     }
   }, [search, filters]);
 
@@ -99,8 +103,11 @@ export default function Participants() {
       if ((participantsRes.reason as any)?.response?.status === 403) {
         setParticipants([]);
         setParticipantsAccessDenied(true);
+        mapped_toast('You do not have access to participants data.', 'warning', true)
+
       } else {
-        console.error("Failed to load participants");
+        mapped_toast('Failed to load participants.', 'error')
+        console.error("Failed to load participants", participantsRes.reason);
         setParticipants([]);
       }
     }
@@ -112,8 +119,10 @@ export default function Participants() {
       if ((collegesRes.reason as any)?.response?.status === 403) {
         setColleges([]);
         setCollegesAccessDenied(true);
+        mapped_toast('You do not have access to college data.', 'warning', true)
       } else {
-        console.error("Failed to load colleges");
+        mapped_toast('Failed to load colleges.', 'error')
+        console.error("Failed to load colleges", collegesRes.reason);
         setColleges([]);
       }
     }
@@ -125,8 +134,10 @@ export default function Participants() {
       if ((eventsRes.reason as any)?.response?.status === 403) {
         setEvents([]);
         setEventsAccessDenied(true);
+        mapped_toast('You do not have access to event data.', 'warning', true)
       } else {
-        console.error("Failed to load events");
+        mapped_toast('Failed to load events.', 'error')
+        console.error("Failed to load events", eventsRes.reason);
         setEvents([]);
       }
     }
@@ -148,15 +159,16 @@ export default function Participants() {
     setDetailParticipant(null);
     try {
       const data = await participantService.getById(id, true);
-      // console.log(data)
       setDetailParticipant(data || null);
     } catch (error: any) {
       if (error?.response?.status === 403) {
         setParticipantDetailsAccessDenied(true);
         setDetailParticipant(null);
+        mapped_toast('You do not have access to participant data.', 'warning', true)
         return;
       }
-      console.error("Failed to load participant details");
+      mapped_toast('Failed to load participant details.', 'error')
+      console.error("Failed to load participant details", error);
       setDetailParticipant(null);
     }
   }, []);
@@ -184,15 +196,16 @@ export default function Participants() {
     try {
       const { college, ...payload } = participantData;
       await participantService.update(editingParticipant.id, payload);
-      console.log("Participant updated successfully");
+      mapped_toast('Participant updated successfully.', 'success')
       setEditingParticipant(null);
       await loadParticipants();
     } catch (error: any) {
       if (error?.response?.status === 403) {
-        console.error("You do not have permission to perform this action.");
+        mapped_toast('You do not have permission to perform this action.', 'warning')
         return;
       }
-      console.error(error.message || "Failed to update participant");
+      mapped_toast('Failed to update participant.', 'error')
+      console.error("Failed to update participant", error);
     }
   };
 
@@ -220,15 +233,16 @@ export default function Participants() {
     try {
       const promises = Array.from(selected).map(id => participantService.checkIn(id));
       await Promise.all(promises);
-      console.log(`${selected.size} participants checked in`);
+      mapped_toast(`${selected.size} participants checked in`, 'success')
       setSelected(new Set());
       await loadParticipants();
     } catch (error: any) {
       if (error?.response?.status === 403) {
-        console.error("You do not have permission to perform this action.");
+        mapped_toast('You do not have permission to perform this action.', 'warning')
         return;
       }
-      console.error("Some check-ins failed");
+      mapped_toast('Some check-ins failed', 'error')
+      console.error("Some check-ins failed", error);
     }
   };
 
@@ -236,29 +250,31 @@ export default function Participants() {
     try {
       const promises = Array.from(selected).map(id => participantService.noShow(id));
       await Promise.all(promises);
-      console.log(`${selected.size} participants marked as no-show`);
+      mapped_toast(`${selected.size} participants marked as no-show`, 'success')
       setSelected(new Set());
       await loadParticipants();
     } catch (error: any) {
       if (error?.response?.status === 403) {
-        console.error("You do not have permission to perform this action.");
+        mapped_toast('You do not have permission to perform this action.', 'warning')
         return;
       }
-      console.error("Some updates failed");
+      mapped_toast('Some updates failed', 'error')
+      console.error("Some updates failed", error);
     }
   };
 
   const deleteParticipant = async (participantId: number) => {
     try {
       await participantService.delete(participantId);
-      console.log("Participant deleted successfully");
+      mapped_toast('Participant deleted successfully', 'success')
       await loadParticipants();
     } catch (error: any) {
       if (error?.response?.status === 403) {
-        console.error("You do not have permission to perform this action.");
+        mapped_toast('You do not have permission to perform this action.', 'warning')
         return;
       }
-      console.error(error.message || "Failed to delete participant");
+      mapped_toast('Failed to delete participant', 'error')
+      console.error("Failed to delete participant", error);
     }
   };
 
@@ -285,14 +301,15 @@ export default function Participants() {
       } else if (action === 'RESET') {
         await participantService.resetStatus(participantId);
       }
-      console.log(`Participant status updated`);
+      mapped_toast('Participant status updated', 'success')
       await loadParticipants();
     } catch (error: any) {
       if (error?.response?.status === 403) {
-        console.error("You do not have permission to perform this action.");
+        mapped_toast('You do not have permission to perform this action.', 'warning')
         return;
       }
-      console.error(error.message || "Failed to update status");
+      mapped_toast('Failed to update status', 'error')
+      console.error("Failed to update status", error);
     }
   };
 
