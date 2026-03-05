@@ -198,7 +198,7 @@ export default function AddEvent() {
                   </FormItem>
                 )}
               />
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="teamSize"
@@ -226,7 +226,7 @@ export default function AddEvent() {
                   )}
                 />
               </div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <FormField
                   control={form.control}
                   name="firstPrizePoints"
@@ -287,7 +287,7 @@ export default function AddEvent() {
                   To import a list of events, please upload a CSV file with the
                   following format:
                 </p>
-                <pre className="mt-2 p-2 bg-gray-100 rounded-md text-sm">
+                <pre className="mt-2 p-2 bg-gray-100 rounded-md text-sm whitespace-pre-wrap break-all">
                   <code>
                     name,teamSize,participationPoints,firstPrizePoints,secondPrizePoints,thirdPrizePoints
                     <br />

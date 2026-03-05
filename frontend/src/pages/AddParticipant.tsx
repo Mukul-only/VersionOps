@@ -101,6 +101,7 @@ export default function AddParticipant() {
         if (result.failed > 0) {
           // TODO: Display detailed errors to the user
             mapped_toast(`Bulk import finished: ${result.inserted} inserted, ${result.failed} failed.`, 'warning')
+            console.error(result);
         }
         else mapped_toast(`Bulk import finished: ${result.inserted} inserted`, "success")
         navigate("/participants");
