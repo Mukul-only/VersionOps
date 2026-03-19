@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, ArrowLeft, Users, UserCheck, Pencil, Trash2, Copy, Save } from "lucide-react";
- ;
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -63,6 +63,7 @@ export default function Events() {
 
   const [searchResults, setSearchResults] = useState<Participant[]>([]);
   const [defaultParticipants, setDefaultParticipants] = useState<Participant[]>([]);
+  const [baseList, setBaseList] = useState<Participant[]>([]);
   
   const [selectedParticipations, setSelectedParticipations] = useState<number[]>([]);
   const [isBulkCopyDialogOpen, setIsBulkCopyDialogOpen] = useState(false);
@@ -237,6 +238,57 @@ export default function Events() {
     }
   }, [searchQuery, selectedEventId, searchParticipants]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const setSafeBaseList = (items: Participant[]) => {
+      if (!cancelled) {
+        setBaseList(items);
+      }
+    };
+
+    const syncBaseList = async () => {
+      if (searchQuery.trim()) {
+        setSafeBaseList(searchResults || []);
+        return;
+      }
+
+      if (collegeFilter === "all") {
+        setSafeBaseList(defaultParticipants || []);
+        return;
+      }
+
+      const selectedCollege = (colleges || []).find((college) => college.code === collegeFilter);
+      if (!selectedCollege) {
+        setSafeBaseList([]);
+        return;
+      }
+
+      try {
+        const response = await participantService.getAll({
+          take: 150,
+          includeRelations: true,
+          filters: JSON.stringify({ collegeId: selectedCollege.id }),
+          suppressForbiddenRedirect: true,
+          suppressErrorToast: true,
+        });
+
+        const rosterIds = new Set((roster || []).map((r) => r.participantId));
+        const filtered = (response.items || []).filter((p) => !rosterIds.has(p.id));
+        setSafeBaseList(filtered);
+      } catch (error: any) {
+        if (error?.response?.status === 403) return;
+        setSafeBaseList([]);
+      }
+    };
+
+    void syncBaseList();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [searchQuery, searchResults, collegeFilter, defaultParticipants, colleges, roster]);
+
   const handleEditClick = (event: FestEvent) => {
     navigate(`/events/edit/${event.id}`);
   };
@@ -271,7 +323,7 @@ export default function Events() {
           delete newDetails[participantId];
           return newDetails;
       });
-      setSearchQuery("");
+      // setSearchQuery("");
       await loadEventDetails(selectedEventId);
     } catch (error: any) {
         if (error?.response?.status === 403) {
@@ -506,8 +558,6 @@ export default function Events() {
     );
   });
 
-
-  const baseList = searchQuery.trim() ? searchResults : defaultParticipants;
   const participantsToShow = collegeFilter === "all"
     ? (baseList || [])
     : (baseList || []).filter(p => p.college?.code === collegeFilter);
@@ -652,6 +702,16 @@ export default function Events() {
                     ))}
                   </SelectContent>
                 </Select>
+                {/*<Select value={dummyFilter} onValueChange={setDummyFilter}>*/}
+                {/*  <SelectTrigger className="w-28 h-9 text-xs">*/}
+                {/*    <SelectValue placeholder="Dummy Filter" />*/}
+                {/*  </SelectTrigger>*/}
+                {/*  <SelectContent>*/}
+                {/*    <SelectItem value="all">All Dummy</SelectItem>*/}
+                {/*    <SelectItem value="assigned">Assigned</SelectItem>*/}
+                {/*    <SelectItem value="unassigned">Unassigned</SelectItem>*/}
+                {/*  </SelectContent>*/}
+                {/*</Select>*/}
               </div>
 
               <div className="border rounded-md h-56 overflow-auto">
