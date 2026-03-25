@@ -12,6 +12,7 @@ import { clearAuthCookie } from 'src/common/utils/auth/cookie.util';
 
 import { ConfigService } from 'src/config/config.service';
 import { LoggerService } from 'src/logger/logger.service';
+import { UserRole } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -56,6 +57,18 @@ export class AuthService {
           userId: user.id,
         });
         throw new UnauthorizedException('Invalid credentials');
+      }
+
+      if (user.role === UserRole.PARTICIPANT) {
+        await this.prisma.participant.updateMany({
+          where: {
+            email: user.email,
+            userId: null,
+          },
+          data: {
+            userId: user.id,
+          },
+        });
       }
 
       const accessToken = generateAccessToken(

@@ -21,6 +21,7 @@ export const PERMISSIONS = {
   LEADERBOARD_MANAGE: 'leaderboard-manage',
   RESULT_MANAGE: 'result-manage',
   ATTENDENCE_MANAGE: 'attendence-manage',
+  REPORT_VIEW: 'report-view',
 } as const;
 
 export type AppPermission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -51,4 +52,5 @@ export const ROLE_PERMISSIONS: Record<
     PERMISSIONS.PARTICIPANT_READ,
     PERMISSIONS.EVENT_READ,
   ],
+  [UserRole.PARTICIPANT]: [PERMISSIONS.REPORT_VIEW],
 };

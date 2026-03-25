@@ -16,6 +16,7 @@ import { LeaderboardModule } from './modules/leaderboard/leadeboard.module';
 import { UserModule } from './modules/user/user.module';
 import { AdminSeedService } from './prisma/seed/admin.seed';
 import { AuthModule } from './modules/auth/auth.module';
+import { ReportsModule } from './modules/reports/reports.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { AuthModule } from './modules/auth/auth.module';
     LeaderboardModule,
     UserModule,
     AuthModule,
+    ReportsModule,
     ThrottlerModule.forRoot({
       throttlers: [
         {

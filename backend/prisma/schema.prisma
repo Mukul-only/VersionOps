@@ -40,17 +40,15 @@ model College {
 model Participant {
   id              Int      @id @default(autoincrement())
 
-  /// Readable ID: ABC-1-001
   participantId   String   @unique @db.VarChar(50)
-
   name            String   @db.VarChar(255)
 
   collegeId       Int
   college         College  @relation(fields: [collegeId], references: [id], onDelete: Restrict)
+
   email           String   @unique @db.VarChar(255)
   year            Year
 
-  /// Fest attendance status
   festStatus      FestStatus @default(REGISTERED)
 
   hackerearthUser String?  @unique() @db.VarChar(100)
@@ -58,12 +56,14 @@ model Participant {
 
   createdAt       DateTime @default(now())
 
+  userId          String?  @unique
+  user            User?    @relation("ParticipantUser", fields: [userId], references: [id])
+
   participations  EventParticipation[]
   results         EventResult[]
 
   @@map("participants")
 }
-
 
 model Event {
   id                   Int      @id @default(autoincrement())
@@ -157,6 +157,7 @@ enum UserRole {
   ADMIN
   OPERATOR
   DESK
+  PARTICIPANT
 }
 
 model User {
@@ -165,6 +166,8 @@ model User {
   email     String   @unique
   password  String
   role      UserRole @default(DESK)
+  
+  participant Participant? @relation("ParticipantUser")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
