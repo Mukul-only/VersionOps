@@ -14,8 +14,10 @@ import {
   reportService,
   PaginationParams,
 } from "@/api/services";
-import { LeaderboardEntry, PaginatedResponse, Participant, College, FestEvent } from "@/api/types";
+import { LeaderboardEntry, PaginatedResponse, Participant, College, FestEvent, CollegeReport } from "@/api/types";
 import {mapped_toast} from "@/lib/toast_map.ts";
+import { CompetitionDashboard } from "@/components/competition-analytics/CompetitionDashboard";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type Stats = {
   totalParticipants: number;
@@ -38,6 +40,9 @@ export default function Dashboard() {
 
   const [stats, setStats] = useState<Stats | null>(null);
   const [topColleges, setTopColleges] = useState<LeaderboardEntry[] | null>(null);
+  const [reportData, setReportData] = useState<CollegeReport | null>(null);
+  const [loadingReport, setLoadingReport] = useState(false);
+  const [reportError, setReportError] = useState<string | null>(null);
 
   const loadLeaderboard = useCallback(async () => {
     try {
@@ -130,12 +135,17 @@ export default function Dashboard() {
 
   const handleGetReport = async () => {
     try {
+      setLoadingReport(true);
+      setReportError(null);
       const report = await reportService.getMyCollegeReport();
-      console.log("College Report:", report);
-      mapped_toast("Report fetched successfully (check console)", "success");
+      setReportData(report);
+      mapped_toast("Report fetched successfully", "success");
     } catch (error) {
+      setReportError("Failed to fetch college report");
       mapped_toast("Failed to fetch college report", "error");
       console.error("Failed to fetch college report", error);
+    } finally {
+      setLoadingReport(false);
     }
   };
 
@@ -254,13 +264,34 @@ export default function Dashboard() {
               </Button>
             )}
             {role === "PARTICIPANT" && (
-              <Button className="w-full justify-start" variant="outline" onClick={handleGetReport}>
-                <Building2 className="mr-2 h-4 w-4" /> Get College Report
+              <Button className="w-full justify-start" variant="outline" onClick={handleGetReport} disabled={loadingReport}>
+                <Building2 className="mr-2 h-4 w-4" /> 
+                {loadingReport ? "Fetching Report..." : "Get College Report"}
               </Button>
             )}
           </CardContent>
         </Card>
       </div>
+
+      {loadingReport && (
+        <div className="space-y-4">
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-48 w-full" />
+        </div>
+      )}
+
+      {reportError && (
+        <div className="p-4 bg-destructive/10 text-destructive rounded-lg border border-destructive/20">
+          {reportError}
+        </div>
+      )}
+
+      {reportData && (
+        <div className="mt-8 border-t pt-8">
+          <h3 className="text-xl font-bold mb-4">Competition Analytics</h3>
+          <CompetitionDashboard data={reportData} />
+        </div>
+      )}
     </div>
   );
 }
