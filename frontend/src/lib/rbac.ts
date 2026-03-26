@@ -22,10 +22,11 @@ export const PERMISSIONS = {
     LEADERBOARD_MANAGE: 'leaderboard-manage',
     RESULT_MANAGE: 'result-manage',
     ATTENDENCE_MANAGE: 'attendence-manage',
+    DASHBOARD_READ: 'dashboard-read',
 } as const;
 
 export const ROUTE_PERMISSIONS: Record<string, AppPermission | null> = {
-    '/': null,
+    '/': PERMISSIONS.DASHBOARD_READ,
     '/participants': PERMISSIONS.PARTICIPANT_READ,
     '/participants/add': PERMISSIONS.PARTICIPANT_CREATE,
     '/colleges': PERMISSIONS.COLLEGE_READ,
@@ -40,11 +41,12 @@ export const ROUTE_PERMISSIONS: Record<string, AppPermission | null> = {
 export const ROUTE_ORDER = ['/', '/participants', '/colleges', '/events', '/leaderboard', '/results'];
 
 export type AppPermission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
-export type AppRole = 'ADMIN' | 'OPERATOR' | 'DESK';
+export type AppRole = 'ADMIN' | 'OPERATOR' | 'DESK' | 'PARTICIPANT';
 
 export const ROLE_PERMISSIONS: Record<AppRole, readonly AppPermission[] | readonly ['*']> = {
     ADMIN: ['*'],
     OPERATOR: [
+        PERMISSIONS.DASHBOARD_READ,
         PERMISSIONS.COLLEGE_CREATE,
         PERMISSIONS.COLLEGE_UPDATE,
         PERMISSIONS.COLLEGE_READ,
@@ -55,6 +57,7 @@ export const ROLE_PERMISSIONS: Record<AppRole, readonly AppPermission[] | readon
         PERMISSIONS.EVENT_READ,
     ],
     DESK: [
+        PERMISSIONS.DASHBOARD_READ,
         PERMISSIONS.COLLEGE_CREATE,
         PERMISSIONS.COLLEGE_UPDATE,
         PERMISSIONS.COLLEGE_READ,
@@ -63,6 +66,7 @@ export const ROLE_PERMISSIONS: Record<AppRole, readonly AppPermission[] | readon
         PERMISSIONS.PARTICIPANT_READ,
         PERMISSIONS.EVENT_READ,
     ],
+    PARTICIPANT: [PERMISSIONS.DASHBOARD_READ],
 };
 
 /** Check if a role has a given permission */

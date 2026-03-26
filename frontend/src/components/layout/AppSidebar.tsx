@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/tooltip";
 
 const navItems = [
-  { to: "/", icon: LayoutDashboard, label: "Dashboard", requiredPermissions: [] },
+  { to: "/", icon: LayoutDashboard, label: "Dashboard", requiredPermissions: ["dashboard-read"] },
   {
     label: "Participants",
     icon: Users,

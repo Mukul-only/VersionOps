@@ -6,6 +6,7 @@ import {
   EventParticipation,
   EventResult,
   LeaderboardEntry,
+  CollegeReport,
   PaginatedResponse,
   PaginationParams as BasePaginationParams,
   AuthResponse,
@@ -236,6 +237,12 @@ export const eventResultService = {
       method: 'DELETE',
       ...options,
     }),
+};
+
+// Reports
+export const reportService = {
+  getMyCollegeReport: (options: FetchApiOptions = {}) =>
+    fetchApi<CollegeReport>('/reports/my-college', options),
 };
 
 // Auth

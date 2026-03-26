@@ -11,6 +11,7 @@ import {
   collegeService,
   eventService,
   leaderboardService,
+  reportService,
   PaginationParams,
 } from "@/api/services";
 import { LeaderboardEntry, PaginatedResponse, Participant, College, FestEvent } from "@/api/types";
@@ -22,6 +23,7 @@ type Stats = {
   colleges: number;
   events: number;
 };
+
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -123,6 +125,17 @@ export default function Dashboard() {
       await loadLeaderboard();
     } catch (error: unknown) {
       mapped_toast("Failed to recalculate", "error");
+    }
+  };
+
+  const handleGetReport = async () => {
+    try {
+      const report = await reportService.getMyCollegeReport();
+      console.log("College Report:", report);
+      mapped_toast("Report fetched successfully (check console)", "success");
+    } catch (error) {
+      mapped_toast("Failed to fetch college report", "error");
+      console.error("Failed to fetch college report", error);
     }
   };
 
@@ -238,6 +251,11 @@ export default function Dashboard() {
             {hasPermission(role, "users-manage") && topColleges !== null && (
               <Button className="w-full justify-start" variant="outline" onClick={recalculateLeaderboard}>
                 <Building2 className="mr-2 h-4 w-4" /> Recalculate Leaderboard
+              </Button>
+            )}
+            {role === "PARTICIPANT" && (
+              <Button className="w-full justify-start" variant="outline" onClick={handleGetReport}>
+                <Building2 className="mr-2 h-4 w-4" /> Get College Report
               </Button>
             )}
           </CardContent>

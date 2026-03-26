@@ -99,5 +99,86 @@ export interface AuthResponse {
   id: string;
   name: string;
   email: string;
-  role: 'ADMIN' | 'STAFF';
+  role: 'ADMIN' | 'OPERATOR' | 'DESK' | 'PARTICIPANT';
+}
+
+export interface CollegeReport {
+  college: {
+    id: number;
+    name: string;
+    code: string;
+    totalParticipants: number;
+  };
+  leaderboard: {
+    rank: number;
+    totalColleges: number;
+    pointsToRankAbove?: number;
+    pointsAheadOfNext?: number;
+  };
+  scoreBreakdown: {
+    participationPoints: number;
+    prizePoints: number;
+    adjustmentPoints: number;
+    total: number;
+  };
+  eventBreakdown: Array<{
+    eventId: number;
+    eventName: string;
+    participationPoints: number;
+    prizePoints: number;
+    total: number;
+    participants: Array<{
+      participantId: number;
+      name: string;
+      teamId: string | null;
+    }>;
+    winners: Array<{
+      participantId: number;
+      name: string;
+      position: 'FIRST' | 'SECOND' | 'THIRD';
+      points: number;
+    }>;
+  }>;
+  participantBreakdown: Array<{
+    id: number;
+    name: string;
+    participationPoints: number;
+    prizePoints: number;
+    total: number;
+  }>;
+  adjustments: Array<{
+    id: number;
+    points: number;
+    reason: string | null;
+    createdAt: string;
+  }>;
+  insights: {
+    topPerformer?: {
+      id: number;
+      name: string;
+      participationPoints: number;
+      prizePoints: number;
+      total: number;
+    };
+    bestEvent?: {
+      eventId: number;
+      eventName: string;
+      participationPoints: number;
+      prizePoints: number;
+      total: number;
+      participants: any[];
+      winners: any[];
+    };
+    worstEvent?: {
+      eventId: number;
+      eventName: string;
+      participationPoints: number;
+      prizePoints: number;
+      total: number;
+      participants: any[];
+      winners: any[];
+    };
+    totalEventsParticipated: number;
+    totalWins: number;
+  };
 }
