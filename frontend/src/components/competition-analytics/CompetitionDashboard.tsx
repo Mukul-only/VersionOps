@@ -431,7 +431,7 @@ const DrilldownDrawer = ({ data, open, onClose, isParticipantView }: any) => (
                  <span className="font-black text-base">{data?.participationPoints}</span>
                </div>
                <div className="flex justify-between items-center text-xs">
-                 <span className="font-bold text-muted-foreground uppercase tracking-widest">Prize Multiplier</span>
+                 <span className="font-bold text-muted-foreground uppercase tracking-widest">Winning Points</span>
                  <span className="font-black text-base text-amber-500">+{data?.prizePoints}</span>
                </div>
                <div className="h-px bg-border/50" />
