@@ -319,6 +319,9 @@ export default function Participants() {
     setParticipantDetailsAccessDenied(false);
   };
 
+  const { user } = useAuth();
+  const role = user?.role;
+
   return (
     <TooltipProvider>
       <div className="space-y-4">
@@ -548,15 +551,17 @@ export default function Participants() {
             </SheetHeader>
             {detailParticipant && !participantDetailsAccessDenied && (
               <div className="mt-6 space-y-6">
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div><p className="text-muted-foreground">ID</p><p className="font-mono font-medium">{detailParticipant.participantId}</p></div>
-                  <div><p className="text-muted-foreground">College</p><p className="font-medium">{detailParticipant.college?.name} ({detailParticipant.college?.code})</p></div>
-                  <div><p className="text-muted-foreground">Year</p><p className="font-medium">{detailParticipant.year}</p></div>
-                  <div><p className="text-muted-foreground">Status</p><p className="font-medium">{detailParticipant.festStatus}</p></div>
-                  <div className="col-span-2"><p className="text-muted-foreground">Email</p><p className="font-medium">{detailParticipant.email}</p></div>
-                  <div className="col-span-2"><p className="text-muted-foreground">Phone</p><p className="font-medium">{detailParticipant.phone || 'N/A'}</p></div>
-                  <div className="col-span-2"><p className="text-muted-foreground">HackerEarth</p><p className="font-medium">{detailParticipant.hackerearthUser || 'N/A'}</p></div>
-                </div>
+                {role !== "PARTICIPANT" && (
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div><p className="text-muted-foreground">ID</p><p className="font-mono font-medium">{detailParticipant.participantId}</p></div>
+                    <div><p className="text-muted-foreground">College</p><p className="font-medium">{detailParticipant.college?.name} ({detailParticipant.college?.code})</p></div>
+                    <div><p className="text-muted-foreground">Year</p><p className="font-medium">{detailParticipant.year}</p></div>
+                    <div><p className="text-muted-foreground">Status</p><p className="font-medium">{detailParticipant.festStatus}</p></div>
+                    <div className="col-span-2"><p className="text-muted-foreground">Email</p><p className="font-medium">{detailParticipant.email}</p></div>
+                    <div className="col-span-2"><p className="text-muted-foreground">Phone</p><p className="font-medium">{detailParticipant.phone || 'N/A'}</p></div>
+                    <div className="col-span-2"><p className="text-muted-foreground">HackerEarth</p><p className="font-medium">{detailParticipant.hackerearthUser || 'N/A'}</p></div>
+                  </div>
+                )}
 
                 <div>
                   <h4 className="font-medium mb-2">Event Participations</h4>
@@ -565,7 +570,7 @@ export default function Participants() {
                       {detailParticipant.participations.map(p => (
                         <div key={p.id} className="flex items-center justify-between p-2 rounded-md bg-muted/50">
                           <span className="text-sm">{getEventName(p.eventId)}</span>
-                          {p.teamId && <Badge variant="secondary" className="text-xs">Team: {p.teamId}</Badge>}
+                          {p.teamId && role !== "PARTICIPANT" && <Badge variant="secondary" className="text-xs">Team: {p.teamId}</Badge>}
                         </div>
                       ))}
                     </div>

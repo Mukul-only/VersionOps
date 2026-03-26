@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, UserCheck, Building2, CalendarDays, ArrowRight } from "lucide-react";
+import { Users, UserCheck, Building2, CalendarDays, ArrowRight, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { AppRole, hasPermission, ROUTE_PERMISSIONS } from "@/lib/rbac";
@@ -29,7 +30,7 @@ type Stats = {
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const role = user?.role as AppRole | undefined;
 
   const canNavigate = (path: string) => {
@@ -121,7 +122,10 @@ export default function Dashboard() {
   useEffect(() => {
     void loadStats();
     void loadLeaderboard();
-  }, [loadStats, loadLeaderboard]);
+    if (role === "PARTICIPANT") {
+      void handleGetReport();
+    }
+  }, [loadStats, loadLeaderboard, role]);
 
   const recalculateLeaderboard = async () => {
     try {
@@ -139,7 +143,6 @@ export default function Dashboard() {
       setReportError(null);
       const report = await reportService.getMyCollegeReport();
       setReportData(report);
-      mapped_toast("Report fetched successfully", "success");
     } catch (error) {
       setReportError("Failed to fetch college report");
       mapped_toast("Failed to fetch college report", "error");
@@ -175,13 +178,63 @@ export default function Dashboard() {
     : [];
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">Dashboard</h2>
-        <p className="text-sm text-muted-foreground">Operational overview</p>
-      </div>
+    <div className="space-y-4">
+      {role === "PARTICIPANT" ? (
+        <div className="relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6 px-8 py-8 bg-gradient-to-br from-primary/10 via-background to-muted/20 rounded-2xl border shadow-lg">
+          <div className="absolute top-0 right-0 -mt-10 -mr-10 h-64 w-64 rounded-full bg-primary/5 blur-3xl" />
+          <div className="absolute bottom-0 left-0 -mb-10 -ml-10 h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
+          
+          <div className="relative flex items-center gap-6">
+            <div className="flex flex-col gap-0 bg-background/50 p-3 rounded-2xl backdrop-blur-sm border shadow-sm">
+              <img src="/logo.png" alt="VERSION'26" className="h-14 w-auto drop-shadow-sm"/>
+            </div>
+            <div>
+              <h1 className="text-2xl font-black tracking-tight text-foreground">Welcome back, {user?.name?.split(' ')[0]}!</h1>
+              <p className="text-muted-foreground font-medium">Here's how your college performed at the event.</p>
+            </div>
+          </div>
 
-      {stats && statCards.length > 0 && (
+          <div className="relative flex items-center gap-4 ml-auto">
+            <div className="flex items-center gap-4 p-3 bg-background/60 backdrop-blur-md rounded-2xl border shadow-sm transition-all hover:shadow-md hover:bg-background/80">
+              <Avatar className="h-12 w-12 border-2 border-primary/20 ring-4 ring-primary/5">
+                <AvatarFallback className="bg-primary text-primary-foreground font-black text-lg">
+                  {user?.name?.split(' ').map(n => n[0]).join('').toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col pr-2">
+                <p className="text-sm font-black text-foreground leading-tight">{user?.name}</p>
+                <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">{role}</p>
+              </div>
+              <div className="h-8 w-px bg-border mx-1" />
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={logout}
+                className="hover:bg-destructive/10 hover:text-destructive transition-all rounded-xl"
+              >
+                <LogOut className="h-5 w-5" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-card p-6 rounded-xl border shadow-sm">
+          <div className="flex items-center gap-4">
+            <div className="flex flex-col">
+              <img src="/logo.png" alt="VERSION'26" className="h-12 w-auto"/>
+              <p className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground uppercase">
+                Management Portal
+              </p>
+            </div>
+          </div>
+          <div>
+            <h2 className="text-xl font-bold tracking-tight">Dashboard</h2>
+            <p className="text-xs text-muted-foreground text-right">Operational overview</p>
+          </div>
+        </div>
+      )}
+
+      {role !== "PARTICIPANT" && stats && statCards.length > 0 && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {statCards.map((s) => (
             <Card key={s.label}>
@@ -199,7 +252,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      <div className="grid lg:grid-cols-2 gap-6">
+      <div className="grid lg:grid-cols-2 gap-4">
         {topColleges !== null && (
           <Card>
             <CardHeader className="pb-3">
@@ -243,34 +296,30 @@ export default function Dashboard() {
           </Card>
         )}
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base font-semibold">Quick Actions</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {canNavigate("/participants") && (
-              <Button className="w-full justify-start" variant="outline" onClick={() => navigate("/participants")}>
-                <UserCheck className="mr-2 h-4 w-4" /> Check-in Participant
-              </Button>
-            )}
-            {canNavigate("/events") && (
-              <Button className="w-full justify-start" variant="outline" onClick={() => navigate("/events")}>
-                <CalendarDays className="mr-2 h-4 w-4" /> Add Participants to Event
-              </Button>
-            )}
-            {hasPermission(role, "users-manage") && topColleges !== null && (
-              <Button className="w-full justify-start" variant="outline" onClick={recalculateLeaderboard}>
-                <Building2 className="mr-2 h-4 w-4" /> Recalculate Leaderboard
-              </Button>
-            )}
-            {role === "PARTICIPANT" && (
-              <Button className="w-full justify-start" variant="outline" onClick={handleGetReport} disabled={loadingReport}>
-                <Building2 className="mr-2 h-4 w-4" /> 
-                {loadingReport ? "Fetching Report..." : "Get College Report"}
-              </Button>
-            )}
-          </CardContent>
-        </Card>
+        {role !== "PARTICIPANT" && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-semibold">Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {canNavigate("/participants") && (
+                <Button className="w-full justify-start" variant="outline" onClick={() => navigate("/participants")}>
+                  <UserCheck className="mr-2 h-4 w-4" /> Check-in Participant
+                </Button>
+              )}
+              {canNavigate("/events") && (
+                <Button className="w-full justify-start" variant="outline" onClick={() => navigate("/events")}>
+                  <CalendarDays className="mr-2 h-4 w-4" /> Add Participants to Event
+                </Button>
+              )}
+              {hasPermission(role, "users-manage") && topColleges !== null && (
+                <Button className="w-full justify-start" variant="outline" onClick={recalculateLeaderboard}>
+                  <Building2 className="mr-2 h-4 w-4" /> Recalculate Leaderboard
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {loadingReport && (
@@ -287,8 +336,7 @@ export default function Dashboard() {
       )}
 
       {reportData && (
-        <div className="mt-8 border-t pt-8">
-          <h3 className="text-xl font-bold mb-4">Competition Analytics</h3>
+        <div className="pt-2">
           <CompetitionDashboard data={reportData} />
         </div>
       )}

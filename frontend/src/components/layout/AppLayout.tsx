@@ -5,20 +5,23 @@ import { GlobalSearch } from "../GlobalSearch";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Maximize2, Minimize2, Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const isMobile = useIsMobile();
   const location = useLocation();
+  const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const isLeaderboard = location.pathname === "/leaderboard";
-  const showSidebar = !isLeaderboard || !sidebarCollapsed;
+  const isParticipant = user?.role === "PARTICIPANT";
+  const showSidebar = (!isLeaderboard || !sidebarCollapsed) && !isParticipant;
 
   return (
     <div className="flex min-h-screen w-full">
       {/* Mobile overlay */}
-      {isMobile && sidebarOpen && (
+      {isMobile && sidebarOpen && !isParticipant && (
         <div
           className="fixed inset-0 z-40 bg-black/50"
           onClick={() => setSidebarOpen(false)}
@@ -26,21 +29,23 @@ export function AppLayout({ children }: { children: ReactNode }) {
       )}
 
       {/* Sidebar */}
-      <div
-        className={cn(
-          isMobile
-            ? "fixed inset-y-0 left-0 z-50 transition-transform duration-200"
-            : "shrink-0 transition-all duration-300 overflow-hidden",
-          isMobile && !sidebarOpen && "-translate-x-full",
-          !isMobile && !showSidebar && "w-0 opacity-0"
-        )}
-      >
-        <AppSidebar onClose={isMobile ? () => setSidebarOpen(false) : undefined} />
-      </div>
+      {!isParticipant && (
+        <div
+          className={cn(
+            isMobile
+              ? "fixed inset-y-0 left-0 z-50 transition-transform duration-200"
+              : "shrink-0 transition-all duration-300 overflow-hidden",
+            isMobile && !sidebarOpen && "-translate-x-full",
+            !isMobile && !showSidebar && "w-0 opacity-0"
+          )}
+        >
+          <AppSidebar onClose={isMobile ? () => setSidebarOpen(false) : undefined} />
+        </div>
+      )}
 
       <div className="flex-1 flex flex-col min-w-0">
         {/* Mobile header */}
-        {isMobile && (
+        {isMobile && !isParticipant && (
           <header className="h-12 flex items-center border-b px-4 bg-card">
             <button
               onClick={() => setSidebarOpen(true)}
@@ -48,12 +53,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
             >
               <Menu className="h-5 w-5" />
             </button>
-            <span className="ml-3 text-sm font-bold">Version'26</span>
+            <img src="/logo.png" alt="Version'26" className="ml-3 h-8 w-auto" />
           </header>
         )}
         
         {/* Desktop Collapse Toggle (only on Leaderboard) */}
-        {!isMobile && isLeaderboard && (
+        {!isMobile && isLeaderboard && !isParticipant && (
           <div className="absolute top-4 right-4 z-50">
             <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}

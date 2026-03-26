@@ -91,11 +91,14 @@ export function AppSidebar({ onClose }: { onClose?: () => void }) {
   return (
     <aside className="w-56 h-full border-r bg-card flex flex-col shrink-0">
       <div className="p-4 border-b flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-bold tracking-tight text-foreground">
-            Version'26
-          </h1>
-          <p className="text-xs text-muted-foreground font-medium">Cognix</p>
+        <div className="flex items-center gap-2">
+          {/*<img src="/logo.png" alt="Version'26" className="h-10 w-auto" />*/}
+          <div className="flex flex-col">
+            <h1 className="text-lg font-bold tracking-tight text-foreground leading-none">
+              Version'26
+            </h1>
+            <p className="text-[10px] text-muted-foreground font-medium">Cognix</p>
+          </div>
         </div>
         {onClose && (
           <button onClick={onClose} className="p-1 rounded-md text-muted-foreground hover:bg-accent">
