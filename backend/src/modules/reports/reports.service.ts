@@ -214,11 +214,14 @@ export class ReportsService {
     }
 
     for (const event of eventBreakdown) {
+      const perParticipant =
+        event.participationPoints / event.participants.length;
+
       for (const p of event.participants) {
         const item = participantMap.get(p.participantId);
         if (!item) continue;
 
-        item.participationPoints += event.participationPoints;
+        item.participationPoints += perParticipant;
       }
 
       for (const w of event.winners) {
