@@ -9,7 +9,10 @@ export const getScoreStats = (data: CollegeReport) => ({
 
 export const getTopPerformer = (data: CollegeReport) => data.insights.topPerformer || null;
 
-export const getBestEvent = (data: CollegeReport) => data.insights.bestEvent || null;
+export const getBestEvent = (data: CollegeReport) => {
+  if (!data.eventBreakdown || data.eventBreakdown.length === 0) return null;
+  return [...data.eventBreakdown].sort((a, b) => (b.prizePoints || 0) - (a.prizePoints || 0))[0];
+};
 
 export const getWorstEvent = (data: CollegeReport) => data.insights.worstEvent || null;
 

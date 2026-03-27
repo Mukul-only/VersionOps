@@ -34,7 +34,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const HeaderSummary = ({ collegeName, rank, totalColleges, lead }: any) => (
+const HeaderSummary = ({ collegeName, rank, totalColleges, lag }: any) => (
   <Card className="overflow-hidden border-none bg-gradient-to-br from-primary/10 via-background to-muted/20 relative">
     <div className="absolute top-0 right-0 p-8 opacity-5">
       <Trophy className="h-32 w-32" />
@@ -61,9 +61,9 @@ const HeaderSummary = ({ collegeName, rank, totalColleges, lead }: any) => (
           </div>
           <div className="h-12 w-px bg-border" />
           <div className="text-center">
-            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Lead</p>
-            <p className="text-4xl font-black text-emerald-500">
-              +{lead}
+            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">{rank === 1 ? "Lead" : "Lagging By"}</p>
+            <p className={cn("text-4xl font-black", rank === 1 ? "text-emerald-500" : "text-amber-500")}>
+              {rank === 1 ? 0 : lag}
             </p>
           </div>
         </div>
@@ -75,11 +75,11 @@ const HeaderSummary = ({ collegeName, rank, totalColleges, lead }: any) => (
 const ScoreBreakdown = ({ participationPoints, prizePoints, adjustmentPoints, total }: any) => (
   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
     {[
-      { label: "Participation", value: participationPoints, icon: Activity, color: "text-blue-500", bg: "bg-blue-500/10", border: "border-blue-500/10" },
-      { label: "Prizes", value: prizePoints, icon: Trophy, color: "text-amber-500", bg: "bg-amber-500/10", border: "border-amber-500/10" },
+      { label: "Participation Points", value: participationPoints, icon: Activity, color: "text-blue-500", bg: "bg-blue-500/10", border: "border-blue-500/10" },
+      { label: "Win Points", value: prizePoints, icon: Trophy, color: "text-amber-500", bg: "bg-amber-500/10", border: "border-amber-500/10" },
       { label: "Adjustments", value: adjustmentPoints, icon: AlertCircle, color: adjustmentPoints >= 0 ? "text-emerald-500" : "text-destructive", bg: adjustmentPoints >= 0 ? "bg-emerald-500/10" : "bg-destructive/10", border: adjustmentPoints >= 0 ? "border-emerald-500/10" : "border-destructive/10" },
       { label: "Total Score", value: total, icon: TrendingUp, color: "text-primary", bg: "bg-primary/10", border: "border-primary/10" },
-    ].map((item) => (
+    ].filter(item => item.label !== "Adjustments" || item.value !== 0).map((item) => (
       <Card key={item.label} className={cn("border-none bg-card hover:shadow-md transition-all duration-300 group overflow-hidden relative")}>
         <div className={cn("absolute top-0 left-0 w-1 h-full", item.color.replace('text-', 'bg-'))} />
         <CardContent className="p-5 flex items-center gap-5">
@@ -96,8 +96,8 @@ const ScoreBreakdown = ({ participationPoints, prizePoints, adjustmentPoints, to
   </div>
 );
 
-const InsightsStrip = ({ topPerformer, bestEvent, worstEvent, totalWins, totalEvents }: any) => (
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+const InsightsStrip = ({ topPerformer, bestEvent, totalWins, totalEvents }: any) => (
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
     <Card className="bg-card border-none shadow-sm hover:shadow-md transition-shadow">
       <CardContent className="p-4">
         <div className="flex items-center gap-4">
@@ -105,7 +105,7 @@ const InsightsStrip = ({ topPerformer, bestEvent, worstEvent, totalWins, totalEv
             <Award className="h-5 w-5 text-yellow-600" />
           </div>
           <div>
-            <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mb-0.5">Success Rate</p>
+            <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mb-0.5">Performance</p>
             <p className="font-black text-base">{totalWins} Wins</p>
             <p className="text-muted-foreground text-[10px] font-bold">across {totalEvents} events</p>
           </div>
@@ -120,7 +120,7 @@ const InsightsStrip = ({ topPerformer, bestEvent, worstEvent, totalWins, totalEv
             <User className="h-5 w-5 text-primary" />
           </div>
           <div className="truncate">
-            <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mb-0.5">Top MVP</p>
+            <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mb-0.5">Top Contributor</p>
             <p className="font-black truncate text-base">{topPerformer?.name || "N/A"}</p>
             <p className="text-muted-foreground text-[10px] font-bold">Leading contributor</p>
           </div>
@@ -135,24 +135,9 @@ const InsightsStrip = ({ topPerformer, bestEvent, worstEvent, totalWins, totalEv
             <TrendingUp className="h-5 w-5 text-emerald-600" />
           </div>
           <div className="truncate">
-            <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mb-0.5">Peak Strength</p>
+            <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mb-0.5">Best Event</p>
             <p className="font-black truncate text-base">{bestEvent?.eventName || "N/A"}</p>
             <p className="text-muted-foreground text-[10px] font-bold">Highest scored event</p>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-
-    <Card className="bg-card border-none shadow-sm hover:shadow-md transition-shadow">
-      <CardContent className="p-4">
-        <div className="flex items-center gap-4">
-          <div className="p-3 bg-destructive/10 rounded-2xl">
-            <AlertCircle className="h-5 w-5 text-destructive" />
-          </div>
-          <div className="truncate">
-            <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mb-0.5">Growth Area</p>
-            <p className="font-black truncate text-base">{worstEvent?.eventName || "N/A"}</p>
-            <p className="text-muted-foreground text-[10px] font-bold">Area for improvement</p>
           </div>
         </div>
       </CardContent>
@@ -215,7 +200,7 @@ const EventChart = ({ data, onBarClick }: any) => {
       </CardHeader>
       <CardContent className="p-6">
         <div className="overflow-x-auto pb-8 scrollbar-hide">
-          <div className="h-56 flex items-end gap-3 min-w-[600px] border-b border-border/50 relative px-2">
+          <div className="h-80 pt-12 flex items-end gap-3 min-w-[600px] border-b border-border/50 relative px-2">
             {data.map((d: any) => {
               const heightPercent = Math.max((d.points / maxPoints) * 100, 4);
               return (
@@ -234,7 +219,7 @@ const EventChart = ({ data, onBarClick }: any) => {
                         ? "bg-muted-foreground/10 border border-dashed border-muted-foreground/20" 
                         : "bg-gradient-to-t from-primary via-primary/80 to-primary/60 shadow-[0_0_20px_rgba(var(--primary),0.1)] group-hover:shadow-[0_0_25px_rgba(var(--primary),0.3)]"
                     )}
-                    style={{ height: `${(heightPercent * 224) / 100}px` }}
+                    style={{ height: `${(heightPercent * 268) / 100}px` }}
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-30 rounded-t-xl" />
                   </div>
@@ -271,7 +256,7 @@ const ParticipantChart = ({ data, onBarClick, reportData }: any) => {
       </CardHeader>
       <CardContent className="p-6">
         <div className="overflow-x-auto pb-8 scrollbar-hide">
-          <div className="h-56 flex items-end gap-3 min-w-[600px] border-b border-border/50 relative px-2">
+          <div className="h-80 pt-12 flex items-end gap-3 min-w-[600px] border-b border-border/50 relative px-2">
             {data.map((d: any) => {
               const heightPercent = Math.max((d.points / maxPoints) * 100, 4);
               
@@ -314,7 +299,7 @@ const ParticipantChart = ({ data, onBarClick, reportData }: any) => {
                         ? "bg-muted-foreground/10 border border-dashed border-muted-foreground/20" 
                         : "bg-gradient-to-t from-accent-foreground via-accent-foreground/80 to-accent-foreground/60 shadow-[0_0_20px_rgba(var(--accent-foreground),0.1)] group-hover:shadow-[0_0_25px_rgba(var(--accent-foreground),0.3)]"
                     )}
-                    style={{ height: `${(heightPercent * 224) / 100}px` }}
+                    style={{ height: `${(heightPercent * 268) / 100}px` }}
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-30 rounded-t-xl" />
                   </div>
@@ -423,7 +408,7 @@ const DrilldownDrawer = ({ data, open, onClose, isParticipantView }: any) => (
           </div>
         )}
         
-        {!isParticipantView && (
+        {(true || !isParticipantView) && (
           <Card className="bg-muted/20 border-none shadow-inner rounded-3xl overflow-hidden">
             <CardContent className="p-6 space-y-4">
                <div className="flex justify-between items-center text-xs">
@@ -492,14 +477,14 @@ export function CompetitionDashboard({ data }: CompetitionDashboardProps) {
   };
 
   if (!data) return null;
-
+  console.log({data})
   return (
     <div className="space-y-4">
       <HeaderSummary
         collegeName={data.college.name}
         rank={data.leaderboard.rank}
         totalColleges={data.leaderboard.totalColleges}
-        lead={data.leaderboard.pointsAheadOfNext}
+        lag={data.leaderboard.pointsToRankAbove}
       />
 
       <ScoreBreakdown {...scoreStats} />
@@ -507,7 +492,6 @@ export function CompetitionDashboard({ data }: CompetitionDashboardProps) {
       <InsightsStrip
         topPerformer={topPerformer}
         bestEvent={bestEvent}
-        worstEvent={worstEvent}
         totalWins={totalWins}
         totalEvents={data.insights.totalEventsParticipated}
       />
