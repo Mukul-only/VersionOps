@@ -70,6 +70,7 @@ export default function Dashboard() {
         setTopColleges(null);
       } else {
         mapped_toast("Failed to load leaderboard data", "error");
+        console.error("Failed to load leaderboard data", error);
         setTopColleges(null);
       }
     }
@@ -112,6 +113,7 @@ export default function Dashboard() {
             return;
           } else {
             mapped_toast("Could not fetch checked-in count with filter", "error");
+            console.error("Could not fetch checked-in count with filter", e);
           }
         }
       }
@@ -126,8 +128,9 @@ export default function Dashboard() {
       } else {
         setStats(null);
       }
-    } catch {
+    } catch (error: unknown) {
       mapped_toast("Failed to load stats", "error", true);
+      console.error("Failed to load stats", error);
       setStats(null);
     }
   }, []);
@@ -145,8 +148,9 @@ export default function Dashboard() {
       await leaderboardService.recalculate();
       mapped_toast("Leaderboard recalculated!", "success");
       await loadLeaderboard();
-    } catch {
+    } catch (error: unknown) {
       mapped_toast("Failed to recalculate", "error");
+      console.error("Failed to recalculate", error);
     }
   };
 
@@ -157,7 +161,6 @@ export default function Dashboard() {
       const report = await reportService.getMyCollegeReport();
       setReportData(report);
     } catch (error: any) {
-      // Check if it's a 403 Forbidden (user not linked to participant)
       if (error.message?.includes('Forbidden') || error.message?.includes('not linked')) {
         setReportError("You are not linked to a participant record. Please contact the administrator.");
       } else {
@@ -178,7 +181,6 @@ export default function Dashboard() {
       ].filter((s) => s.value > 0)
     : [];
 
-  /* Rank badge colours (1=teal/indigo, 2=silver, 3=bronze, rest=muted) */
   const rankStyle = (i: number) => {
     if (i === 0) return { bg: T.tealDeep, color: T.teal };
     if (i === 1) return { bg: "#25252c", color: "#a8a8b3" };
@@ -191,12 +193,10 @@ export default function Dashboard() {
       
       {/* ── Welcome / Header banner ── */}
       {role === "PARTICIPANT" ? (
-        /* Participant: welcome hero with logout */
         <div
           className="relative flex flex-col md:flex-row md:items-center justify-between gap-6 px-6 py-6 rounded-2xl"
           style={{ background: T.surface, border: `1px solid ${T.border}` }}
         >
-          {/* Subtle teal accent left strip */}
           <div
             className="absolute left-0 top-4 bottom-4 w-0.5 rounded-full"
             style={{ background: `linear-gradient(to bottom, ${T.tealContainer}, transparent)` }}
@@ -257,7 +257,6 @@ export default function Dashboard() {
           </div>
         </div>
       ) : (
-        /* Admin: minimal page header banner */
         <div
           className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-6 py-5 rounded-2xl"
           style={{ background: T.surface, border: `1px solid ${T.border}` }}
@@ -270,7 +269,6 @@ export default function Dashboard() {
               <BarChart2 className="h-5 w-5" style={{ color: T.teal }} strokeWidth={2} />
             </div>
             <div>
-              {/* Wizardly hierarchy: small cap label above main heading */}
               <p
                 className="font-bold mb-0.5"
                 style={{ fontSize: 10, color: T.tealContainer, letterSpacing: "0.12em", textTransform: "uppercase" }}
@@ -309,7 +307,6 @@ export default function Dashboard() {
               }}
             >
               <div className="flex flex-col h-full justify-between gap-5">
-                {/* Icon in tinted container */}
                 <div
                   className="flex items-center justify-center rounded-lg self-start"
                   style={{
@@ -344,8 +341,6 @@ export default function Dashboard() {
 
       {/* ── Bottom grid: Top Colleges + Quick Actions ── */}
       <div className="grid lg:grid-cols-2 gap-3">
-        
-        {/* Top Colleges */}
         {topColleges !== null && (
           <div
             className="p-6 rounded-2xl flex flex-col"
@@ -400,7 +395,6 @@ export default function Dashboard() {
                     }}
                   >
                     <div className="flex items-center gap-3">
-                      {/* Rank badge */}
                       <span
                         className="flex items-center justify-center rounded-lg text-[10px] font-bold shrink-0"
                         style={{
@@ -434,7 +428,6 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Quick Actions */}
         {role !== "PARTICIPANT" && (
           <div
             className="p-6 rounded-2xl"
@@ -482,7 +475,6 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* ── Loading skeleton ── */}
       {loadingReport && (
         <div className="space-y-3">
           <Skeleton className="h-12 w-full rounded-2xl" style={{ background: T.surface }} />
@@ -490,7 +482,6 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* ── Report error ── */}
       {reportError && (
         <div
           className="p-4 rounded-2xl text-sm font-medium"
@@ -504,7 +495,6 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* ── College report ── */}
       {reportData && (
         <div className="pt-2">
           <CompetitionDashboard data={reportData} />
@@ -550,7 +540,6 @@ function QuickActionButton({
         el.style.borderColor = T_local.border;
       }}
     >
-      {/* Teal icon with container */}
       <span
         className="flex items-center justify-center rounded-lg shrink-0"
         style={{ background: "#1a3d37", padding: 6, color: T_local.iconColor }}

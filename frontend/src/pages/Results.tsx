@@ -36,7 +36,9 @@ export default function Results() {
   const [participations, setParticipations] = useState<EventParticipation[]>([]);
   const [results, setResults] = useState<EventResult[]>([]);
 
-  useEffect(() => { void loadEvents(); }, []);
+  useEffect(() => {
+    void loadEvents();
+  }, []);
 
   useEffect(() => {
     if (selectedEventId) {
@@ -51,12 +53,13 @@ export default function Results() {
     try {
       const response = await eventService.getAll({ take: 100 });
       setEvents(response.items);
-    } catch (error: any) {
-      if (error?.response?.status === 403) {
+    } catch (error: unknown) {
+      if ((error as any)?.response?.status === 403) {
         mapped_toast("You do not have access to events data.", "warning", true);
         return;
       }
       mapped_toast("Failed to load events.", "error");
+      console.error("Failed to load events", error);
     }
   };
 
@@ -82,12 +85,13 @@ export default function Results() {
       }
 
       setResults(resultsRes.items);
-    } catch (error: any) {
-      if (error?.response?.status === 403) {
+    } catch (error: unknown) {
+      if ((error as any)?.response?.status === 403) {
         mapped_toast("You do not have access to event data.", "warning", true);
         return;
       }
       mapped_toast("Failed to load event data.", "error");
+      console.error("Failed to load event data", error);
     }
   };
 
@@ -102,16 +106,18 @@ export default function Results() {
         </div>
       </div>
 
-      <Select value={selectedEventId} onValueChange={setSelectedEventId}>
-        <SelectTrigger className="w-[300px]">
-          <SelectValue placeholder="Select event..." />
-        </SelectTrigger>
-        <SelectContent>
-          {events.map((ev) => (
-            <SelectItem key={ev.id} value={ev.id.toString()}>{ev.name}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <div className="flex gap-4 items-center">
+        <Select value={selectedEventId} onValueChange={setSelectedEventId}>
+          <SelectTrigger className="w-[300px]">
+            <SelectValue placeholder="Select event..." />
+          </SelectTrigger>
+          <SelectContent>
+            {events.map((ev) => (
+              <SelectItem key={ev.id} value={ev.id.toString()}>{ev.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       {selectedEventId && (
         <div className="space-y-4">

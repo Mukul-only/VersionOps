@@ -49,7 +49,9 @@ export class CollegeController {
   // ────────────────────────────────────────────────
   @Public()
   @Get()
-  @ApiOperation({ summary: 'Get all colleges with filtering and pagination (Public)' })
+  @ApiOperation({
+    summary: 'Get all colleges with filtering and pagination (Public)',
+  })
   @ApiResponse({ status: 200, description: 'Colleges fetched successfully' })
   async findAll(@Query() query: QueryOptionsDto) {
     return this.collegeService.findAll(query);

@@ -20,12 +20,11 @@ import {
 } from "@/components/ui/select";
 
 import { participantService, collegeService } from "@/api/services";
- ;
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import { College } from "@/api/types";
 import { Upload } from "lucide-react";
-import {mapped_toast} from "@/lib/toast_map.ts";
+import { mapped_toast } from "@/lib/toast_map.ts";
 
 const yearEnum = z.enum(["ONE", "TWO"]);
 
@@ -67,14 +66,17 @@ export default function AddParticipant() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       await participantService.create(values);
-      mapped_toast('Participant created successfully!', 'success');
+      mapped_toast("Participant created successfully!", "success");
       navigate("/participants");
     } catch (error: any) {
       if (error?.response?.status === 403) {
-        mapped_toast('You do not have permission to perform this action.', 'warning');
+        mapped_toast(
+          "You do not have permission to perform this action.",
+          "warning",
+        );
         return;
       }
-      mapped_toast(error?.message || 'Failed to create participant.', 'error');
+      mapped_toast(error?.message || "Failed to create participant.", "error");
     }
   }
 
@@ -89,7 +91,7 @@ export default function AddParticipant() {
       try {
         const text = e.target?.result;
         if (typeof text !== "string") {
-            mapped_toast('Could not read file.', 'error')
+          mapped_toast("Could not read file.", "error");
           return;
         }
         // Assuming CSV format: name,email,collegeCode, year,hackerearthUser, phone
@@ -104,13 +106,19 @@ export default function AddParticipant() {
         const result = await participantService.bulkImport(data);
         if (result.failed > 0) {
           // TODO: Display detailed errors to the user
-            mapped_toast(`Bulk import finished: ${result.inserted} inserted, ${result.failed} failed.`, 'warning')
-            console.error(result);
-        }
-        else mapped_toast(`Bulk import finished: ${result.inserted} inserted`, "success")
+          mapped_toast(
+            `Bulk import finished: ${result.inserted} inserted, ${result.failed} failed.`,
+            "warning",
+          );
+          console.error(result);
+        } else
+          mapped_toast(
+            `Bulk import finished: ${result.inserted} inserted`,
+            "success",
+          );
         navigate("/participants");
       } catch (error: any) {
-          mapped_toast('Failed to process bulk import.', 'error')
+        mapped_toast("Failed to process bulk import.", "error");
         console.error("Failed to process bulk import.", error);
       }
     };
@@ -131,7 +139,9 @@ export default function AddParticipant() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 bg-surface-lowest/80 backdrop-blur-3xl border border-surface-highest/50 shadow-2xl rounded-3xl p-8 lg:p-12">
-          <h3 className="text-xl font-semibold text-white mb-8 border-b border-surface-highest/50 pb-4">Manual Entry</h3>
+          <h3 className="text-xl font-semibold text-white mb-8 border-b border-surface-highest/50 pb-4">
+            Manual Entry
+          </h3>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
@@ -241,7 +251,11 @@ export default function AddParticipant() {
                   )}
                 />
               </div>
-              <Button type="submit" disabled={form.formState.isSubmitting} className="w-full rounded-full bg-teal hover:bg-teal/90 text-[#00201b] font-extrabold text-sm py-6 mt-8 transition-all">
+              <Button
+                type="submit"
+                disabled={form.formState.isSubmitting}
+                className="w-full rounded-full bg-teal hover:bg-teal/90 text-[#00201b] font-extrabold text-sm py-6 mt-8 transition-all"
+              >
                 {form.formState.isSubmitting
                   ? "INITIALIZING..."
                   : "FINALIZE PARTICIPANT"}
@@ -251,7 +265,7 @@ export default function AddParticipant() {
         </div>
 
         <div className="lg:col-span-1">
-          <div 
+          <div
             onClick={() => fileInputRef.current?.click()}
             className="group cursor-pointer border-2 border-dashed border-teal/40 bg-surface-lowest/50 backdrop-blur-3xl rounded-3xl p-12 h-full min-h-[400px] flex flex-col items-center justify-center text-center transition-all duration-500 hover:border-teal hover:shadow-[0_0_30px_rgba(94,207,186,0.15)] hover:bg-teal/5"
           >
@@ -259,7 +273,9 @@ export default function AddParticipant() {
               <Upload className="w-10 h-10 text-teal" />
             </div>
             <h3 className="text-2xl font-bold text-white mb-2">Bulk Import</h3>
-            <p className="text-[#bcc9c5] text-sm mb-8 leading-relaxed">Drop your CSV dataset here to ingest multiple profiles.</p>
+            <p className="text-[#bcc9c5] text-sm mb-8 leading-relaxed">
+              Drop your CSV dataset here to ingest multiple profiles.
+            </p>
             <span className="text-xs font-bold font-mono text-teal bg-teal/10 px-5 py-3 rounded-full uppercase tracking-widest group-hover:bg-teal/20 transition-colors">
               SELECT FILE ⌘
             </span>

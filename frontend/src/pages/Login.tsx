@@ -30,16 +30,23 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!email || !password) return;
+    if (!email || !password) {
+      mapped_toast("Please fill in all fields", "error");
+      return;
+    }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) return;
+    if (!emailRegex.test(email)) {
+      mapped_toast("Please enter a valid email address", "error");
+      return;
+    }
 
     setIsSubmitting(true);
     try {
       await login({ email, password });
-    } catch (error) {
+    } catch (error: unknown) {
       mapped_toast('Invalid credentials', 'error');
+      console.error("Login Failed", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -61,7 +68,6 @@ const Login = () => {
         }}
       >
         <div className="flex items-center gap-3">
-          {/* Brand badge */}
           <div
             className="flex items-center justify-center rounded-lg"
             style={{ background: "#ffffff", padding: 6, width: 30, height: 30 }}
@@ -91,11 +97,11 @@ const Login = () => {
         </div>
 
         <div className="flex gap-5 text-xs font-medium" style={{ color: T.textSecondary }}>
-          {([
+          {[
             { label: "Leaderboard", icon: <Trophy className="h-3.5 w-3.5" /> },
-            { label: "Events",      icon: <CalendarDays className="h-3.5 w-3.5" /> },
-            { label: "Colleges",    icon: <GraduationCap className="h-3.5 w-3.5" /> },
-          ]).map(({ label, icon }) => (
+            { label: "Events", icon: <CalendarDays className="h-3.5 w-3.5" /> },
+            { label: "Colleges", icon: <GraduationCap className="h-3.5 w-3.5" /> },
+          ].map(({ label, icon }) => (
             <Link
               key={label}
               to={`/${label.toLowerCase()}`}
@@ -111,8 +117,6 @@ const Login = () => {
 
       {/* ── Main centered content ── */}
       <div className="flex-1 flex items-center justify-center p-4 relative z-0">
-
-        {/* Teal ambient glow — Wizardly signature */}
         <div
           className="absolute pointer-events-none"
           style={{
@@ -135,7 +139,6 @@ const Login = () => {
             boxShadow: "0 0 48px rgba(94,207,186,0.04), 0 20px 60px rgba(0,0,0,0.5)",
           }}
         >
-          {/* Secure badge — top right */}
           <div
             className="absolute top-7 right-7 flex items-center gap-1.5 px-3 py-1.5 rounded-full"
             style={{
@@ -152,7 +155,6 @@ const Login = () => {
             </span>
           </div>
 
-          {/* Brand icon + Heading */}
           <div className="mb-8 text-center mt-2 flex flex-col items-center">
             <div
               className="mb-5 flex items-center justify-center rounded-xl"
@@ -166,7 +168,6 @@ const Login = () => {
               <Command className="w-5 h-5" style={{ color: T.teal }} strokeWidth={2.5} />
             </div>
 
-            {/* Wizardly hierarchy: small cap label above main heading */}
             <p
               className="font-bold mb-2"
               style={{
@@ -189,9 +190,7 @@ const Login = () => {
             </p>
           </div>
 
-          {/* ── Form ── */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Email */}
             <div className="space-y-2">
               <Label
                 htmlFor="email"
@@ -216,7 +215,6 @@ const Login = () => {
               />
             </div>
 
-            {/* Password */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label
@@ -252,10 +250,9 @@ const Login = () => {
               />
             </div>
 
-            {/* Submit */}
             <Button
               type="submit"
-              className="w-full h-11 mt-4 rounded-xl font-bold text-sm"
+              className="w-full h-11 mt-4 rounded-xl font-bold text-sm bg-teal-400 hover:bg-teal-500 text-black border-none"
               disabled={isSubmitting}
             >
               {isSubmitting ? (
@@ -271,7 +268,6 @@ const Login = () => {
               )}
             </Button>
 
-            {/* Register link */}
             <div className="text-center mt-4">
               <p className="text-sm" style={{ color: T.textSecondary }}>
                 Don't have an account?{' '}
@@ -290,7 +286,6 @@ const Login = () => {
         </div>
       </div>
 
-      {/* ── Footer ── */}
       <footer
         className="w-full py-5 px-6 sm:px-10 flex flex-col sm:flex-row items-center justify-between text-xs font-medium"
         style={{

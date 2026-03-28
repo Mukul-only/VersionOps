@@ -4,7 +4,6 @@ import {
   getScoreStats,
   getTopPerformer,
   getBestEvent,
-  getWorstEvent,
   getTotalWins,
   getEventChartData,
   getParticipantChartData,
@@ -22,7 +21,6 @@ import {
 } from "@/components/ui/sheet";
 import { 
   Trophy, 
-  Target, 
   User, 
   TrendingUp, 
   Award, 
@@ -30,11 +28,12 @@ import {
   Activity,
   BarChart3,
   Users2,
-  MinusCircle
+  MinusCircle,
+  Target
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const HeaderSummary = ({ collegeName, rank, lag }: any) => (
+const HeaderSummary = ({ collegeName, rank, totalColleges, lag }: any) => (
   <div className="relative p-10 rounded-[3rem] bg-[#0a0a0a] overflow-hidden group mb-6 shadow-2xl ring-1 ring-white/5">
     <div className="absolute inset-0 grain-overlay opacity-20 pointer-events-none" />
     <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/10 rounded-full blur-[100px]" />
@@ -54,14 +53,15 @@ const HeaderSummary = ({ collegeName, rank, lag }: any) => (
           <div className="flex items-center gap-2">
             <Trophy className="h-5 w-5 text-amber-500" />
             <span className="text-3xl font-black text-white tracking-tighter">#{rank}</span>
+            {totalColleges && <span className="text-xs font-bold text-zinc-600 mt-2">/{totalColleges}</span>}
           </div>
         </div>
         <div className="w-[1px] h-10 bg-white/5 mx-2" />
         <div className="flex flex-col items-center">
-          <p className="text-[10px] text-zinc-500 uppercase font-black tracking-[0.2em] mb-1">Lag</p>
+          <p className="text-[10px] text-zinc-500 uppercase font-black tracking-[0.2em] mb-1">{rank === 1 ? "Lead" : "Lag"}</p>
           <div className="flex items-center gap-2">
             <MinusCircle className="h-5 w-5 text-zinc-500" />
-            <span className="text-3xl font-black text-white tracking-tighter">{lag} pts</span>
+            <span className="text-3xl font-black text-white tracking-tighter">{rank === 1 ? 0 : lag} pts</span>
           </div>
         </div>
       </div>
@@ -270,7 +270,7 @@ const EventChart = ({ data, onBarClick }: any) => {
   );
 };
 
-const ParticipantChart = ({ data, onBarClick }: any) => {
+const ParticipantChart = ({ data, onBarClick, reportData }: any) => {
   const maxPoints = Math.max(...data.map((d: any) => d.points), 10);
   
   return (
@@ -291,6 +291,19 @@ const ParticipantChart = ({ data, onBarClick }: any) => {
           <div className="h-full flex items-end gap-6 min-w-[600px] border-b border-white/[0.05] relative px-4 pb-10 pt-20">
             {data.map((d: any) => {
               const heightPercent = Math.max((d.points / maxPoints) * 100, 4);
+              
+              // Logic from remote: find events and winners for this participant
+              const participantEvents = reportData?.eventBreakdown?.filter((event: any) => 
+                event.participants.some((p: any) => p.participantId === d.id)
+              ) || [];
+
+              const participantWinners = reportData?.eventBreakdown?.flatMap((event: any) => 
+                event.winners.filter((w: any) => w.participantId === d.id).map((w: any) => ({
+                  ...w,
+                  eventName: event.eventName
+                }))
+              ) || [];
+
               return (
                 <div 
                   key={d.id} 
@@ -300,8 +313,13 @@ const ParticipantChart = ({ data, onBarClick }: any) => {
                     total: d.points,
                     participationPoints: d.raw.participationPoints,
                     prizePoints: d.raw.prizePoints,
-                    participants: [],
-                    winners: []
+                    participants: participantEvents.map((e: any) => ({ participantId: e.eventId, name: e.eventName })),
+                    winners: participantWinners.map((w: any) => ({ 
+                      participantId: w.participantId, 
+                      name: w.eventName, 
+                      position: w.position, 
+                      points: w.points 
+                    }))
                   })}
                 >
                   <div className="absolute -top-12 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-primary text-primary-foreground text-[10px] px-4 py-2 rounded-full border-none shadow-[0_0_20px_rgba(var(--primary),0.3)] z-50 whitespace-nowrap font-black scale-90 group-hover:scale-100">
@@ -472,7 +490,6 @@ export function CompetitionDashboard({ data }: CompetitionDashboardProps) {
   const scoreStats = useMemo(() => getScoreStats(data), [data]);
   const topPerformer = useMemo(() => getTopPerformer(data), [data]);
   const bestEvent = useMemo(() => getBestEvent(data), [data]);
-  const worstEvent = useMemo(() => getWorstEvent(data), [data]);
   const totalWins = useMemo(() => getTotalWins(data), [data]);
   
   const eventChartData = useMemo(() => {
@@ -504,7 +521,7 @@ export function CompetitionDashboard({ data }: CompetitionDashboardProps) {
   };
 
   if (!data) return null;
-  console.log({data})
+
   return (
     <div className="space-y-4">
       <HeaderSummary

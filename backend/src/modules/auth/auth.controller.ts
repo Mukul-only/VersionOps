@@ -44,7 +44,8 @@ export class AuthController {
   @ApiBody({ type: RegisterDto })
   @ApiResponse({
     status: 201,
-    description: 'Registration successful. Returns user and sets HttpOnly cookie.',
+    description:
+      'Registration successful. Returns user and sets HttpOnly cookie.',
     type: AuthResponseDto,
   })
   @ApiResponse({

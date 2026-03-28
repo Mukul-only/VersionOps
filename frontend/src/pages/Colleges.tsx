@@ -21,13 +21,14 @@ import {
 import EditCollegeDialog from "./EditCollegeDialog";
 import AdjustPointsDialog from "./AdjustPointsDialog";
 import { Input } from "@/components/ui/input";
-import {mapped_toast} from "@/lib/toast_map.ts";
+import { mapped_toast } from "@/lib/toast_map.ts";
 
 export default function Colleges() {
   const { user } = useAuth();
   const role = user?.role;
   const canEdit = hasPermission(role, PERMISSIONS.COLLEGE_UPDATE);
   const canDelete = hasPermission(role, PERMISSIONS.COLLEGE_DELETE);
+
   const [colleges, setColleges] = useState<College[]>([]);
   const [selectedCollege, setSelectedCollege] = useState<College | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -43,7 +44,7 @@ export default function Colleges() {
     try {
       const response = await collegeService.getAll({ take: 100, includeRelations: true, search });
       setColleges(response.items);
-    } catch (error) {
+    } catch (error: any) {
       if (error?.response?.status === 403) {
         mapped_toast('You do not have access to colleges data.', 'warning', true)
         return;
@@ -58,7 +59,7 @@ export default function Colleges() {
       const details = await collegeService.getById(college.id, true);
       setSelectedCollege(details);
       setIsSheetOpen(true);
-    } catch (error) {
+    } catch (error: any) {
       if (error?.response?.status === 403) {
         mapped_toast('You do not have permission to perform this action.', 'warning')
         return;
@@ -83,7 +84,7 @@ export default function Colleges() {
       await collegeService.delete(collegeId);
       mapped_toast('College deleted successfully.', 'success');
       void loadColleges();
-    } catch (error) {
+    } catch (error: any) {
       if (error?.response?.status === 403) {
         mapped_toast('You do not have permission to perform this action.', 'warning')
         return;

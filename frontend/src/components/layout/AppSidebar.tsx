@@ -30,15 +30,28 @@ import {
 } from "@/components/ui/tooltip";
 
 const navItems = [
-  { to: "/", icon: LayoutDashboard, label: "Dashboard", requiredPermissions: ["dashboard-read"] },
+  {
+    to: "/",
+    icon: LayoutDashboard,
+    label: "Dashboard",
+    requiredPermissions: ["dashboard-read"],
+  },
   {
     label: "Participants",
     icon: Users,
     basePath: "/participants",
     requiredPermissions: ["participant-read", "participant-create"],
     subItems: [
-      { to: "/participants", label: "View Participants", requiredPermissions: ["participant-read"] },
-      { to: "/participants/add", label: "Add Participant", requiredPermissions: ["participant-create"] },
+      {
+        to: "/participants",
+        label: "View Participants",
+        requiredPermissions: ["participant-read"],
+      },
+      {
+        to: "/participants/add",
+        label: "Add Participant",
+        requiredPermissions: ["participant-create"],
+      },
     ],
   },
   {
@@ -47,8 +60,16 @@ const navItems = [
     basePath: "/colleges",
     requiredPermissions: ["college-read", "college-create"],
     subItems: [
-      { to: "/colleges", label: "View Colleges", requiredPermissions: ["college-read"] },
-      { to: "/colleges/add", label: "Add College", requiredPermissions: ["college-create"] },
+      {
+        to: "/colleges",
+        label: "View Colleges",
+        requiredPermissions: ["college-read"],
+      },
+      {
+        to: "/colleges/add",
+        label: "Add College",
+        requiredPermissions: ["college-create"],
+      },
     ],
   },
   {
@@ -57,13 +78,36 @@ const navItems = [
     basePath: "/events",
     requiredPermissions: ["event-read", "event-create"],
     subItems: [
-      { to: "/events", label: "View Events", requiredPermissions: ["event-read"] },
-      { to: "/events/add", label: "Add Event", requiredPermissions: ["event-create"] },
+      {
+        to: "/events",
+        label: "View Events",
+        requiredPermissions: ["event-read"],
+      },
+      {
+        to: "/events/add",
+        label: "Add Event",
+        requiredPermissions: ["event-create"],
+      },
     ],
   },
-  { to: "/leaderboard", icon: Trophy, label: "Leaderboard", requiredPermissions: ["leaderboard-manage"] },
-  { to: "/results", icon: Medal, label: "Results", requiredPermissions: ["result-manage"] },
-  { to: "/users", icon: UserCog, label: "Users", requiredPermissions: ["users-manage"] },
+  {
+    to: "/leaderboard",
+    icon: Trophy,
+    label: "Leaderboard",
+    requiredPermissions: ["leaderboard-manage"],
+  },
+  {
+    to: "/results",
+    icon: Medal,
+    label: "Results",
+    requiredPermissions: ["result-manage"],
+  },
+  {
+    to: "/users",
+    icon: UserCog,
+    label: "Users",
+    requiredPermissions: ["users-manage"],
+  },
 ];
 
 export function AppSidebar({ onClose }: { onClose?: () => void }) {
@@ -79,7 +123,7 @@ export function AppSidebar({ onClose }: { onClose?: () => void }) {
 
   useEffect(() => {
     const activeSection = navItems.find(
-      (item) => item.basePath && location.pathname.startsWith(item.basePath)
+      (item) => item.basePath && location.pathname.startsWith(item.basePath),
     );
     if (activeSection) {
       setOpenSections((prev) => ({ ...prev, [activeSection.label]: true }));
@@ -160,7 +204,9 @@ export function AppSidebar({ onClose }: { onClose?: () => void }) {
         {navItems
           .filter((item) => {
             if (item.subItems) {
-              return item.subItems.some((sub) => canSee(sub.requiredPermissions));
+              return item.subItems.some((sub) =>
+                canSee(sub.requiredPermissions),
+              );
             }
             return canSee(item.requiredPermissions);
           })
@@ -186,10 +232,15 @@ export function AppSidebar({ onClose }: { onClose?: () => void }) {
                 </CollapsibleTrigger>
                 <CollapsibleContent className="pt-1 pb-1">
                   {/* Indent guide line */}
-                  <div className="relative ml-[18px] pl-4" style={{ borderLeft: "1px solid #1e1e20" }}>
+                  <div
+                    className="relative ml-[18px] pl-4"
+                    style={{ borderLeft: "1px solid #1e1e20" }}
+                  >
                     <div className="space-y-0.5">
                       {item.subItems
-                        .filter((subItem) => canSee(subItem.requiredPermissions))
+                        .filter((subItem) =>
+                          canSee(subItem.requiredPermissions),
+                        )
                         .map((subItem) => (
                           <NavLink
                             key={subItem.to}
@@ -202,19 +253,29 @@ export function AppSidebar({ onClose }: { onClose?: () => void }) {
                               <div
                                 className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150"
                                 style={{
-                                  background: isActive ? "#1a3d37" : "transparent",
+                                  background: isActive
+                                    ? "#1a3d37"
+                                    : "transparent",
                                   color: isActive ? "#7cebd6" : "#6b7280",
                                 }}
                                 onMouseEnter={(e) => {
                                   if (!isActive) {
-                                    (e.currentTarget as HTMLElement).style.background = "#161618";
-                                    (e.currentTarget as HTMLElement).style.color = "#e3e3e3";
+                                    (
+                                      e.currentTarget as HTMLElement
+                                    ).style.background = "#161618";
+                                    (
+                                      e.currentTarget as HTMLElement
+                                    ).style.color = "#e3e3e3";
                                   }
                                 }}
                                 onMouseLeave={(e) => {
                                   if (!isActive) {
-                                    (e.currentTarget as HTMLElement).style.background = "transparent";
-                                    (e.currentTarget as HTMLElement).style.color = "#6b7280";
+                                    (
+                                      e.currentTarget as HTMLElement
+                                    ).style.background = "transparent";
+                                    (
+                                      e.currentTarget as HTMLElement
+                                    ).style.color = "#6b7280";
                                   }
                                 }}
                               >
@@ -255,16 +316,21 @@ export function AppSidebar({ onClose }: { onClose?: () => void }) {
                   />
                 )}
               </NavLink>
-            )
+            ),
           )}
       </nav>
 
       {/* ── Bottom: Search + User ── */}
-      <div className="px-3 py-4 space-y-3" style={{ borderTop: "1px solid #1e1e20" }}>
+      <div
+        className="px-3 py-4 space-y-3"
+        style={{ borderTop: "1px solid #1e1e20" }}
+      >
         {/* Search shortcut — Wizardly pill style */}
         <button
           onClick={() =>
-            document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true }))
+            document.dispatchEvent(
+              new KeyboardEvent("keydown", { key: "k", ctrlKey: true }),
+            )
           }
           className="flex items-center gap-2 w-full px-3 py-2.5 rounded-xl text-xs font-medium transition-all duration-150"
           style={{
@@ -306,12 +372,20 @@ export function AppSidebar({ onClose }: { onClose?: () => void }) {
             className="flex items-center gap-3 px-2 py-2.5 rounded-xl"
             style={{ background: "#111113", border: "1px solid #1e1e20" }}
           >
-            <Avatar className="h-8 w-8 rounded-lg shrink-0" style={{ border: "1px solid #222224" }}>
+            <Avatar
+              className="h-8 w-8 rounded-lg shrink-0"
+              style={{ border: "1px solid #222224" }}
+            >
               <AvatarFallback
                 className="text-[10px] font-bold rounded-lg"
                 style={{ background: "#1a3d37", color: "#7cebd6" }}
               >
-                {user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
+                {user.name
+                  .split(" ")
+                  .map((n) => n[0])
+                  .join("")
+                  .toUpperCase()
+                  .slice(0, 2)}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
@@ -347,7 +421,11 @@ export function AppSidebar({ onClose }: { onClose?: () => void }) {
               </TooltipTrigger>
               <TooltipContent
                 className="font-medium text-xs rounded-lg"
-                style={{ background: "#1e1e22", color: "#e3e3e3", border: "1px solid #2e2e34" }}
+                style={{
+                  background: "#1e1e22",
+                  color: "#e3e3e3",
+                  border: "1px solid #2e2e34",
+                }}
               >
                 <p>Logout securely</p>
               </TooltipContent>
@@ -392,7 +470,10 @@ function NavItemButton({
           {icon}
         </span>
       ) : (
-        <span className="shrink-0" style={{ color: hovered ? "#e3e3e3" : "#6b7280" }}>
+        <span
+          className="shrink-0"
+          style={{ color: hovered ? "#e3e3e3" : "#6b7280" }}
+        >
           {icon}
         </span>
       )}

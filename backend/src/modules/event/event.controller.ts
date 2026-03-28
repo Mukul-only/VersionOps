@@ -72,7 +72,9 @@ export class EventController {
   // ────────────────────────────────────────────────
   @Public()
   @Get()
-  @ApiOperation({ summary: 'Get all events with filtering and pagination (Public)' })
+  @ApiOperation({
+    summary: 'Get all events with filtering and pagination (Public)',
+  })
   @ApiResponse({ status: 200, description: 'Events fetched successfully' })
   async findAll(@Query() query: QueryOptionsDto) {
     return this.eventService.findAll(query);

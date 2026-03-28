@@ -1,17 +1,19 @@
-import React, {useContext, useState, useEffect, useCallback} from 'react';
-import { authService } from '@/api/services';
-import { AuthResponse, LoginPayload } from '@/api/types';
-import { AuthContext, AuthContextType } from './AuthContextType';
+import React, { useContext, useState, useEffect, useCallback } from "react";
+import { authService } from "@/api/services";
+import { AuthResponse, LoginPayload } from "@/api/types";
+import { AuthContext, AuthContextType } from "./AuthContextType";
 
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [user, setUser] = useState<AuthResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -35,7 +37,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(userData);
   };
 
-  const register = async (data: { name: string; email: string; password: string }) => {
+  const register = async (data: {
+    name: string;
+    email: string;
+    password: string;
+  }) => {
     const userData = await authService.register(data);
     setUser(userData);
   };
@@ -44,14 +50,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await authService.logout();
     } catch (error) {
-      console.error('Logout failed:', error);
+      console.error("Logout failed:", error);
     } finally {
       setUser(null);
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, register, logout, refreshUser }}>
+    <AuthContext.Provider
+      value={{ user, isLoading, login, register, logout, refreshUser }}
+    >
       {children}
     </AuthContext.Provider>
   );

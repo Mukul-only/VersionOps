@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Response } from 'express';
 
@@ -7,7 +11,10 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { AuthResponseDto } from './dto/auth-response.dto';
 
-import { verifyPassword, hashPassword } from 'src/common/utils/auth/password.util';
+import {
+  verifyPassword,
+  hashPassword,
+} from 'src/common/utils/auth/password.util';
 import { generateAccessToken } from 'src/common/utils/auth/jwt.util';
 import { clearAuthCookie } from 'src/common/utils/auth/cookie.util';
 

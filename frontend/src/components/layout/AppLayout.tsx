@@ -58,8 +58,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 to={to}
                 className="flex items-center gap-1.5 text-xs font-medium transition-colors duration-150"
                 style={{ color: location.pathname === to ? "#7cebd6" : "#6b7280" }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#e3e3e3"; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = location.pathname === to ? "#7cebd6" : "#6b7280"; }}
               >
                 {icon}{label}
               </Link>
@@ -68,8 +66,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
               to="/login"
               className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition-all duration-150"
               style={{ background: "#1a3d37", color: "#7cebd6", border: "1px solid #5ecfba25" }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#1f4a42"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "#1a3d37"; }}
             >
               <LogIn className="h-3.5 w-3.5" /> Sign in
             </Link>
@@ -96,11 +92,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
             isMobile && !sidebarOpen && "-translate-x-full",
             !isMobile && !showSidebar && "w-0 opacity-0"
           )}
-          style={
-            !isMobile
-              ? { borderRight: showSidebar ? undefined : "none" }
-              : undefined
-          }
         >
           <AppSidebar onClose={isMobile ? () => setSidebarOpen(false) : undefined} />
         </div>
@@ -124,14 +115,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
               onClick={() => setSidebarOpen(true)}
               className="p-1.5 rounded-lg transition-colors duration-150"
               style={{ color: "#6b7280" }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.background = "#1e1e22";
-                (e.currentTarget as HTMLElement).style.color = "#e3e3e3";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.background = "transparent";
-                (e.currentTarget as HTMLElement).style.color = "#6b7280";
-              }}
             >
               <Menu className="h-4 w-4" />
             </button>
@@ -180,14 +163,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 border: "1px solid #222224",
                 color: "#6b7280",
               }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.borderColor = "#5ecfba40";
-                (e.currentTarget as HTMLElement).style.color = "#7cebd6";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.borderColor = "#222224";
-                (e.currentTarget as HTMLElement).style.color = "#6b7280";
-              }}
               title={sidebarCollapsed ? "Show Sidebar" : "Hide Sidebar"}
             >
               {sidebarCollapsed ? (
@@ -210,7 +185,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
           {children}
         </main>
       </div>
-
       <GlobalSearch />
     </div>
   );

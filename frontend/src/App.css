@@ -30,7 +30,8 @@
 }
 
 /* Input focus style override */
-input:focus, textarea:focus {
+input:focus,
+textarea:focus {
   border-color: rgba(94, 207, 186, 0.4) !important;
   box-shadow: 0 0 0 3px rgba(94, 207, 186, 0.08) !important;
 }

@@ -5,9 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Version 26 | Cognix — Dashboard</title>
 
-    <meta name="description" content="Version 26 internal management portal powered by Cognix — participants, events, colleges, leaderboard." />
+    <meta
+      name="description"
+      content="Version 26 internal management portal powered by Cognix — participants, events, colleges, leaderboard."
+    />
     <meta property="og:title" content="Version 26 | Cognix Dashboard" />
-    <meta property="og:description" content="An internal operational dashboard to manage Version '26 execution." />
+    <meta
+      property="og:description"
+      content="An internal operational dashboard to manage Version '26 execution."
+    />
     <meta property="og:type" content="website" />
 
     <!-- Preconnect for Manrope font (Wizardly design system) -->
@@ -15,7 +21,30 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   </head>
 
-  <body style="background:#0d0d0d; margin:0; padding:0;">
+  <body style="background: #0d0d0d; margin: 0; padding: 0">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- TODO: Set the document title to the name of your application -->
+    <title>VersionOps</title>
+
+    <!-- TODO: Update og:title to match your application name -->
+    <meta property="og:title" content="versionOps" />
+    <meta
+      property="og:description"
+      content="An internal app to manage version'26 execution"
+    />
+    <meta property="og:type" content="website" />
+  </head>
+
+  <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

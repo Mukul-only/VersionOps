@@ -3,7 +3,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppLayout } from "./components/layout/AppLayout";
 import { AuthProvider } from "./contexts/AuthContext";
-import { ProtectedRoute, PublicRoute, RbacRoute } from "./components/auth/RouteGuards";
+import {
+  ProtectedRoute,
+  PublicRoute,
+  RbacRoute,
+} from "./components/auth/RouteGuards";
 import Dashboard from "./pages/Dashboard";
 import Participants from "./pages/Participants";
 import AddParticipant from "./pages/AddParticipant";
@@ -44,10 +48,38 @@ const App = () => (
               }
             />
             {/* Public routes — no auth required */}
-            <Route path="/leaderboard" element={<AppLayout><Leaderboard /></AppLayout>} />
-            <Route path="/events" element={<AppLayout><Events /></AppLayout>} />
-            <Route path="/colleges" element={<AppLayout><Colleges /></AppLayout>} />
-            <Route path="/results" element={<AppLayout><Results /></AppLayout>} />
+            <Route
+              path="/leaderboard"
+              element={
+                <AppLayout>
+                  <Leaderboard />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/events"
+              element={
+                <AppLayout>
+                  <Events />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/colleges"
+              element={
+                <AppLayout>
+                  <Colleges />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/results"
+              element={
+                <AppLayout>
+                  <Results />
+                </AppLayout>
+              }
+            />
 
             <Route
               path="/*"

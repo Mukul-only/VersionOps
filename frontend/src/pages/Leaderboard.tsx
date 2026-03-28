@@ -19,20 +19,26 @@ export default function Leaderboard() {
   const [search, setSearch] = useState("");
   const [recalculating, setRecalculating] = useState(false);
 
-  useEffect(() => { void loadLeaderboard(); }, []);
+  useEffect(() => {
+    void loadLeaderboard();
+  }, []);
 
   const loadLeaderboard = async () => {
     try {
       const response = await leaderboardService.get({
-        take: 100, includeRelations: true,
-        suppressErrorToast: true, suppressRedirect: true, suppressForbiddenRedirect: true,
+        take: 100,
+        includeRelations: true,
+        suppressErrorToast: true,
+        suppressRedirect: true,
+        suppressForbiddenRedirect: true,
       });
       setLeaderboard(response.items);
-    } catch (error: any) {
-      if (error.message === "Unauthorized" || error.message === "Forbidden") {
+    } catch (error: unknown) {
+      if ((error as any)?.message === "Unauthorized" || (error as any)?.message === "Forbidden") {
         mapped_toast("you do have access to leaderboard", "warning", true);
       } else {
         mapped_toast("Failed to load leaderboard", "error");
+        console.error("Failed to load leaderboard", error);
       }
     }
   };
@@ -43,8 +49,9 @@ export default function Leaderboard() {
       await leaderboardService.recalculate();
       mapped_toast("Leaderboard recalculated", "success");
       await loadLeaderboard();
-    } catch {
+    } catch (error: unknown) {
       mapped_toast("Failed to recalculate leaderboard", "error");
+      console.error("Failed to recalculate leaderboard", error);
     } finally {
       setRecalculating(false);
     }
@@ -57,7 +64,6 @@ export default function Leaderboard() {
   });
 
   const top3 = filtered.slice(0, 3);
-  const rest = filtered.slice(3);
 
   return (
     <div className="space-y-6">

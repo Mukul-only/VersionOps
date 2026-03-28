@@ -13,12 +13,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Upload } from "lucide-react";
 import { collegeService } from "@/api/services";
- ;
 import { useNavigate } from "react-router-dom";
 import { College } from "@/api/types";
 import React, { useEffect, useState } from "react";
 import Papa from "papaparse";
-import {mapped_toast} from "@/lib/toast_map.ts";
+import { mapped_toast } from "@/lib/toast_map.ts";
 
 const formSchema = z.object({
   code: z.string().min(2, "Code must be at least 2 characters.").max(10),
@@ -58,22 +57,25 @@ export default function AddCollege({ college, onSuccess }: AddCollegeProps) {
       if (isEditMode && college) {
         const { code, ...updateData } = values;
         await collegeService.update(college.id, updateData as { name: string });
-        mapped_toast('College updated successfully.', 'success')
+        mapped_toast("College updated successfully.", "success");
       } else {
         await collegeService.create(values as { code: string; name: string });
-        mapped_toast('College created successfully.', 'success')
+        mapped_toast("College created successfully.", "success");
       }
       if (onSuccess) {
         onSuccess();
       } else {
         navigate("/colleges");
       }
-    } catch (error) {
+    } catch (error: any) {
       if (error?.response?.status === 403) {
-        mapped_toast('You do not have permission to perform this action.', 'warning')
+        mapped_toast(
+          "You do not have permission to perform this action.",
+          "warning",
+        );
         return;
       }
-      mapped_toast('Failed to save college.', 'error')
+      mapped_toast("Failed to save college.", "error");
       console.error("Failed to save college", error);
     }
   }
@@ -86,7 +88,7 @@ export default function AddCollege({ college, onSuccess }: AddCollegeProps) {
 
   const handleCsvImport = async () => {
     if (!csvFile) {
-      mapped_toast('Please select a CSV file to import.', 'warning')
+      mapped_toast("Please select a CSV file to import.", "warning");
       return;
     }
 
@@ -98,16 +100,16 @@ export default function AddCollege({ college, onSuccess }: AddCollegeProps) {
         // Skip header row
         const collegeData = dataRows.slice(1);
 
-        const colleges = collegeData.map((row) => {
+        const collegesToImport = collegeData.map((row) => {
           const [code, ...nameParts] = row;
           const name = nameParts.join(",").trim();
           return { code: code?.trim(), name };
         });
 
-        const creationPromises = colleges
+        const creationPromises = collegesToImport
           .filter((c) => c.code && c.name)
-          .map((college) =>
-            collegeService.create(college as { code: string; name: string })
+          .map((c) =>
+            collegeService.create(c as { code: string; name: string }),
           );
 
         const promiseResults = await Promise.allSettled(creationPromises);
@@ -124,12 +126,14 @@ export default function AddCollege({ college, onSuccess }: AddCollegeProps) {
           }
         });
 
-
         if (successfulImports > 0) {
-          mapped_toast(`${successfulImports} colleges imported successfully.`, 'success')
+          mapped_toast(
+            `${successfulImports} colleges imported successfully.`,
+            "success",
+          );
         }
         if (failedImports > 0) {
-          mapped_toast(`${failedImports} colleges failed to import.`, 'error')
+          mapped_toast(`${failedImports} colleges failed to import.`, "error");
           console.error(`${failedImports} colleges failed to import.`);
         }
 
@@ -143,7 +147,7 @@ export default function AddCollege({ college, onSuccess }: AddCollegeProps) {
         }
       },
       error: (error) => {
-        mapped_toast('Error parsing CSV file.', 'error')
+        mapped_toast("Error parsing CSV file.", "error");
         console.error(`Error parsing CSV file: `, error);
         setIsImporting(false);
       },
@@ -157,14 +161,18 @@ export default function AddCollege({ college, onSuccess }: AddCollegeProps) {
           {isEditMode ? "Edit College" : "New College"}
         </h2>
         <p className="text-sm text-[#bcc9c5] uppercase tracking-widest font-semibold flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-teal shadow-[0_0_10px_rgba(94,207,186,0.5)]"></span>
+          <span className="w-2 h-2 rounded-full bg-teal-400 shadow-[0_0_10px_rgba(94,207,186,0.5)]"></span>
           {isEditMode ? "Update Details" : "College Registration"}
         </p>
       </div>
 
-      <div className={`grid grid-cols-1 ${!isEditMode ? 'lg:grid-cols-3' : ''} gap-8`}>
-        <div className={`${!isEditMode ? 'lg:col-span-2' : ''} bg-surface-lowest/80 backdrop-blur-3xl border border-surface-highest/50 shadow-2xl rounded-3xl p-8 lg:p-12`}>
-          <h3 className="text-xl font-semibold text-white mb-8 border-b border-surface-highest/50 pb-4">
+      <div
+        className={`grid grid-cols-1 ${!isEditMode ? "lg:grid-cols-3" : ""} gap-8`}
+      >
+        <div
+          className={`${!isEditMode ? "lg:col-span-2" : ""} bg-zinc-900/80 backdrop-blur-3xl border border-zinc-800/50 shadow-2xl rounded-3xl p-8 lg:p-12`}
+        >
+          <h3 className="text-xl font-semibold text-white mb-8 border-b border-zinc-800/50 pb-4">
             {isEditMode ? "Modify Details" : "Manual Entry"}
           </h3>
           <Form {...form}>
@@ -200,14 +208,18 @@ export default function AddCollege({ college, onSuccess }: AddCollegeProps) {
                   </FormItem>
                 )}
               />
-              <Button type="submit" disabled={form.formState.isSubmitting} className="w-full rounded-full bg-teal hover:bg-teal/90 text-[#00201b] font-extrabold text-sm py-6 mt-8 transition-all">
+              <Button
+                type="submit"
+                disabled={form.formState.isSubmitting}
+                className="w-full rounded-full bg-teal-400 hover:bg-teal-500 text-black font-extrabold text-sm py-6 mt-8 transition-all border-none"
+              >
                 {form.formState.isSubmitting
                   ? isEditMode
                     ? "SAVING..."
                     : "INITIALIZING..."
                   : isEditMode
-                  ? "SAVE CHANGES"
-                  : "FINALIZE COLLEGE"}
+                    ? "SAVE CHANGES"
+                    : "FINALIZE COLLEGE"}
               </Button>
             </form>
           </Form>
@@ -215,16 +227,21 @@ export default function AddCollege({ college, onSuccess }: AddCollegeProps) {
 
         {!isEditMode && (
           <div className="lg:col-span-1">
-            <div 
-              onClick={() => document.getElementById('csv-upload')?.click()}
-              className="group cursor-pointer border-2 border-dashed border-teal/40 bg-surface-lowest/50 backdrop-blur-3xl rounded-3xl p-12 h-full min-h-[400px] flex flex-col items-center justify-center text-center transition-all duration-500 hover:border-teal hover:shadow-[0_0_30px_rgba(94,207,186,0.15)] hover:bg-teal/5"
+            <div
+              onClick={() => document.getElementById("csv-upload")?.click()}
+              className="group cursor-pointer border-2 border-dashed border-teal-400/40 bg-zinc-900/50 backdrop-blur-3xl rounded-3xl p-12 h-full min-h-[400px] flex flex-col items-center justify-center text-center transition-all duration-500 hover:border-teal-400 hover:shadow-[0_0_30px_rgba(94,207,186,0.15)] hover:bg-teal-400/5"
             >
-              <div className="w-20 h-20 rounded-full bg-surface-highest flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500 group-hover:shadow-[0_0_20px_rgba(94,207,186,0.4)]">
-                <Upload className="w-10 h-10 text-teal" />
+              <div className="w-20 h-20 rounded-full bg-zinc-800 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500 group-hover:shadow-[0_0_20px_rgba(94,207,186,0.4)]">
+                <Upload className="w-10 h-10 text-teal-400" />
               </div>
-              <h3 className="text-2xl font-bold text-white mb-2">Bulk Import</h3>
-              <p className="text-[#bcc9c5] text-sm mb-4 leading-relaxed">Format: <code className="text-teal font-mono">code,name</code></p>
-              
+              <h3 className="text-2xl font-bold text-white mb-2">
+                Bulk Import
+              </h3>
+              <p className="text-[#bcc9c5] text-sm mb-4 leading-relaxed">
+                Format:{" "}
+                <code className="text-teal-400 font-mono">code,name</code>
+              </p>
+
               <div className="flex flex-col space-y-4 w-full px-4">
                 <input
                   id="csv-upload"
@@ -234,18 +251,27 @@ export default function AddCollege({ college, onSuccess }: AddCollegeProps) {
                   disabled={isImporting}
                   className="hidden"
                 />
-                
+
                 {csvFile && (
-                  <p className="text-teal text-xs font-mono font-bold truncate px-2">{csvFile.name}</p>
+                  <p className="text-teal-400 text-xs font-mono font-bold truncate px-2">
+                    {csvFile.name}
+                  </p>
                 )}
 
                 <Button
-                  onClick={(e) => { e.stopPropagation(); handleCsvImport(); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleCsvImport();
+                  }}
                   disabled={!csvFile || isImporting}
                   variant="outline"
-                  className="w-full rounded-full border-teal/50 text-teal hover:bg-teal hover:text-[#00201b] transition-all cursor-pointer z-10"
+                  className="w-full rounded-full border-teal-400/50 text-teal-400 hover:bg-teal-400 hover:text-black transition-all cursor-pointer z-10"
                 >
-                  {isImporting ? "IMPORTING..." : csvFile ? "EXECUTE IMPORT" : "SELECT FILE ⌘"}
+                  {isImporting
+                    ? "IMPORTING..."
+                    : csvFile
+                      ? "EXECUTE IMPORT"
+                      : "SELECT FILE ⌘"}
                 </Button>
               </div>
             </div>

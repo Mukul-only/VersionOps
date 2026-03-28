@@ -81,7 +81,7 @@ export default function Participants() {
         setParticipantsAccessDenied(true);
         setParticipants([]);
         return;
-      }else {
+      } else {
         mapped_toast('Failed to load participants.', 'error')
         console.error("Failed to load participants", error);
         setParticipants([]);
@@ -104,7 +104,6 @@ export default function Participants() {
         setParticipants([]);
         setParticipantsAccessDenied(true);
         mapped_toast('You do not have access to participants data.', 'warning', true)
-
       } else {
         mapped_toast('Failed to load participants.', 'error')
         console.error("Failed to load participants", participantsRes.reason);
@@ -325,11 +324,14 @@ export default function Participants() {
   return (
     <TooltipProvider>
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">Participants</h2>
-            {!participantsAccessDenied && <p className="text-sm text-muted-foreground">{participants.length} loaded</p>}
-          </div>
+        <div className="flex flex-col mb-4">
+          <p className="section-label mb-1 opacity-70 dot-prefix pl-3 relative">Management</p>
+          <h2 className="text-4xl font-extrabold tracking-tighter heading-display">Participants</h2>
+          {!participantsAccessDenied && (
+            <p className="text-xs text-muted-foreground uppercase tracking-widest mt-1">
+              {participants.length} individuals in the system
+            </p>
+          )}
         </div>
 
         <div className="flex gap-4 items-center">
@@ -382,41 +384,48 @@ export default function Participants() {
         </div>
 
         {selected.size > 0 && !participantsAccessDenied && (
-          <div className="flex items-center gap-3 bg-primary/10 border border-primary/20 rounded-lg px-4 py-2">
-            <span className="text-sm font-medium">{selected.size} selected</span>
-            <Button size="sm" onClick={bulkCheckIn}>
+          <div className="flex items-center gap-3 bg-teal/10 p-3 rounded-full teal-glow ring-1 ring-teal/20">
+            <span className="text-xs font-bold uppercase tracking-widest pl-4 pr-2 text-teal">{selected.size} selected</span>
+            <Button size="sm" onClick={bulkCheckIn} className="btn-teal-gradient shadow-lg">
               <UserCheck className="mr-1 h-3.5 w-3.5" /> Bulk Check-In
             </Button>
-            <Button size="sm" variant="destructive" onClick={bulkNoShow}>
+            <Button size="sm" variant="destructive" onClick={bulkNoShow} className="pill shadow-lg shadow-destructive/10">
               <UserX className="mr-1 h-3.5 w-3.5" /> Mark No-Show
             </Button>
           </div>
         )}
 
         {participantsAccessDenied ? (
-          <div className="border border-zinc-800 bg-[#0a0a0a] rounded-md flex items-center justify-center h-64 shadow-sm">
-            <p className="text-zinc-500 font-medium">You do not have access to participants data.</p>
+          <div className="bg-surface-lowest/50 rounded-3xl flex flex-col items-center justify-center h-80 shadow-inner group transition-all">
+            <div className="p-4 rounded-full bg-destructive/10 mb-4">
+              <UserX className="h-8 w-8 text-destructive" />
+            </div>
+            <p className="text-muted-foreground font-medium tracking-wide">The Digital Archive is sealed to your access level.</p>
           </div>
         ) : (
           <div className="w-full overflow-x-auto pb-8">
-            <div className="relative overflow-y-auto max-h-[calc(100vh-280px)]">
+            <div className="bg-surface-low/30 rounded-3xl p-1 overflow-hidden">
               <Table className="w-full">
-                <TableHeader className="sticky top-0 bg-transparent z-10">
-                  <TableRow className="hover:bg-transparent bg-transparent border-none shadow-none">
-                    <TableHead className="w-[4%] pl-4"><Checkbox checked={selected.size === participants.length && participants.length > 0} onCheckedChange={toggleAll} /></TableHead>
+                <TableHeader className="bg-transparent">
+                  <TableRow className="hover:bg-transparent bg-transparent border-none">
+                    <TableHead className="w-[4%]"><Checkbox checked={selected.size === participants.length && participants.length > 0} onCheckedChange={toggleAll} className="border-teal/50 data-[state=checked]:bg-teal text-teal-void" /></TableHead>
                     <TableHead className="w-[10%]">ID</TableHead>
                     <TableHead className="w-[20%]">Name</TableHead>
                     <TableHead className="w-[10%]">College</TableHead>
                     <TableHead className="w-[8%]">Year</TableHead>
                     <TableHead className="w-[20%]">Email</TableHead>
                     <TableHead className="w-[10%]">Status</TableHead>
-                    <TableHead className="w-[18%] text-right pr-4">Actions</TableHead>
+                    <TableHead className="w-[18%] text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {participants.map((p) => (
-                    <TableRow key={p.id} data-state={selected.has(p.id) && "selected"}>
-                      <TableCell className="pl-4"><Checkbox checked={selected.has(p.id)} onCheckedChange={() => toggleSelect(p.id)} /></TableCell>
+                    <TableRow 
+                      key={p.id} 
+                      data-state={selected.has(p.id) && "selected"}
+                      className="bg-surface-lowest/80 hover:bg-surface-high border-none transition-all duration-300 group shadow-sm mb-2"
+                    >
+                      <TableCell><Checkbox checked={selected.has(p.id)} onCheckedChange={() => toggleSelect(p.id)} /></TableCell>
                       <TableCell className="font-mono text-xs">{p.participantId}</TableCell>
                       <TableCell className="font-medium">{p.name}</TableCell>
                       <TableCell>{p.college?.code}</TableCell>
@@ -427,7 +436,7 @@ export default function Participants() {
                         : p.festStatus === 'CHECKED_IN' ? <Badge className="text-[10px] font-semibold tracking-wider uppercase bg-emerald-950/50 text-emerald-500 border border-emerald-900 pointer-events-none">Checked In</Badge>
                         : <Badge variant="secondary" className="text-[10px] font-semibold tracking-wider uppercase bg-zinc-900 text-zinc-300 border border-zinc-800 hover:bg-zinc-800">{p.festStatus}</Badge>}
                       </TableCell>
-                      <TableCell className="text-right pr-4">
+                      <TableCell className="text-right">
                         <div className="flex items-center gap-1 justify-end">
                           <Tooltip>
                             <TooltipTrigger asChild>
@@ -445,7 +454,7 @@ export default function Participants() {
                             <TooltipTrigger asChild>
                               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => updateParticipantStatus(p.id, 'RESET')}><RotateCcw className="h-3 w-3" /></Button>
                             </TooltipTrigger>
-                            <TooltipContent>Reset Status</TooltipContent>
+                            <TooltipContent>Reset to Registered</TooltipContent>
                           </Tooltip>
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDetailId(p.id)}><Eye className="h-4 w-4" /></Button>
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEditClick(p)}><Pencil className="h-3 w-3" /></Button>
