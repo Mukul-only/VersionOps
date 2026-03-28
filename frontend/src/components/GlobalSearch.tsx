@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppRole, hasPermission, ROUTE_PERMISSIONS } from "@/lib/rbac";
 import { useAuth } from "@/contexts/AuthContext";
-import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandShortcut } from "@/components/ui/command";
 import { Users, CalendarDays, Building2, LayoutDashboard, Trophy, Medal } from "lucide-react";
 import { participantService } from "@/api/services";
 import { Participant } from "@/api/types";
@@ -71,13 +71,13 @@ export function GlobalSearch() {
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
       <CommandInput 
-        placeholder="Search participants, pages..." 
+        placeholder="Search identities, systemic nodes, modules..." 
         value={query}
         onValueChange={setQuery}
       />
-      <CommandList>
-        <CommandEmpty>No results found.</CommandEmpty>
-        <CommandGroup heading="Pages">
+      <CommandList className="scrollbar-wizardly">
+        <CommandEmpty>No resonance detected for this query.</CommandEmpty>
+        <CommandGroup heading="Systemic Nodes">
           {pages
             .filter((page) => canNavigate(page.path))
             .map((page) => (
@@ -88,13 +88,14 @@ export function GlobalSearch() {
                   setOpen(false);
                 }}
               >
-                <page.icon className="mr-2 h-4 w-4" />
-                {page.name}
+                <page.icon className="mr-3 h-4 w-4 text-primary opacity-80 group-data-[selected=true]:opacity-100 group-data-[selected=true]:scale-110 transition-all font-black" />
+                <span className="flex-1 text-white opacity-90 group-data-[selected=true]:opacity-100 transition-opacity">{page.name}</span>
+                <CommandShortcut>GO_TO_NODE</CommandShortcut>
               </CommandItem>
             ))}
         </CommandGroup>
         {participants.length > 0 && canNavigate("/participants") && (
-          <CommandGroup heading="Participants">
+          <CommandGroup heading="Validated Identities">
             {participants.map((p) => (
               <CommandItem
                 key={p.id}
@@ -103,10 +104,19 @@ export function GlobalSearch() {
                   setOpen(false);
                 }}
               >
-                <Users className="mr-2 h-4 w-4" />
-                <span className="font-mono text-xs mr-2">{p.participantId}</span>
-                {p.name}
-                <span className="ml-auto text-xs text-muted-foreground">{p.college?.code}</span>
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30 group-data-[selected=true]:bg-primary group-data-[selected=true]:text-primary-foreground transition-all">
+                    <Users className="h-4 w-4" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-mono text-primary font-black uppercase tracking-widest">{p.participantId}</span>
+                    <span className="text-sm font-black tracking-tight text-white">{p.name}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50 group-data-[selected=true]:text-white/80">{p.college?.code}</span>
+                  <CommandShortcut>VIEW_INTEL</CommandShortcut>
+                </div>
               </CommandItem>
             ))}
           </CommandGroup>
