@@ -1,0 +1,36 @@
+/* App.css — Reset Vite defaults, apply Wizardly Obsidian dark mode */
+#root {
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+  height: 100%;
+}
+
+/* Smooth scrollbar — dark themed */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0d0d0d;
+}
+::-webkit-scrollbar-thumb {
+  background: #2e2e34;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3d4946;
+}
+
+/* Focus visible — teal ring (Wizardly) */
+:focus-visible {
+  outline: 2px solid rgba(94, 207, 186, 0.5);
+  outline-offset: 2px;
+}
+
+/* Input focus style override */
+input:focus, textarea:focus {
+  border-color: rgba(94, 207, 186, 0.4) !important;
+  box-shadow: 0 0 0 3px rgba(94, 207, 186, 0.08) !important;
+}

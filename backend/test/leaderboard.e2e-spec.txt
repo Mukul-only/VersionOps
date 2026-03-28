@@ -1,0 +1,736 @@
+import { INestApplication } from '@nestjs/common';
+import * as request from 'supertest';
+import { PrismaService } from '../src/prisma/prisma.service';
+import { createTestApp } from './e2e-setup/app-setup';
+import { Express } from 'express';
+import { PaginatedLeaderboardResponse } from 'src/modules/leaderboard/types/leaderboard.types';
+import { CollegeResponse } from 'src/modules/college/types/college.types';
+import { ParticipantResponse } from 'src/modules/participant/types/participants.types';
+import { EventResponse } from 'src/modules/event/types/event.types';
+import { EventParticipationResponse } from 'src/modules/event-participation/types/event-participation.types';
+import { EventResultResponse } from 'src/modules/event-result/types/event-result.types';
+import { Year, Position } from '@prisma/client';
+
+describe('Leaderboard E2E', () => {
+  let app: INestApplication;
+  let prisma: PrismaService;
+  let httpServer: Express;
+
+  // Test data with proper types
+  let collegeA: CollegeResponse;
+  let collegeB: CollegeResponse;
+  let collegeC: CollegeResponse;
+
+  let event1: EventResponse;
+  let event2: EventResponse;
+  let event3: EventResponse;
+
+  beforeAll(async () => {
+    app = await createTestApp();
+    prisma = app.get(PrismaService);
+    httpServer = app.getHttpServer() as unknown as Express;
+  });
+
+  afterAll(async () => {
+    await prisma.$disconnect();
+    await app.close();
+  });
+
+  // Helper to clean database
+  const cleanDatabase = async () => {
+    await prisma.eventResult.deleteMany({});
+    await prisma.eventParticipation.deleteMany({});
+    await prisma.participant.deleteMany({});
+    await prisma.event.deleteMany({});
+    await prisma.collegeScore.deleteMany({});
+    await prisma.college.deleteMany({});
+  };
+
+  // Helper to setup fresh test data
+  const setupTestData = async () => {
+    await cleanDatabase();
+
+    // Create colleges
+    const collegeAResponse = await request(httpServer)
+      .post('/api/v1/colleges')
+      .send({ code: 'IITB', name: 'IIT Bombay' })
+      .expect(201);
+    collegeA = collegeAResponse.body as CollegeResponse;
+
+    const collegeBResponse = await request(httpServer)
+      .post('/api/v1/colleges')
+      .send({ code: 'IITD', name: 'IIT Delhi' })
+      .expect(201);
+    collegeB = collegeBResponse.body as CollegeResponse;
+
+    const collegeCResponse = await request(httpServer)
+      .post('/api/v1/colleges')
+      .send({ code: 'IITK', name: 'IIT Kanpur' })
+      .expect(201);
+    collegeC = collegeCResponse.body as CollegeResponse;
+
+    // Create events with different point structures
+    const event1Response = await request(httpServer)
+      .post('/api/v1/events')
+      .send({
+        name: 'Coding Contest',
+        teamSize: 1,
+        participationPoints: 10,
+        firstPrizePoints: 100,
+        secondPrizePoints: 50,
+        thirdPrizePoints: 25,
+      })
+      .expect(201);
+    event1 = event1Response.body as EventResponse;
+
+    const event2Response = await request(httpServer)
+      .post('/api/v1/events')
+      .send({
+        name: 'Hackathon',
+        teamSize: 3,
+        participationPoints: 20,
+        firstPrizePoints: 300,
+        secondPrizePoints: 150,
+        thirdPrizePoints: 90,
+      })
+      .expect(201);
+    event2 = event2Response.body as EventResponse;
+
+    const event3Response = await request(httpServer)
+      .post('/api/v1/events')
+      .send({
+        name: 'Quiz Competition',
+        teamSize: 2,
+        participationPoints: 5,
+        firstPrizePoints: 60,
+        secondPrizePoints: 30,
+        thirdPrizePoints: 20,
+      })
+      .expect(201);
+    event3 = event3Response.body as EventResponse;
+  };
+
+  // Helper to create participants
+  const createParticipant = async (
+    collegeId: number,
+    name: string,
+    email: string,
+    year: Year,
+  ): Promise<ParticipantResponse> => {
+    const response = await request(httpServer)
+      .post('/api/v1/participants')
+      .send({
+        name,
+        email,
+        year,
+        collegeId,
+      })
+      .expect(201);
+    return response.body as ParticipantResponse;
+  };
+
+  // Helper to create participation
+  const createParticipation = async (
+    eventId: number,
+    participantId: number,
+  ): Promise<EventParticipationResponse> => {
+    const response = await request(httpServer)
+      .post('/api/v1/event-participations')
+      .send({
+        eventId,
+        participantId,
+      })
+      .expect(201);
+    return response.body as EventParticipationResponse;
+  };
+
+  // Helper to create result
+  const createResult = async (
+    eventId: number,
+    participantId: number,
+    position: Position,
+  ): Promise<EventResultResponse> => {
+    const response = await request(httpServer)
+      .post('/api/v1/event-results')
+      .send({
+        eventId,
+        participantId,
+        position,
+      })
+      .expect(201);
+    return response.body as EventResultResponse;
+  };
+
+  describe('POST /api/v1/leaderboard/recalculate', () => {
+    beforeEach(async () => {
+      await setupTestData();
+    });
+
+    it('should return success response', async () => {
+      const response = await request(httpServer)
+        .post('/api/v1/leaderboard/recalculate')
+        .expect(201);
+
+      expect(response.body).toEqual({ success: true });
+    });
+
+    it('should handle empty database gracefully', async () => {
+      await cleanDatabase();
+
+      const response = await request(httpServer)
+        .post('/api/v1/leaderboard/recalculate')
+        .expect(201);
+
+      expect(response.body).toEqual({ success: true });
+
+      // Leaderboard should be empty
+      const leaderboardResponse = await request(httpServer)
+        .get('/api/v1/leaderboard')
+        .expect(200);
+
+      const leaderboard =
+        leaderboardResponse.body as PaginatedLeaderboardResponse;
+      expect(leaderboard.items).toHaveLength(0);
+      expect(leaderboard.total).toBe(0);
+    });
+  });
+
+  describe('Leaderboard Score Calculations', () => {
+    beforeEach(async () => {
+      await setupTestData();
+    });
+
+    it('should calculate scores correctly with participations only', async () => {
+      // Create participants for College A
+      const participant1 = await createParticipant(
+        collegeA.id,
+        'John',
+        'john@a.com',
+        Year.ONE,
+      );
+      const participant2 = await createParticipant(
+        collegeA.id,
+        'Jane',
+        'jane@a.com',
+        Year.TWO,
+      );
+
+      // Create participants for College B
+      const participant3 = await createParticipant(
+        collegeB.id,
+        'Bob',
+        'bob@b.com',
+        Year.ONE,
+      );
+
+      // Add participations
+      await createParticipation(event1.id, participant1.id); // 10 points
+      await createParticipation(event2.id, participant2.id); // 20 points
+      await createParticipation(event3.id, participant3.id); // 5 points
+
+      // Recalculate leaderboard
+      await request(httpServer)
+        .post('/api/v1/leaderboard/recalculate')
+        .expect(201);
+
+      // Get leaderboard
+      const response = await request(httpServer)
+        .get('/api/v1/leaderboard')
+        .expect(200);
+
+      const leaderboard = response.body as PaginatedLeaderboardResponse;
+
+      // Find scores by college
+      const collegeAScore = leaderboard.items.find(
+        (i) => i.collegeId === collegeA.id,
+      );
+      const collegeBScore = leaderboard.items.find(
+        (i) => i.collegeId === collegeB.id,
+      );
+      const collegeCScore = leaderboard.items.find(
+        (i) => i.collegeId === collegeC.id,
+      );
+
+      // College A: 10 + 20 = 30 points
+      expect(collegeAScore).toBeDefined();
+      expect(collegeAScore?.totalPoints).toBe(30);
+      expect(collegeAScore?.firstPrizes).toBe(0);
+      expect(collegeAScore?.secondPrizes).toBe(0);
+      expect(collegeAScore?.thirdPrizes).toBe(0);
+
+      // College B: 5 points
+      expect(collegeBScore).toBeDefined();
+      expect(collegeBScore?.totalPoints).toBe(5);
+
+      // College C: 0 points
+      expect(collegeCScore).toBeDefined();
+      expect(collegeCScore?.totalPoints).toBe(0);
+    });
+
+    it('should calculate scores correctly with participations and prizes', async () => {
+      // Create participants for College A
+      const participant1 = await createParticipant(
+        collegeA.id,
+        'John',
+        'john@a.com',
+        Year.ONE,
+      );
+      const participant2 = await createParticipant(
+        collegeA.id,
+        'Jane',
+        'jane@a.com',
+        Year.TWO,
+      );
+
+      // Create participants for College B
+      const participant3 = await createParticipant(
+        collegeB.id,
+        'Bob',
+        'bob@b.com',
+        Year.ONE,
+      );
+      const participant4 = await createParticipant(
+        collegeB.id,
+        'Alice',
+        'alice@b.com',
+        Year.TWO,
+      );
+
+      // Create participants for College C
+      const participant5 = await createParticipant(
+        collegeC.id,
+        'Charlie',
+        'charlie@c.com',
+        Year.ONE,
+      );
+
+      // Add participations and results
+
+      // College A: 1 FIRST place in event1 (100 pts) + participation (10)
+      await createParticipation(event1.id, participant1.id);
+      await createResult(event1.id, participant1.id, Position.FIRST);
+
+      // College A: 1 participation in event2 (20)
+      await createParticipation(event2.id, participant2.id);
+
+      // College B: 1 SECOND place in event1 (50) + participation (10)
+      await createParticipation(event1.id, participant3.id);
+      await createResult(event1.id, participant3.id, Position.SECOND);
+
+      // College B: 1 THIRD place in event2 (50) + participation (20)
+      await createParticipation(event2.id, participant4.id);
+      await createResult(event2.id, participant4.id, Position.THIRD);
+
+      // College C: 1 participation in event3 (5)
+      await createParticipation(event3.id, participant5.id);
+
+      // Recalculate leaderboard
+      await request(httpServer)
+        .post('/api/v1/leaderboard/recalculate')
+        .expect(201);
+
+      // Get leaderboard
+      const response = await request(httpServer)
+        .get('/api/v1/leaderboard?includeRelations=true')
+        .expect(200);
+
+      const leaderboard = response.body as PaginatedLeaderboardResponse;
+
+      const collegeAScore = leaderboard.items.find(
+        (i) => i.collegeId === collegeA.id,
+      );
+      const collegeBScore = leaderboard.items.find(
+        (i) => i.collegeId === collegeB.id,
+      );
+      const collegeCScore = leaderboard.items.find(
+        (i) => i.collegeId === collegeC.id,
+      );
+
+      // College A: 100 (FIRST) + 10 (participation) + 20 (participation) = 130 points, 1 first prize
+      expect(collegeAScore?.totalPoints).toBe(130);
+      expect(collegeAScore?.firstPrizes).toBe(1);
+      expect(collegeAScore?.secondPrizes).toBe(0);
+      expect(collegeAScore?.thirdPrizes).toBe(0);
+      expect(collegeAScore?.college).toBeDefined();
+      expect(collegeAScore?.college?.code).toBe(collegeA.code);
+
+      // College B: 50 (SECOND) + 10 (participation) + 50 (THIRD) + 20 (participation) = 130 points, 1 second, 1 third
+      expect(collegeBScore?.totalPoints).toBe(130);
+      expect(collegeBScore?.firstPrizes).toBe(0);
+      expect(collegeBScore?.secondPrizes).toBe(1);
+      expect(collegeBScore?.thirdPrizes).toBe(1);
+
+      // College C: 5 points
+      expect(collegeCScore?.totalPoints).toBe(5);
+    });
+
+    it('should handle multiple participants from same college winning multiple prizes', async () => {
+      // Create participants for College A
+      const participant1 = await createParticipant(
+        collegeA.id,
+        'John',
+        'john@a.com',
+        Year.ONE,
+      );
+      const participant2 = await createParticipant(
+        collegeA.id,
+        'Jane',
+        'jane@a.com',
+        Year.TWO,
+      );
+      const participant3 = await createParticipant(
+        collegeA.id,
+        'Bob',
+        'bob@a.com',
+        Year.ONE,
+      );
+
+      // College A wins: FIRST in event1, SECOND in event2, THIRD in event3
+
+      // Event 1
+      await createParticipation(event1.id, participant1.id);
+      await createResult(event1.id, participant1.id, Position.FIRST); // 100 pts + 10 participation = 110
+
+      // Event 2
+      await createParticipation(event2.id, participant2.id);
+      await createResult(event2.id, participant2.id, Position.SECOND); // 100 pts + 20 participation = 120
+
+      // Event 3
+      await createParticipation(event3.id, participant3.id);
+      await createResult(event3.id, participant3.id, Position.THIRD); // 10 pts + 5 participation = 15
+
+      // Additional participations without prizes
+      await createParticipation(event2.id, participant1.id); // +20 pts
+      await createParticipation(event3.id, participant2.id); // +5 pts
+
+      // Recalculate
+      await request(httpServer)
+        .post('/api/v1/leaderboard/recalculate')
+        .expect(201);
+
+      const response = await request(httpServer)
+        .get('/api/v1/leaderboard')
+        .expect(200);
+
+      const leaderboard = response.body as PaginatedLeaderboardResponse;
+      const collegeAScore = leaderboard.items.find(
+        (i) => i.collegeId === collegeA.id,
+      );
+
+      // Calculate expected total:
+      // Participant 1: 110 (FIRST in event1) + 20 (extra participation in event2) = 130
+      // Participant 2: 120 (SECOND in event2) + 5 (extra participation in event3) = 125
+      // Participant 3: 15 (THIRD in event3) = 15
+      // Total: 130 + 125 + 15 = 270 points
+      // Prizes: 1 first, 1 second, 1 third
+      expect(collegeAScore?.totalPoints).toBe(270);
+      expect(collegeAScore?.firstPrizes).toBe(1);
+      expect(collegeAScore?.secondPrizes).toBe(1);
+      expect(collegeAScore?.thirdPrizes).toBe(1);
+    });
+
+    it('should reset and recalculate correctly when called multiple times', async () => {
+      // First round of data
+      const participant1 = await createParticipant(
+        collegeA.id,
+        'John',
+        'john@a.com',
+        Year.ONE,
+      );
+      await createParticipation(event1.id, participant1.id);
+      await createResult(event1.id, participant1.id, Position.FIRST);
+
+      // First recalculation
+      await request(httpServer)
+        .post('/api/v1/leaderboard/recalculate')
+        .expect(201);
+
+      let response = await request(httpServer)
+        .get('/api/v1/leaderboard')
+        .expect(200);
+
+      let leaderboard = response.body as PaginatedLeaderboardResponse;
+      let collegeAScore = leaderboard.items.find(
+        (i) => i.collegeId === collegeA.id,
+      );
+      expect(collegeAScore?.totalPoints).toBe(110); // 100 + 10
+
+      // Add more data
+      const participant2 = await createParticipant(
+        collegeA.id,
+        'Jane',
+        'jane@a.com',
+        Year.TWO,
+      );
+      await createParticipation(event2.id, participant2.id);
+      await createResult(event2.id, participant2.id, Position.SECOND);
+
+      // Second recalculation should replace old scores
+      await request(httpServer)
+        .post('/api/v1/leaderboard/recalculate')
+        .expect(201);
+
+      response = await request(httpServer)
+        .get('/api/v1/leaderboard')
+        .expect(200);
+
+      leaderboard = response.body as PaginatedLeaderboardResponse;
+      collegeAScore = leaderboard.items.find(
+        (i) => i.collegeId === collegeA.id,
+      );
+
+      // Should be updated to include new data: 100+10 (old) + 100+20 (new) = 230
+      expect(collegeAScore?.totalPoints).toBe(230);
+    });
+  });
+
+  describe('GET /api/v1/leaderboard', () => {
+    beforeEach(async () => {
+      await setupTestData();
+
+      // Create test data with varying scores
+
+      // College A: High score
+      const participant1 = await createParticipant(
+        collegeA.id,
+        'John',
+        'john@a.com',
+        Year.ONE,
+      );
+      const participant2 = await createParticipant(
+        collegeA.id,
+        'Jane',
+        'jane@a.com',
+        Year.TWO,
+      );
+      await createParticipation(event1.id, participant1.id);
+      await createResult(event1.id, participant1.id, Position.FIRST); // 100 + 10
+      await createParticipation(event2.id, participant2.id);
+      await createResult(event2.id, participant2.id, Position.SECOND); // 100 + 20
+
+      // College B: Medium score
+      const participant3 = await createParticipant(
+        collegeB.id,
+        'Bob',
+        'bob@b.com',
+        Year.ONE,
+      );
+      const participant4 = await createParticipant(
+        collegeB.id,
+        'Alice',
+        'alice@b.com',
+        Year.TWO,
+      );
+      await createParticipation(event1.id, participant3.id);
+      await createResult(event1.id, participant3.id, Position.SECOND); // 50 + 10
+      await createParticipation(event2.id, participant4.id);
+      await createResult(event2.id, participant4.id, Position.THIRD); // 50 + 20
+
+      // College C: Low score
+      const participant5 = await createParticipant(
+        collegeC.id,
+        'Charlie',
+        'charlie@c.com',
+        Year.ONE,
+      );
+      await createParticipation(event3.id, participant5.id); // 5 only
+
+      // Recalculate
+      await request(httpServer)
+        .post('/api/v1/leaderboard/recalculate')
+        .expect(201);
+    });
+
+    it('should return leaderboard sorted by totalPoints descending', async () => {
+      const response = await request(httpServer)
+        .get('/api/v1/leaderboard')
+        .expect(200);
+
+      const leaderboard = response.body as PaginatedLeaderboardResponse;
+
+      // Check sorting
+      expect(leaderboard.items[0].totalPoints).toBeGreaterThanOrEqual(
+        leaderboard.items[1].totalPoints,
+      );
+      expect(leaderboard.items[1].totalPoints).toBeGreaterThanOrEqual(
+        leaderboard.items[2].totalPoints,
+      );
+
+      // College A should be first (highest)
+      expect(leaderboard.items[0].collegeId).toBe(collegeA.id);
+      // College C should be last (lowest)
+      expect(leaderboard.items[2].collegeId).toBe(collegeC.id);
+    });
+
+    it('should support pagination', async () => {
+      const response = await request(httpServer)
+        .get('/api/v1/leaderboard?skip=1&take=1')
+        .expect(200);
+
+      const leaderboard = response.body as PaginatedLeaderboardResponse;
+
+      expect(leaderboard.items).toHaveLength(1);
+      expect(leaderboard.total).toBe(3);
+      // Should be the second item (College B)
+      expect(leaderboard.items[0].collegeId).toBe(collegeB.id);
+    });
+
+    it('should include college relations when flag is true', async () => {
+      const response = await request(httpServer)
+        .get('/api/v1/leaderboard?includeRelations=true')
+        .expect(200);
+
+      const leaderboard = response.body as PaginatedLeaderboardResponse;
+
+      expect(leaderboard.items[0]).toHaveProperty('college');
+      expect(leaderboard.items[0].college).toBeDefined();
+      expect(leaderboard.items[0].college?.code).toBeDefined();
+      expect(leaderboard.items[0].college?.name).toBeDefined();
+    });
+
+    it('should not include college relations by default', async () => {
+      const response = await request(httpServer)
+        .get('/api/v1/leaderboard')
+        .expect(200);
+
+      const leaderboard = response.body as PaginatedLeaderboardResponse;
+
+      expect(leaderboard.items[0].college).toBeUndefined();
+    });
+
+    it('should filter by collegeId', async () => {
+      const response = await request(httpServer)
+        .get(
+          `/api/v1/leaderboard?filters=${JSON.stringify({ collegeId: collegeA.id })}`,
+        )
+        .expect(200);
+
+      const leaderboard = response.body as PaginatedLeaderboardResponse;
+
+      expect(leaderboard.items).toHaveLength(1);
+      expect(leaderboard.items[0].collegeId).toBe(collegeA.id);
+      expect(leaderboard.items[0].totalPoints).toBe(230); // 110 + 120
+    });
+  });
+
+  describe('Edge Cases', () => {
+    it('should handle colleges with no activity', async () => {
+      await setupTestData();
+      // No participations or results created
+
+      await request(httpServer)
+        .post('/api/v1/leaderboard/recalculate')
+        .expect(201);
+
+      const response = await request(httpServer)
+        .get('/api/v1/leaderboard')
+        .expect(200);
+
+      const leaderboard = response.body as PaginatedLeaderboardResponse;
+
+      // All colleges should have zero scores
+      expect(leaderboard.items).toHaveLength(3);
+      expect(leaderboard.items.every((i) => i.totalPoints === 0)).toBe(true);
+      expect(leaderboard.items.every((i) => i.firstPrizes === 0)).toBe(true);
+      expect(leaderboard.items.every((i) => i.secondPrizes === 0)).toBe(true);
+      expect(leaderboard.items.every((i) => i.thirdPrizes === 0)).toBe(true);
+    });
+
+    it('should handle participants from same college across multiple events', async () => {
+      await setupTestData();
+
+      // Create one participant
+      const participant1 = await createParticipant(
+        collegeA.id,
+        'John',
+        'john@a.com',
+        Year.ONE,
+      );
+
+      // Participate in all events
+      await createParticipation(event1.id, participant1.id); // 10 pts
+      await createParticipation(event2.id, participant1.id); // 20 pts
+      await createParticipation(event3.id, participant1.id); // 5 pts
+
+      // Win prizes in all events
+      await createResult(event1.id, participant1.id, Position.FIRST); // 100 pts
+      await createResult(event2.id, participant1.id, Position.SECOND); // 100 pts
+      await createResult(event3.id, participant1.id, Position.THIRD); // 10 pts
+
+      await request(httpServer)
+        .post('/api/v1/leaderboard/recalculate')
+        .expect(201);
+
+      const response = await request(httpServer)
+        .get('/api/v1/leaderboard')
+        .expect(200);
+
+      const leaderboard = response.body as PaginatedLeaderboardResponse;
+      const collegeAScore = leaderboard.items.find(
+        (i) => i.collegeId === collegeA.id,
+      );
+
+      // Total: 10+20+5 (participations) + 100+100+10 (prizes) = 245 points
+      // Prizes: 1 first, 1 second, 1 third
+      expect(collegeAScore?.totalPoints).toBe(245);
+      expect(collegeAScore?.firstPrizes).toBe(1);
+      expect(collegeAScore?.secondPrizes).toBe(1);
+      expect(collegeAScore?.thirdPrizes).toBe(1);
+    });
+
+    it('should be idempotent - multiple recalculations produce same result (ignoring timestamps)', async () => {
+      await setupTestData();
+
+      // Create some data
+      const participant1 = await createParticipant(
+        collegeA.id,
+        'John',
+        'john@a.com',
+        Year.ONE,
+      );
+      await createParticipation(event1.id, participant1.id);
+      await createResult(event1.id, participant1.id, Position.FIRST);
+
+      // First recalculation
+      await request(httpServer)
+        .post('/api/v1/leaderboard/recalculate')
+        .expect(201);
+
+      const response1 = await request(httpServer)
+        .get('/api/v1/leaderboard')
+        .expect(200);
+      const leaderboard1 = response1.body as PaginatedLeaderboardResponse;
+
+      // Second recalculation (no data changes)
+      await request(httpServer)
+        .post('/api/v1/leaderboard/recalculate')
+        .expect(201);
+
+      const response2 = await request(httpServer)
+        .get('/api/v1/leaderboard')
+        .expect(200);
+      const leaderboard2 = response2.body as PaginatedLeaderboardResponse;
+
+      // Compare everything except updatedAt timestamps
+      expect(leaderboard1.total).toBe(leaderboard2.total);
+      expect(leaderboard1.items).toHaveLength(leaderboard2.items.length);
+
+      // Sort both arrays by collegeId for consistent comparison
+      const sorted1 = [...leaderboard1.items].sort(
+        (a, b) => a.collegeId - b.collegeId,
+      );
+      const sorted2 = [...leaderboard2.items].sort(
+        (a, b) => a.collegeId - b.collegeId,
+      );
+
+      for (let i = 0; i < sorted1.length; i++) {
+        expect(sorted1[i].collegeId).toBe(sorted2[i].collegeId);
+        expect(sorted1[i].totalPoints).toBe(sorted2[i].totalPoints);
+        expect(sorted1[i].firstPrizes).toBe(sorted2[i].firstPrizes);
+        expect(sorted1[i].secondPrizes).toBe(sorted2[i].secondPrizes);
+        expect(sorted1[i].thirdPrizes).toBe(sorted2[i].thirdPrizes);
+        // updatedAt will be different, so we don't compare it
+      }
+    });
+  });
+});

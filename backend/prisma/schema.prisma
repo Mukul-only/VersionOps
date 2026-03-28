@@ -1,0 +1,174 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Year {
+  ONE
+  TWO
+}
+
+enum Position {
+  FIRST
+  SECOND
+  THIRD
+}
+
+/// Fest level attendance
+enum FestStatus {
+  REGISTERED
+  CHECKED_IN
+  NO_SHOW
+}
+
+model College {
+  id        Int      @id @default(autoincrement())
+  code      String   @unique @db.VarChar(10)
+  name      String   @unique @db.VarChar(255)
+  createdAt DateTime @default(now())
+
+  participants Participant[]
+  score        CollegeScore?
+  manualAdjustments ManualScoreAdjustment[]
+
+  @@map("colleges")
+}
+
+model Participant {
+  id              Int      @id @default(autoincrement())
+
+  participantId   String   @unique @db.VarChar(50)
+  name            String   @db.VarChar(255)
+
+  collegeId       Int
+  college         College  @relation(fields: [collegeId], references: [id], onDelete: Restrict)
+
+  email           String   @unique @db.VarChar(255)
+  year            Year
+
+  festStatus      FestStatus @default(REGISTERED)
+
+  hackerearthUser String?  @unique() @db.VarChar(100)
+  phone           String?  @db.VarChar(20)
+
+  createdAt       DateTime @default(now())
+
+  userId          String?  @unique
+  user            User?    @relation("ParticipantUser", fields: [userId], references: [id])
+
+  participations  EventParticipation[]
+  results         EventResult[]
+
+  @@map("participants")
+}
+
+model Event {
+  id                   Int      @id @default(autoincrement())
+  name                 String   @unique @db.VarChar(255)
+
+  teamSize             Int      @default(1)
+
+  participationPoints  Int      @default(0)
+  firstPrizePoints     Int      @default(0)
+  secondPrizePoints    Int      @default(0)
+  thirdPrizePoints     Int      @default(0)
+
+  createdAt            DateTime @default(now())
+
+  participations       EventParticipation[]
+  results              EventResult[]
+
+  @@map("events")
+}
+
+
+model EventParticipation {
+  id              Int      @id @default(autoincrement())
+
+  eventId         Int
+  participantId   Int
+
+  event           Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  participant     Participant  @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  /// Dummy ID like AC-001
+  dummyId         String?  @db.VarChar(50)
+
+  /// Team grouping identifier (same value = same team)
+  teamId          String?  @db.VarChar(50)
+
+  createdAt       DateTime @default(now())
+
+  @@unique([eventId, participantId])
+  @@unique([eventId, dummyId])
+  @@map("event_participations")
+}
+
+//////////////////////////////////////////////////////////
+// EVENT RESULTS (WINNERS ONLY)
+//////////////////////////////////////////////////////////
+
+model EventResult {
+  id              Int      @id @default(autoincrement())
+
+  eventId         Int
+  participantId   Int
+
+  event           Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  participant     Participant  @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  position        Position
+  createdAt       DateTime @default(now())
+
+  @@unique([eventId, participantId])
+  @@map("event_results")
+}
+
+
+model CollegeScore {
+  collegeId      Int     @id
+
+  college        College @relation(fields: [collegeId], references: [id], onDelete: Restrict)
+
+  totalPoints    Int     @default(0)
+  firstPrizes    Int     @default(0)
+  secondPrizes   Int     @default(0)
+  thirdPrizes    Int     @default(0)
+
+  updatedAt      DateTime @updatedAt
+
+  @@map("college_scores")
+}
+
+model ManualScoreAdjustment {
+  id          Int      @id @default(autoincrement())
+  collegeId   Int
+  points      Float
+  reason      String?  
+  createdAt   DateTime @default(now())
+
+  college     College  @relation(fields: [collegeId], references: [id])
+}
+
+enum UserRole {
+  ADMIN
+  OPERATOR
+  DESK
+  PARTICIPANT
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      UserRole @default(DESK)
+  
+  participant Participant? @relation("ParticipantUser")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

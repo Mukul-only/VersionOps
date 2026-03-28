@@ -1,0 +1,64 @@
+import { UserRole } from '@prisma/client';
+
+export const PERMISSIONS = {
+  USERS_MANAGE: 'users-manage',
+
+  EVENT_CREATE: 'event-create',
+  EVENT_READ: 'event-read',
+  EVENT_UPDATE: 'event-update',
+  EVENT_DELETE: 'event-delete',
+
+  COLLEGE_CREATE: 'college-create',
+  COLLEGE_READ: 'college-read',
+  COLLEGE_UPDATE: 'college-update',
+  COLLEGE_DELETE: 'college-delete',
+
+  PARTICIPANT_CREATE: 'participant-create',
+  PARTICIPANT_READ: 'participant-read',
+  PARTICIPANT_UPDATE: 'participant-update',
+  PARTICIPANT_DELETE: 'participant-delete',
+
+  LEADERBOARD_MANAGE: 'leaderboard-manage',
+  RESULT_MANAGE: 'result-manage',
+  ATTENDENCE_MANAGE: 'attendence-manage',
+  REPORT_VIEW: 'report-view',
+  DASHBOARD_READ: 'dashboard-read',
+} as const;
+
+export type AppPermission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
+
+export type AppRole = UserRole;
+
+export const ROLE_PERMISSIONS: Record<
+  AppRole,
+  readonly AppPermission[] | readonly ['*']
+> = {
+  [UserRole.ADMIN]: ['*'],
+  [UserRole.OPERATOR]: [
+    PERMISSIONS.DASHBOARD_READ,
+    PERMISSIONS.COLLEGE_CREATE,
+    PERMISSIONS.COLLEGE_UPDATE,
+    PERMISSIONS.COLLEGE_READ,
+    PERMISSIONS.PARTICIPANT_CREATE,
+    PERMISSIONS.PARTICIPANT_UPDATE,
+    PERMISSIONS.PARTICIPANT_READ,
+    PERMISSIONS.PARTICIPANT_DELETE,
+    PERMISSIONS.ATTENDENCE_MANAGE,
+    PERMISSIONS.EVENT_CREATE,
+    PERMISSIONS.EVENT_READ,
+    PERMISSIONS.EVENT_UPDATE,
+    PERMISSIONS.EVENT_DELETE,
+    PERMISSIONS.RESULT_MANAGE,
+    PERMISSIONS.LEADERBOARD_MANAGE,
+  ],
+  [UserRole.DESK]: [
+    PERMISSIONS.DASHBOARD_READ,
+    PERMISSIONS.COLLEGE_READ,
+    PERMISSIONS.PARTICIPANT_CREATE,
+    PERMISSIONS.PARTICIPANT_UPDATE,
+    PERMISSIONS.PARTICIPANT_READ,
+    PERMISSIONS.ATTENDENCE_MANAGE,
+    PERMISSIONS.EVENT_READ,
+  ],
+  [UserRole.PARTICIPANT]: [PERMISSIONS.REPORT_VIEW, PERMISSIONS.DASHBOARD_READ],
+};

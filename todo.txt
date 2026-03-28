@@ -1,0 +1,2 @@
+1. hackerearth id not provided in response for roster                                                                                                                          done
+8. Improve UI for Leaderboard and Results page (we will show it in closing ceremony)                                                                                            done
