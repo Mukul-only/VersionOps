@@ -101,8 +101,8 @@ export default function Results() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight">Results</h2>
-          <p className="text-sm text-muted-foreground mt-0.5">Event winners</p>
+          <h2 className="text-heading">Results</h2>
+          <p className="text-body text-muted-foreground mt-1">Event winners</p>
         </div>
       </div>
 

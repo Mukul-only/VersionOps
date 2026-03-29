@@ -1,9 +1,21 @@
-/* Wizardly "Obsidian" Design System — Manrope geometric font, teal accents, pure-black premium dark mode */
-@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;700&display=swap");
+/* Wizardly "Obsidian" Design System — Sora geometric font, teal accents, pure-black premium dark mode */
+@import url("https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ── Animation Tokens ── */
+@layer base {
+  :root {
+    --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --duration-instant: 100ms;
+    --duration-fast: 150ms;
+    --duration-normal: 200ms;
+    --duration-slow: 300ms;
+  }
+}
 
 @layer base {
   :root {
@@ -67,10 +79,86 @@
     --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.2);
 
     /* Fonts */
-    --font-sans: 'Manrope', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    --font-sans: 'Sora', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     --tracking-normal: 0em;
     --spacing: 0.25rem;
+
+    /* ── Typography Scale — Semantic Tokens for Dashboard Clarity ── */
+    /* Base: 16px (1rem) - minimum for comfortable reading */
+
+    /* Display — Hero numbers, page titles (clamp for fluid sizing) */
+    --text-display: clamp(2.5rem, 5vw + 1rem, 4rem);    /* 40-64px */
+    --text-display-line: 1.15;
+    --text-display-weight: 800;
+    --text-display-tracking: -0.01em;
+
+    /* Heading — Section titles, card headers */
+    --text-heading: clamp(1.5rem, 2vw + 0.5rem, 2rem);  /* 24-32px */
+    --text-heading-line: 1.25;
+    --text-heading-weight: 700;
+    --text-heading-tracking: -0.01em;
+
+    /* Subheading — Subsection titles, emphasis */
+    --text-subheading: clamp(1.125rem, 1vw + 0.5rem, 1.25rem); /* 18-20px */
+    --text-subheading-line: 1.4;
+    --text-subheading-weight: 600;
+    --text-subheading-tracking: 0em;
+
+    /* Body — Primary reading text */
+    --text-body: 1.125rem;                                   /* 18px - larger for readability */
+    --text-body-line: 1.7;
+    --text-body-weight: 400;
+    --text-body-tracking: 0.01em;
+
+    /* Body Large — Emphasized body, intro text */
+    --text-body-lg: 1.25rem;                            /* 20px */
+    --text-body-lg-line: 1.6;
+    --text-body-lg-weight: 500;
+    --text-body-lg-tracking: 0.02em;
+
+    /* Label — UI labels, buttons, navigation */
+    --text-label: 0.9375rem;                              /* 15px - slightly larger */
+    --text-label-line: 1.5;
+    --text-label-weight: 600;
+    --text-label-tracking: 0.03em;
+
+    /* Caption — Metadata, timestamps, helper text */
+    --text-caption: 0.8125rem;                           /* 13px - larger than before */
+    --text-caption-line: 1.5;
+    --text-caption-weight: 500;
+    --text-caption-tracking: 0.04em;
+
+    /* Metric — Numbers, stats, scores (tabular for alignment) */
+    --text-metric: 1.375rem;                              /* 22px - larger for readability */
+    --text-metric-line: 1.25;
+    --text-metric-weight: 700;
+    --text-metric-tracking: -0.01em;
+
+    /* Metric Large — Primary metrics, rankings */
+    --text-metric-lg: clamp(1.75rem, 2.5vw + 0.5rem, 2.5rem); /* 28-40px */
+    --text-metric-lg-line: 1.15;
+    --text-metric-lg-weight: 800;
+    --text-metric-lg-tracking: -0.02em;
+
+    /* Table Header — Column titles in data tables */
+    --text-table-header: 0.75rem;                         /* 12px */
+    --text-table-header-line: 1.4;
+    --text-table-header-weight: 700;
+    --text-table-header-tracking: 0.06em;
+    --text-table-header-transform: uppercase;
+
+    /* Table Cell — Body content in data tables */
+    --text-table-cell: 0.9375rem;                         /* 15px */
+    --text-table-cell-line: 1.5;
+    --text-table-cell-weight: 500;
+    --text-table-cell-tracking: 0em;
+
+    /* Table Cell Small — Secondary data (codes, IDs) */
+    --text-table-cell-sm: 0.8125rem;                      /* 13px */
+    --text-table-cell-sm-line: 1.4;
+    --text-table-cell-sm-weight: 500;
+    --text-table-cell-sm-tracking: 0em;
   }
 
   /* ══════════════════════════════════════════
@@ -166,13 +254,24 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Manrope', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    font-weight: var(--text-body-weight);
+    line-height: var(--text-body-line);
+    letter-spacing: var(--text-body-tracking);
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   /* Mono for IDs, codes, numbers */
   .font-mono {
-    font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-family: 'Manrope', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  /* Space Grotesk for headings */
+  .font-space {
+    font-family: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
   }
 
   /* selection colour — teal tint */
@@ -218,7 +317,7 @@
   /* ─ Wizardly dot prefix (● before CTA links) ─ */
   .dot-prefix::before {
     content: "●";
-    @apply text-[#5ecfba] mr-1.5 text-[8px] align-middle;
+    @apply text-primary mr-1.5 text-[8px] align-middle;
   }
 
   /* ─ Ambient teal gradient for primary CTA ─ */
@@ -250,12 +349,131 @@
     @apply bg-[#1a3d37] text-[#7cebd6] font-semibold;
   }
 
-  /* ─ Typography hierarchy ─ */
+  /* ─ Typography Hierarchy — Semantic Classes ── */
+
+  /* Display — Page titles, hero numbers */
+  .text-display {
+    font-size: var(--text-display);
+    font-weight: var(--text-display-weight);
+    line-height: var(--text-display-line);
+    letter-spacing: var(--text-display-tracking);
+    color: #e3e3e3;
+  }
+
+  /* Heading — Section titles */
+  .text-heading {
+    font-size: var(--text-heading);
+    font-weight: var(--text-heading-weight);
+    line-height: var(--text-heading-line);
+    letter-spacing: var(--text-heading-tracking);
+    color: #e3e3e3;
+  }
+
+  /* Subheading — Subsection titles */
+  .text-subheading {
+    font-size: var(--text-subheading);
+    font-weight: var(--text-subheading-weight);
+    line-height: var(--text-subheading-line);
+    letter-spacing: var(--text-subheading-tracking);
+    color: #e3e3e3;
+  }
+
+  /* Body Large — Emphasized text */
+  .text-body-lg {
+    font-size: var(--text-body-lg);
+    font-weight: var(--text-body-lg-weight);
+    line-height: var(--text-body-lg-line);
+    letter-spacing: var(--text-body-lg-tracking);
+  }
+
+  /* Body — Default text (already set on body) */
+  .text-body {
+    font-size: var(--text-body);
+    font-weight: var(--text-body-weight);
+    line-height: var(--text-body-line);
+    letter-spacing: var(--text-body-tracking);
+  }
+
+  /* Label — UI elements */
+  .text-label {
+    font-size: var(--text-label);
+    font-weight: var(--text-label-weight);
+    line-height: var(--text-label-line);
+    letter-spacing: var(--text-label-tracking);
+  }
+
+  /* Caption — Metadata, small text */
+  .text-caption {
+    font-size: var(--text-caption);
+    font-weight: var(--text-caption-weight);
+    line-height: var(--text-caption-line);
+    letter-spacing: var(--text-caption-tracking);
+    color: #919a96;
+  }
+
+  /* Metrics — Numbers, scores (tabular nums for alignment) */
+  .text-metric {
+    font-size: var(--text-metric);
+    font-weight: var(--text-metric-weight);
+    line-height: var(--text-metric-line);
+    letter-spacing: var(--text-metric-tracking);
+    font-variant-numeric: tabular-nums;
+    color: #e3e3e3;
+  }
+
+  /* Metric Large — Primary stats */
+  .text-metric-lg {
+    font-size: var(--text-metric-lg);
+    font-weight: var(--text-metric-lg-weight);
+    line-height: var(--text-metric-lg-line);
+    letter-spacing: var(--text-metric-lg-tracking);
+    font-variant-numeric: tabular-nums;
+    color: #e3e3e3;
+  }
+
+  /* Legacy compatibility — maintain old classes */
   .heading-display {
-    @apply text-[#e3e3e3] font-extrabold tracking-[-0.04em];
+    @apply text-display;
   }
   .heading-section {
-    @apply text-[#e3e3e3] font-semibold tracking-[-0.02em];
+    @apply text-heading;
+  }
+
+  /* Data table text optimization */
+  .text-data {
+    font-size: var(--text-body);
+    font-weight: 500;
+    line-height: 1.5;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Table Header — Column titles */
+  .text-table-header {
+    font-size: var(--text-table-header);
+    font-weight: var(--text-table-header-weight);
+    line-height: var(--text-table-header-line);
+    letter-spacing: var(--text-table-header-tracking);
+    text-transform: var(--text-table-header-transform);
+    color: #e3e3e3;
+  }
+
+  /* Table Cell — Body content */
+  .text-table-cell {
+    font-size: var(--text-table-cell);
+    font-weight: var(--text-table-cell-weight);
+    line-height: var(--text-table-cell-line);
+    letter-spacing: var(--text-table-cell-tracking);
+    color: #e3e3e3;
+  }
+
+  /* Table Cell Small — Secondary data */
+  .text-table-cell-sm {
+    font-size: var(--text-table-cell-sm);
+    font-weight: var(--text-table-cell-sm-weight);
+    line-height: var(--text-table-cell-sm-line);
+    letter-spacing: var(--text-table-cell-sm-tracking);
+    font-variant-numeric: tabular-nums;
+    color: #919a96;
   }
 
   /* ─ Custom thin scrollbar ─ */
@@ -278,8 +496,345 @@
     background: rgba(124, 235, 214, 0.4);
   }
 
+  /* ─ Global scrollbar styling ─ */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(124, 235, 214, 0.15) rgba(13, 13, 13, 0.3);
+  }
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  *::-webkit-scrollbar-track {
+    background: rgba(13, 13, 13, 0.3);
+    border-radius: 10px;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: rgba(124, 235, 214, 0.15);
+    border-radius: 10px;
+    border: 2px solid rgba(13, 13, 13, 0.3);
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background: rgba(124, 235, 214, 0.3);
+  }
+  *::-webkit-scrollbar-thumb:active {
+    background: rgba(124, 235, 214, 0.4);
+  }
+
   /* ─ Wizardly Bar Gradients ─ */
   .bg-teal-gradient-wizardly {
     background: linear-gradient(180deg, #7cebd6 0%, rgba(124, 235, 214, 0.1) 100%);
+  }
+
+  /* ─ Page Content Fade-In ─ */
+  .page-fade-in {
+    animation: pageFadeIn 500ms var(--ease-out-expo) forwards;
+  }
+  @keyframes pageFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* ─ Fade Up Animation ─ */
+  .animate-fade-up {
+    animation: fadeUp 500ms var(--ease-out-expo) forwards;
+  }
+  @keyframes fadeUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* ─ Staggered Children Animation ─ */
+  .stagger-children > * {
+    opacity: 0;
+    animation: pageFadeIn 500ms var(--ease-out-expo) forwards;
+  }
+  .stagger-children > *:nth-child(1) { animation-delay: 100ms; }
+  .stagger-children > *:nth-child(2) { animation-delay: 150ms; }
+  .stagger-children > *:nth-child(3) { animation-delay: 200ms; }
+  .stagger-children > *:nth-child(4) { animation-delay: 250ms; }
+  .stagger-children > *:nth-child(5) { animation-delay: 300ms; }
+  .stagger-children > *:nth-child(6) { animation-delay: 350ms; }
+
+  /* ─ Interactive Element Transitions ─ */
+  .interactive-scale {
+    transition: transform 300ms var(--ease-out-quart), background-color 300ms, border-color 300ms, box-shadow 300ms;
+  }
+  .interactive-scale:hover {
+    transform: scale(1.01);
+  }
+  .interactive-scale:active {
+    transform: scale(0.98);
+  }
+
+  /* ─ Focus Ring Animation ─ */
+  .focus-ring {
+    transition: box-shadow 300ms var(--ease-out-quart);
+  }
+
+  /* ─ Button Press Feedback ─ */
+  .btn-press {
+    transition: transform 150ms var(--ease-out-quart);
+  }
+  .btn-press:active {
+    transform: scale(0.97);
+  }
+
+  /* ─ Skeleton Pulse ─ */
+  .skeleton-pulse {
+    animation: skeletonPulse 1.5s ease-in-out infinite;
+  }
+  @keyframes skeletonPulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 0.7; }
+  }
+
+  /* ─ Counter Animation ─ */
+  .counter-animate {
+    display: inline-block;
+  }
+
+  /* ─ Number Count-Up Animation ─ */
+  @keyframes countUpReveal {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .count-up {
+    animation: countUpReveal 800ms var(--ease-out-expo) forwards;
+  }
+
+  /* ─ Pulse Glow Effect ─ */
+  @keyframes pulseGlow {
+    0%, 100% { box-shadow: 0 0 8px rgba(124, 235, 214, 0.15); }
+    50% { box-shadow: 0 0 20px rgba(124, 235, 214, 0.3); }
+  }
+  .glow-pulse {
+    animation: pulseGlow 3s ease-in-out infinite;
+  }
+
+  /* ─ Icon Micro-interaction ─ */
+  .icon-bounce {
+    transition: transform 300ms var(--ease-out-quart);
+  }
+  .icon-bounce:hover {
+    transform: scale(1.15);
+  }
+
+  /* ─ Button Arrow Slide ─ */
+  .btn-arrow-slide {
+    transition: transform 300ms var(--ease-out-quart), color 300ms;
+  }
+  .group:hover .btn-arrow-slide {
+    transform: translateX(4px);
+  }
+
+  /* ─ Leaderboard Item Hover ─ */
+  .leaderboard-item {
+    transition: transform 300ms var(--ease-out-quart), border-color 300ms, background-color 300ms, box-shadow 300ms;
+  }
+  .leaderboard-item:hover {
+    transform: translateX(6px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  }
+
+  /* ─ Card Shine Effect ─ */
+  .card-shine {
+    position: relative;
+    overflow: hidden;
+  }
+  .card-shine::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent);
+    transition: left 800ms var(--ease-out-quart);
+  }
+  .card-shine:hover::after {
+    left: 100%;
+  }
+
+  /* ─ Quick Action Button Enhanced ─ */
+  .quick-action-btn {
+    transition: transform 300ms var(--ease-out-quart), border-color 300ms, box-shadow 300ms;
+  }
+  .quick-action-btn:hover {
+    transform: translateX(6px);
+    border-color: rgba(124, 235, 214, 0.3) !important;
+    box-shadow: 0 0 20px rgba(124, 235, 214, 0.1);
+  }
+  .quick-action-btn:active {
+    transform: translateX(4px) scale(0.99);
+  }
+
+  /* ─ Stat Card Enhanced ─ */
+  .stat-card-animated {
+    transition: transform 300ms var(--ease-out-quart), border-color 300ms, box-shadow 300ms;
+  }
+  .stat-card-animated:hover {
+    transform: translateY(-4px) scale(1.02);
+    border-color: rgba(124, 235, 214, 0.2);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+  }
+
+  /* ─ View Toggle Indicator ─ */
+  .toggle-indicator {
+    transition: left 400ms var(--ease-out-expo), width 400ms var(--ease-out-expo);
+  }
+
+  /* ─ Success Pulse ─ */
+  @keyframes successPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+  }
+  .success-pulse {
+    animation: successPulse 500ms var(--ease-out-expo);
+  }
+
+  /* ─ Error Shake ─ */
+  @keyframes errorShake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+  }
+  .error-shake {
+    animation: errorShake 500ms var(--ease-out-quart);
+  }
+
+  /* ─ Skeleton Shimmer ─ */
+  .skeleton-shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+  .skeleton-shimmer::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+    animation: shimmer 1.5s infinite;
+  }
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  /* ═══════════════════════════════════════════
+     STAGGERED LIST ANIMATION SYSTEM
+     ═══════════════════════════════════════════ */
+  
+  /* ── Base: Hidden initial state ── */
+  .animate-item {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+    filter: blur(4px);
+    pointer-events: none;
+    will-change: opacity, transform, filter;
+  }
+
+  /* ── Visible state (applied via JS) ── */
+  .animate-item.is-visible {
+    animation: staggeredReveal 500ms var(--ease-out-expo) forwards;
+    pointer-events: auto;
+  }
+
+  /* ── Keyframes: Fade up + scale + blur reduction ── */
+  @keyframes staggeredReveal {
+    from {
+      opacity: 0;
+      transform: translateY(20px) scale(0.95);
+      filter: blur(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      filter: blur(0);
+    }
+  }
+
+  /* ── Alternative: Slide from left variant ── */
+  .animate-item.slide-left {
+    transform: translateX(-20px) scale(0.95);
+  }
+  .animate-item.slide-left.is-visible {
+    animation-name: staggeredSlideLeft;
+  }
+  @keyframes staggeredSlideLeft {
+    from {
+      opacity: 0;
+      transform: translateX(-20px) scale(0.95);
+      filter: blur(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+      filter: blur(0);
+    }
+  }
+
+  /* ── Container with overflow hidden for smooth reveal ── */
+  .animate-list {
+    overflow: hidden;
+  }
+}
+
+/* ── Reduced Motion Support ── */
+@media (prefers-reduced-motion: reduce) {
+  .page-fade-in,
+  .stagger-children > *,
+  .skeleton-pulse,
+  .count-up,
+  .glow-pulse,
+  .success-pulse,
+  .error-shake,
+  .skeleton-shimmer,
+  .leaderboard-slide-in,
+  .leaderboard-scale-in,
+  .leaderboard-fade-up,
+  .animate-item,
+  .animate-item.is-visible {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+    pointer-events: auto !important;
+  }
+  .interactive-scale,
+  .focus-ring,
+  .btn-press,
+  .icon-bounce,
+  .btn-arrow-slide,
+  .leaderboard-item,
+  .card-shine,
+  .quick-action-btn,
+  .stat-card-animated,
+  .toggle-indicator,
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
   }
 }

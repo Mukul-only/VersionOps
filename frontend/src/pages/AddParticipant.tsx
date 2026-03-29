@@ -131,14 +131,13 @@ export default function AddParticipant() {
         <h2 className="text-4xl font-extrabold tracking-tight text-white mb-2">
           New Participant
         </h2>
-        <p className="text-sm text-[#bcc9c5] uppercase tracking-widest font-semibold flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-teal shadow-[0_0_10px_rgba(94,207,186,0.5)]"></span>
+        <p className="text-sm text-[#bcc9c5]">
           Participant Registration
         </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 bg-surface-lowest/80 backdrop-blur-3xl border border-surface-highest/50 shadow-2xl rounded-3xl p-8 lg:p-12">
+        <div className="lg:col-span-2 bg-surface-lowest rounded-2xl p-8 lg:p-12">
           <h3 className="text-xl font-semibold text-white mb-8 border-b border-surface-highest/50 pb-4">
             Manual Entry
           </h3>
@@ -254,11 +253,9 @@ export default function AddParticipant() {
               <Button
                 type="submit"
                 disabled={form.formState.isSubmitting}
-                className="w-full rounded-full bg-teal hover:bg-teal/90 text-[#00201b] font-extrabold text-sm py-6 mt-8 transition-all"
+                className="w-full bg-teal hover:bg-teal/90 text-[#00201b] font-semibold py-6 mt-8"
               >
-                {form.formState.isSubmitting
-                  ? "INITIALIZING..."
-                  : "FINALIZE PARTICIPANT"}
+                {form.formState.isSubmitting ? "Saving..." : "Add Participant"}
               </Button>
             </form>
           </Form>
@@ -267,17 +264,17 @@ export default function AddParticipant() {
         <div className="lg:col-span-1">
           <div
             onClick={() => fileInputRef.current?.click()}
-            className="group cursor-pointer border-2 border-dashed border-teal/40 bg-surface-lowest/50 backdrop-blur-3xl rounded-3xl p-12 h-full min-h-[400px] flex flex-col items-center justify-center text-center transition-all duration-500 hover:border-teal hover:shadow-[0_0_30px_rgba(94,207,186,0.15)] hover:bg-teal/5"
+            className="cursor-pointer border-2 border-dashed border-teal/40 bg-surface-lowest rounded-2xl p-12 h-full min-h-[400px] flex flex-col items-center justify-center text-center hover:border-teal"
           >
-            <div className="w-20 h-20 rounded-full bg-surface-highest flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500 group-hover:shadow-[0_0_20px_rgba(94,207,186,0.4)]">
+            <div className="w-20 h-20 rounded-full bg-surface-highest flex items-center justify-center mb-6">
               <Upload className="w-10 h-10 text-teal" />
             </div>
-            <h3 className="text-2xl font-bold text-white mb-2">Bulk Import</h3>
+            <h3 className="text-xl font-semibold text-white mb-2">Bulk Import</h3>
             <p className="text-[#bcc9c5] text-sm mb-8 leading-relaxed">
-              Drop your CSV dataset here to ingest multiple profiles.
+              Upload a CSV file to add multiple participants at once.
             </p>
-            <span className="text-xs font-bold font-mono text-teal bg-teal/10 px-5 py-3 rounded-full uppercase tracking-widest group-hover:bg-teal/20 transition-colors">
-              SELECT FILE ⌘
+            <span className="text-xs font-semibold text-teal bg-teal/10 px-5 py-3 rounded-full">
+              Select File
             </span>
           </div>
           <input

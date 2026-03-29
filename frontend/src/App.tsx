@@ -9,6 +9,7 @@ import {
   RbacRoute,
 } from "./components/auth/RouteGuards";
 import Dashboard from "./pages/Dashboard";
+import ParticipantHome from "./pages/ParticipantHome";
 import Participants from "./pages/Participants";
 import AddParticipant from "./pages/AddParticipant";
 import Colleges from "./pages/Colleges";
@@ -47,31 +48,7 @@ const App = () => (
                 </PublicRoute>
               }
             />
-            {/* Public routes — no auth required */}
-            <Route
-              path="/leaderboard"
-              element={
-                <AppLayout>
-                  <Leaderboard />
-                </AppLayout>
-              }
-            />
-            <Route
-              path="/events"
-              element={
-                <AppLayout>
-                  <Events />
-                </AppLayout>
-              }
-            />
-            <Route
-              path="/colleges"
-              element={
-                <AppLayout>
-                  <Colleges />
-                </AppLayout>
-              }
-            />
+            {/* Public route — no auth required */}
             <Route
               path="/results"
               element={
@@ -88,10 +65,42 @@ const App = () => (
                   <AppLayout>
                     <Routes>
                       <Route
+                        path="/home"
+                        element={
+                          <RbacRoute path="/home">
+                            <ParticipantHome />
+                          </RbacRoute>
+                        }
+                      />
+                      <Route
                         path="/"
                         element={
                           <RbacRoute path="/">
                             <Dashboard />
+                          </RbacRoute>
+                        }
+                      />
+                      <Route
+                        path="/leaderboard"
+                        element={
+                          <RbacRoute path="/leaderboard">
+                            <Leaderboard />
+                          </RbacRoute>
+                        }
+                      />
+                      <Route
+                        path="/events"
+                        element={
+                          <RbacRoute path="/events">
+                            <Events />
+                          </RbacRoute>
+                        }
+                      />
+                      <Route
+                        path="/colleges"
+                        element={
+                          <RbacRoute path="/colleges">
+                            <Colleges />
                           </RbacRoute>
                         }
                       />

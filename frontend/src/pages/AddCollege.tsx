@@ -161,7 +161,7 @@ export default function AddCollege({ college, onSuccess }: AddCollegeProps) {
           {isEditMode ? "Edit College" : "New College"}
         </h2>
         <p className="text-sm text-[#bcc9c5] uppercase tracking-widest font-semibold flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-teal-400 shadow-[0_0_10px_rgba(94,207,186,0.5)]"></span>
+          <span className="w-2 h-2 rounded-full bg-teal shadow-[0_0_10px_rgba(94,207,186,0.5)]"></span>
           {isEditMode ? "Update Details" : "College Registration"}
         </p>
       </div>
@@ -170,9 +170,9 @@ export default function AddCollege({ college, onSuccess }: AddCollegeProps) {
         className={`grid grid-cols-1 ${!isEditMode ? "lg:grid-cols-3" : ""} gap-8`}
       >
         <div
-          className={`${!isEditMode ? "lg:col-span-2" : ""} bg-zinc-900/80 backdrop-blur-3xl border border-zinc-800/50 shadow-2xl rounded-3xl p-8 lg:p-12`}
+          className={`${!isEditMode ? "lg:col-span-2" : ""} bg-surface-lowest/80 backdrop-blur-3xl border border-surface-highest/50 shadow-2xl rounded-3xl p-8 lg:p-12`}
         >
-          <h3 className="text-xl font-semibold text-white mb-8 border-b border-zinc-800/50 pb-4">
+          <h3 className="text-xl font-semibold text-white mb-8 border-b border-surface-highest/50 pb-4">
             {isEditMode ? "Modify Details" : "Manual Entry"}
           </h3>
           <Form {...form}>
@@ -200,7 +200,7 @@ export default function AddCollege({ college, onSuccess }: AddCollegeProps) {
                     <FormLabel>College Name</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="e.g., MIT College of Engineering"
+                        placeholder="e.g., Massachusetts Institute of Technology"
                         {...field}
                       />
                     </FormControl>
@@ -211,7 +211,7 @@ export default function AddCollege({ college, onSuccess }: AddCollegeProps) {
               <Button
                 type="submit"
                 disabled={form.formState.isSubmitting}
-                className="w-full rounded-full bg-teal-400 hover:bg-teal-500 text-black font-extrabold text-sm py-6 mt-8 transition-all border-none"
+                className="w-full rounded-full bg-teal hover:bg-teal/90 text-[#00201b] font-extrabold text-sm py-6 mt-8 transition-all"
               >
                 {form.formState.isSubmitting
                   ? isEditMode
@@ -229,17 +229,16 @@ export default function AddCollege({ college, onSuccess }: AddCollegeProps) {
           <div className="lg:col-span-1">
             <div
               onClick={() => document.getElementById("csv-upload")?.click()}
-              className="group cursor-pointer border-2 border-dashed border-teal-400/40 bg-zinc-900/50 backdrop-blur-3xl rounded-3xl p-12 h-full min-h-[400px] flex flex-col items-center justify-center text-center transition-all duration-500 hover:border-teal-400 hover:shadow-[0_0_30px_rgba(94,207,186,0.15)] hover:bg-teal-400/5"
+              className="group cursor-pointer border-2 border-dashed border-teal/40 bg-surface-lowest/50 backdrop-blur-3xl rounded-3xl p-12 h-full min-h-[400px] flex flex-col items-center justify-center text-center transition-all duration-500 hover:border-teal hover:shadow-[0_0_30px_rgba(94,207,186,0.15)] hover:bg-teal/5"
             >
-              <div className="w-20 h-20 rounded-full bg-zinc-800 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500 group-hover:shadow-[0_0_20px_rgba(94,207,186,0.4)]">
-                <Upload className="w-10 h-10 text-teal-400" />
+              <div className="w-20 h-20 rounded-full bg-surface-highest flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500 group-hover:shadow-[0_0_20px_rgba(94,207,186,0.4)]">
+                <Upload className="w-10 h-10 text-teal" />
               </div>
               <h3 className="text-2xl font-bold text-white mb-2">
                 Bulk Import
               </h3>
-              <p className="text-[#bcc9c5] text-sm mb-4 leading-relaxed">
-                Format:{" "}
-                <code className="text-teal-400 font-mono">code,name</code>
+              <p className="text-[#bcc9c5] text-xs mb-4 leading-relaxed font-mono text-left break-all bg-surface-lowest rounded-xl p-4 w-full border border-surface-highest/50">
+                code,name
               </p>
 
               <div className="flex flex-col space-y-4 w-full px-4">
@@ -253,7 +252,7 @@ export default function AddCollege({ college, onSuccess }: AddCollegeProps) {
                 />
 
                 {csvFile && (
-                  <p className="text-teal-400 text-xs font-mono font-bold truncate px-2">
+                  <p className="text-teal text-xs font-mono font-bold truncate px-2">
                     {csvFile.name}
                   </p>
                 )}
@@ -265,7 +264,7 @@ export default function AddCollege({ college, onSuccess }: AddCollegeProps) {
                   }}
                   disabled={!csvFile || isImporting}
                   variant="outline"
-                  className="w-full rounded-full border-teal-400/50 text-teal-400 hover:bg-teal-400 hover:text-black transition-all cursor-pointer z-10"
+                  className="w-full rounded-full border-teal/50 text-teal hover:bg-teal hover:text-[#00201b] transition-all cursor-pointer z-10"
                 >
                   {isImporting
                     ? "IMPORTING..."

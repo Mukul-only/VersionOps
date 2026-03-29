@@ -46,6 +46,10 @@ export const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ childr
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  if (user.role === "PARTICIPANT" && location.pathname === "/") {
+    return <Navigate to="/home" replace />;
+  }
+
   return <>{children}</>;
 };
 

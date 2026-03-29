@@ -28,6 +28,7 @@ export const PERMISSIONS = {
 
 export const ROUTE_PERMISSIONS: Record<string, AppPermission | null> = {
     '/': PERMISSIONS.DASHBOARD_READ,
+    '/home': PERMISSIONS.DASHBOARD_READ,
     '/participants': PERMISSIONS.PARTICIPANT_READ,
     '/participants/add': PERMISSIONS.PARTICIPANT_CREATE,
     '/colleges': PERMISSIONS.COLLEGE_READ,
@@ -40,7 +41,7 @@ export const ROUTE_PERMISSIONS: Record<string, AppPermission | null> = {
     '/users': PERMISSIONS.USERS_MANAGE,
 };
 
-export const ROUTE_ORDER = ['/', '/participants', '/colleges', '/events', '/leaderboard', '/results'];
+export const ROUTE_ORDER = ['/home', '/', '/participants', '/colleges', '/events', '/leaderboard', '/results'];
 
 export type AppPermission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 export type AppRole = 'ADMIN' | 'OPERATOR' | 'DESK' | 'PARTICIPANT';

@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Command, ShieldCheck, ArrowLeft, Trophy, CalendarDays, GraduationCap } from 'lucide-react';
+import { Loader2, Command, ShieldCheck, ArrowLeft } from 'lucide-react';
 import { mapped_toast } from "@/lib/toast_map.ts";
 import { Link } from 'react-router-dom';
 
@@ -107,24 +107,6 @@ const Register = () => {
             </span>
           </div>
         </div>
-
-        <div className="flex gap-5 text-xs font-medium" style={{ color: T.textSecondary }}>
-          {([
-            { label: "Leaderboard", icon: <Trophy className="h-3.5 w-3.5" /> },
-            { label: "Events",      icon: <CalendarDays className="h-3.5 w-3.5" /> },
-            { label: "Colleges",    icon: <GraduationCap className="h-3.5 w-3.5" /> },
-          ]).map(({ label, icon }) => (
-            <Link
-              key={label}
-              to={`/${label.toLowerCase()}`}
-              className="flex items-center gap-1.5 transition-colors duration-150"
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = T.textPrimary; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = T.textSecondary; }}
-            >
-              {icon}{label}
-            </Link>
-          ))}
-        </div>
       </nav>
 
       {/* ── Main centered content ── */}
@@ -218,13 +200,10 @@ const Register = () => {
             >
               Version 26 · Cognix
             </p>
-            <h1
-              className="text-2xl font-bold mb-2 leading-tight"
-              style={{ color: T.textPrimary, letterSpacing: "-0.03em" }}
-            >
+            <h1 className="text-heading mb-2" style={{ color: T.textPrimary }}>
               Create Account
             </h1>
-            <p className="text-sm font-medium" style={{ color: T.textSecondary }}>
+            <p className="text-body" style={{ color: T.textSecondary }}>
               Register to access the dashboard
             </p>
           </div>
@@ -235,7 +214,7 @@ const Register = () => {
             <div className="space-y-2">
               <Label
                 htmlFor="name"
-                className="text-xs font-bold block"
+                className="text-caption font-bold block"
                 style={{ color: T.textPrimary, letterSpacing: "0.04em" }}
               >
                 Full Name
@@ -260,7 +239,7 @@ const Register = () => {
             <div className="space-y-2">
               <Label
                 htmlFor="email"
-                className="text-xs font-bold block"
+                className="text-caption font-bold block"
                 style={{ color: T.textPrimary, letterSpacing: "0.04em" }}
               >
                 Email
@@ -285,7 +264,7 @@ const Register = () => {
             <div className="space-y-2">
               <Label
                 htmlFor="password"
-                className="text-xs font-bold"
+                className="text-caption font-bold"
                 style={{ color: T.textPrimary, letterSpacing: "0.04em" }}
               >
                 Password
@@ -313,7 +292,7 @@ const Register = () => {
             <div className="space-y-2">
               <Label
                 htmlFor="confirmPassword"
-                className="text-xs font-bold"
+                className="text-caption font-bold"
                 style={{ color: T.textPrimary, letterSpacing: "0.04em" }}
               >
                 Confirm Password

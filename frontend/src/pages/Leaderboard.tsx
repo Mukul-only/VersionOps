@@ -69,10 +69,10 @@ export default function Leaderboard() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight">Leaderboard</h2>
-          <p className="text-sm text-muted-foreground mt-0.5">{leaderboard.length} colleges ranked</p>
+          <h2 className="text-heading">Leaderboard</h2>
+          <p className="text-body text-muted-foreground mt-1">{leaderboard.length} colleges ranked</p>
         </div>
-        <Button variant="outline" onClick={recalculate} disabled={recalculating} className="mr-12">
+        <Button variant="outline" onClick={recalculate} disabled={recalculating}>
           <RefreshCw className={cn("mr-2 h-4 w-4", recalculating && "animate-spin")} />
           Recalculate
         </Button>
@@ -85,26 +85,18 @@ export default function Leaderboard() {
 
       {/* Top 3 podium cards */}
       {!search && top3.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {top3.map((entry, i) => (
-            <div key={entry.collegeId} className={cn("rounded-xl p-4 flex flex-col gap-2", MEDAL[i].bg)}>
+            <div key={entry.collegeId} className={cn("rounded-lg p-4 flex flex-col gap-2", MEDAL[i].bg)}>
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  {MEDAL[i].icon}
-                  <span className={cn("text-xs font-bold uppercase tracking-widest", MEDAL[i].text)}>
-                    {i === 0 ? "1st" : i === 1 ? "2nd" : "3rd"}
-                  </span>
-                </div>
-                <span className={cn("text-2xl font-bold font-mono", MEDAL[i].text)}>{entry.totalPoints}</span>
+                <span className={cn("font-semibold", MEDAL[i].text)}>
+                  {i === 0 ? "1st" : i === 1 ? "2nd" : "3rd"}
+                </span>
+                <span className={cn("font-mono text-metric font-bold", MEDAL[i].text)}>{entry.totalPoints}</span>
               </div>
               <div>
-                <p className="font-semibold text-foreground leading-tight">{entry.college?.name}</p>
-                <p className="text-xs text-muted-foreground font-mono">{entry.college?.code}</p>
-              </div>
-              <div className="flex gap-3 text-xs text-muted-foreground mt-1">
-                <span>🥇 {entry.firstPrizes}</span>
-                <span>🥈 {entry.secondPrizes}</span>
-                <span>🥉 {entry.thirdPrizes}</span>
+                <p className="text-table-cell font-medium">{entry.college?.name}</p>
+                <p className="text-table-cell-sm">{entry.college?.code}</p>
               </div>
             </div>
           ))}
@@ -113,43 +105,42 @@ export default function Leaderboard() {
 
       <div className="w-full overflow-x-auto pb-8">
         <Table>
-          <TableHeader>
-            <TableRow className="hover:bg-transparent bg-transparent border-none shadow-none">
-              <TableHead className="w-16">Rank</TableHead>
-              <TableHead>College</TableHead>
-              <TableHead className="w-28 text-right">Total Points</TableHead>
-              <TableHead className="w-20 text-center">🥇</TableHead>
-              <TableHead className="w-20 text-center">🥈</TableHead>
-              <TableHead className="w-20 text-center">🥉</TableHead>
-            </TableRow>
-          </TableHeader>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-16 text-table-header">Rank</TableHead>
+                <TableHead className="text-table-header">College</TableHead>
+                <TableHead className="text-table-header text-right">Points</TableHead>
+                <TableHead className="text-table-header text-center">1st</TableHead>
+                <TableHead className="text-table-header text-center">2nd</TableHead>
+                <TableHead className="text-table-header text-center">3rd</TableHead>
+              </TableRow>
+            </TableHeader>
           <TableBody>
-            {filtered.map((entry, i) => (
-              <TableRow key={entry.collegeId} className={cn(i < 3 && !search && "opacity-50 text-xs")}>
+            {filtered.slice(search ? undefined : 3).map((entry, i) => (
+              <TableRow key={entry.collegeId}>
                 <TableCell>
                   <span className={cn(
-                    "inline-flex items-center justify-center w-6 h-6 rounded text-xs font-semibold",
-                    i === 0 ? "bg-yellow-400/20 text-yellow-400"
-                    : i === 1 ? "bg-zinc-300/20 text-zinc-300"
-                    : i === 2 ? "bg-amber-600/20 text-amber-600"
-                    : "text-muted-foreground border"
+                    "inline-flex items-center justify-center w-6 h-6 rounded text-sm font-medium",
+                    entry.totalPoints > 0 ? "bg-primary/10 text-primary" : "text-muted-foreground border"
                   )}>
-                    {i + 1}
+                    {filtered.indexOf(entry) + 1}
                   </span>
                 </TableCell>
                 <TableCell>
-                  <p className="font-medium text-foreground">{entry.college?.name}</p>
-                  <p className="text-xs text-muted-foreground font-mono">{entry.college?.code}</p>
+                  <p className="text-table-cell font-medium">{entry.college?.name}</p>
+                  <p className="text-table-cell-sm">{entry.college?.code}</p>
                 </TableCell>
-                <TableCell className="font-mono font-semibold text-right">{entry.totalPoints}</TableCell>
-                <TableCell className="font-mono text-center text-foreground/80">{entry.firstPrizes}</TableCell>
-                <TableCell className="font-mono text-center text-foreground/80">{entry.secondPrizes}</TableCell>
-                <TableCell className="font-mono text-center text-foreground/80">{entry.thirdPrizes}</TableCell>
+                <TableCell className="font-mono text-table-cell text-right">{entry.totalPoints}</TableCell>
+                <TableCell className="font-mono text-table-cell text-center">{entry.firstPrizes}</TableCell>
+                <TableCell className="font-mono text-table-cell text-center">{entry.secondPrizes}</TableCell>
+                <TableCell className="font-mono text-table-cell text-center">{entry.thirdPrizes}</TableCell>
               </TableRow>
             ))}
             {filtered.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-12">No colleges found</TableCell>
+                <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
+                  {search ? "No colleges match your search" : "No colleges yet"}
+                </TableCell>
               </TableRow>
             )}
           </TableBody>

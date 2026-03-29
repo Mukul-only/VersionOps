@@ -29,7 +29,13 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-const navItems = [
+const navItemsBase = [
+  {
+    to: "/home",
+    icon: LayoutDashboard,
+    label: "Home",
+    requiredPermissions: ["dashboard-read"],
+  },
   {
     to: "/",
     icon: LayoutDashboard,
@@ -37,20 +43,32 @@ const navItems = [
     requiredPermissions: ["dashboard-read"],
   },
   {
-    label: "Participants",
-    icon: Users,
-    basePath: "/participants",
-    requiredPermissions: ["participant-read", "participant-create"],
+    to: "/leaderboard",
+    icon: Trophy,
+    label: "Leaderboard",
+    requiredPermissions: ["leaderboard-manage"],
+  },
+  {
+    to: "/results",
+    icon: Medal,
+    label: "Results",
+    requiredPermissions: ["result-manage"],
+  },
+  {
+    label: "Events",
+    icon: CalendarDays,
+    basePath: "/events",
+    requiredPermissions: ["event-read", "event-create"],
     subItems: [
       {
-        to: "/participants",
-        label: "View Participants",
-        requiredPermissions: ["participant-read"],
+        to: "/events",
+        label: "View Events",
+        requiredPermissions: ["event-read"],
       },
       {
-        to: "/participants/add",
-        label: "Add Participant",
-        requiredPermissions: ["participant-create"],
+        to: "/events/add",
+        label: "Add Event",
+        requiredPermissions: ["event-create"],
       },
     ],
   },
@@ -73,34 +91,22 @@ const navItems = [
     ],
   },
   {
-    label: "Events",
-    icon: CalendarDays,
-    basePath: "/events",
-    requiredPermissions: ["event-read", "event-create"],
+    label: "Participants",
+    icon: Users,
+    basePath: "/participants",
+    requiredPermissions: ["participant-read", "participant-create"],
     subItems: [
       {
-        to: "/events",
-        label: "View Events",
-        requiredPermissions: ["event-read"],
+        to: "/participants",
+        label: "View Participants",
+        requiredPermissions: ["participant-read"],
       },
       {
-        to: "/events/add",
-        label: "Add Event",
-        requiredPermissions: ["event-create"],
+        to: "/participants/add",
+        label: "Add Participant",
+        requiredPermissions: ["participant-create"],
       },
     ],
-  },
-  {
-    to: "/leaderboard",
-    icon: Trophy,
-    label: "Leaderboard",
-    requiredPermissions: ["leaderboard-manage"],
-  },
-  {
-    to: "/results",
-    icon: Medal,
-    label: "Results",
-    requiredPermissions: ["result-manage"],
   },
   {
     to: "/users",
@@ -116,13 +122,22 @@ export function AppSidebar({ onClose }: { onClose?: () => void }) {
   const { user, logout } = useAuth();
   const role = user?.role as AppRole | undefined;
 
+  const isParticipant = role === "PARTICIPANT";
+  const isAdmin = role === "ADMIN";
+
+  const visibleNavItems = navItemsBase.filter((item) => {
+    if (isParticipant && item.to === "/") return false;
+    if (isAdmin && item.to === "/home") return false;
+    return true;
+  });
+
   const canSee = (perms?: string[]) => {
     if (!perms || perms.length === 0) return true;
     return hasAnyPermission(role, perms as AppPermission[]);
   };
 
   useEffect(() => {
-    const activeSection = navItems.find(
+    const activeSection = visibleNavItems.find(
       (item) => item.basePath && location.pathname.startsWith(item.basePath),
     );
     if (activeSection) {
@@ -136,7 +151,7 @@ export function AppSidebar({ onClose }: { onClose?: () => void }) {
 
   return (
     <aside
-      className="w-64 h-full flex flex-col shrink-0"
+      className="w-64 h-screen flex flex-col shrink-0 fixed left-0 top-0"
       style={{
         background: "#0d0d0d",
         borderRight: "1px solid #222224",
@@ -201,7 +216,7 @@ export function AppSidebar({ onClose }: { onClose?: () => void }) {
 
       {/* ── Navigation ── */}
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-        {navItems
+        {visibleNavItems
           .filter((item) => {
             if (item.subItems) {
               return item.subItems.some((sub) =>

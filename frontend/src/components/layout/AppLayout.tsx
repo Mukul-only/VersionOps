@@ -3,7 +3,7 @@ import { useLocation, Link } from "react-router-dom";
 import { AppSidebar } from "./AppSidebar";
 import { GlobalSearch } from "../GlobalSearch";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Maximize2, Minimize2, Menu, Command, Trophy, CalendarDays, GraduationCap, LogIn } from "lucide-react";
+import { Maximize2, Minimize2, Menu, Command, LogIn } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -17,17 +17,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const isLeaderboard = location.pathname === "/leaderboard";
   const isParticipant = user?.role === "PARTICIPANT";
   const isGuest = !user;
-  const showSidebar = (!isLeaderboard || !sidebarCollapsed) && !isParticipant && !isGuest;
-
-  const PUBLIC_NAV = [
-    { to: "/leaderboard", label: "Leaderboard", icon: <Trophy className="h-3.5 w-3.5" /> },
-    { to: "/events",      label: "Events",      icon: <CalendarDays className="h-3.5 w-3.5" /> },
-    { to: "/colleges",   label: "Colleges",    icon: <GraduationCap className="h-3.5 w-3.5" /> },
-  ];
+  const showSidebar = !isGuest && !isParticipant && (!isLeaderboard || !sidebarCollapsed);
 
   return (
     <div
-      className="flex min-h-screen w-full font-sans"
+      className="flex min-h-screen w-full font-sans overflow-x-hidden"
       style={{
         background: "#0d0d0d",
         color: "#e3e3e3",
@@ -52,16 +46,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
             <span className="font-bold" style={{ fontSize: 10, color: "#5ecfba", letterSpacing: "0.12em", textTransform: "uppercase" }}>Cognix</span>
           </div>
           <div className="flex items-center gap-5">
-            {PUBLIC_NAV.map(({ to, label, icon }) => (
-              <Link
-                key={to}
-                to={to}
-                className="flex items-center gap-1.5 text-xs font-medium transition-colors duration-150"
-                style={{ color: location.pathname === to ? "#7cebd6" : "#6b7280" }}
-              >
-                {icon}{label}
-              </Link>
-            ))}
             <Link
               to="/login"
               className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition-all duration-150"
@@ -84,21 +68,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
       {/* ── Sidebar ── */}
       {!isParticipant && !isGuest && (
-        <div
-          className={cn(
-            isMobile
-              ? "fixed inset-y-0 left-0 z-50 transition-transform duration-200"
-              : "shrink-0 transition-all duration-300 overflow-hidden",
-            isMobile && !sidebarOpen && "-translate-x-full",
-            !isMobile && !showSidebar && "w-0 opacity-0"
-          )}
-        >
-          <AppSidebar onClose={isMobile ? () => setSidebarOpen(false) : undefined} />
-        </div>
+        <AppSidebar onClose={isMobile ? () => setSidebarOpen(false) : undefined} />
       )}
 
       {/* ── Main content area ── */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
         
         {/* ── Mobile header — Wizardly glassmorphism pill ── */}
         {isMobile && !isParticipant && !isGuest && (
@@ -177,10 +151,14 @@ export function AppLayout({ children }: { children: ReactNode }) {
         {/* ── Page Content ── */}
         <main
           className={cn(
-            "flex-1 p-6 md:p-10 transition-all duration-300 max-w-[1800px] mx-auto w-full",
-            !isMobile && !showSidebar && "p-8 md:p-12",
+            "flex-1 p-6 md:p-10 transition-all duration-300",
+            !isMobile && !isParticipant && !isGuest && "ml-64",
             isGuest && "pt-24 md:pt-28"
           )}
+          style={{
+            width: !isMobile && !isParticipant && !isGuest ? 'calc(100vw - 16rem)' : '100%',
+            maxWidth: !isMobile && !isParticipant && !isGuest ? 'calc(100vw - 16rem)' : '100%'
+          }}
         >
           {children}
         </main>

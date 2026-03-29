@@ -141,9 +141,9 @@ export default {
         "teal-sm": "0 0 8px rgba(94, 207, 186, 0.2)",
       },
       fontFamily: {
-        // Wizardly uses Manrope — geometric rounded sans-serif
+        // Wizardly uses Sora — modern geometric sans-serif
         sans: [
-          "Manrope",
+          "Sora",
           "ui-sans-serif",
           "system-ui",
           "-apple-system",
@@ -156,7 +156,7 @@ export default {
           "sans-serif",
         ],
         mono: [
-          "IBM Plex Mono",
+          "JetBrains Mono",
           "ui-monospace",
           "SFMono-Regular",
           "Menlo",
@@ -171,6 +171,45 @@ export default {
         display: "-0.04em",
         headline: "-0.02em",
         label: "0.12em",
+      },
+      fontSize: {
+        /* Semantic type scale for dashboard readability */
+        display: [
+          "clamp(2.5rem, 5vw + 1rem, 4rem)",
+          { lineHeight: "1.1", letterSpacing: "-0.03em", fontWeight: "800" },
+        ],
+        heading: [
+          "clamp(1.5rem, 2vw + 0.5rem, 2rem)",
+          { lineHeight: "1.2", letterSpacing: "-0.02em", fontWeight: "700" },
+        ],
+        subheading: [
+          "clamp(1.125rem, 1vw + 0.5rem, 1.25rem)",
+          { lineHeight: "1.3", letterSpacing: "-0.01em", fontWeight: "600" },
+        ],
+        "body-lg": [
+          "1.125rem",
+          { lineHeight: "1.5", letterSpacing: "-0.01em", fontWeight: "500" },
+        ],
+        body: [
+          "1rem",
+          { lineHeight: "1.6", letterSpacing: "0", fontWeight: "400" },
+        ],
+        label: [
+          "0.875rem",
+          { lineHeight: "1.4", letterSpacing: "0", fontWeight: "600" },
+        ],
+        caption: [
+          "0.75rem",
+          { lineHeight: "1.4", letterSpacing: "0.01em", fontWeight: "500" },
+        ],
+        metric: [
+          "1.25rem",
+          { lineHeight: "1.2", letterSpacing: "-0.02em", fontWeight: "700" },
+        ],
+        "metric-lg": [
+          "clamp(1.5rem, 2vw + 0.5rem, 2.25rem)",
+          { lineHeight: "1.1", letterSpacing: "-0.03em", fontWeight: "800" },
+        ],
       },
     },
   },
