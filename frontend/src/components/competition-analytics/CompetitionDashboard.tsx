@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useRef } from "react";
+import React, { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { CollegeReport } from "@/api/types";
 import {
   getScoreStats,
@@ -90,14 +90,14 @@ const ScoreBreakdown = ({
       bg: "bg-[#00d2ff]/10",
     },
     {
-      label: "Win Points",
+      label: "Prize Points",
       value: prizePoints,
       icon: Trophy,
       color: "text-amber-500",
       bg: "bg-amber-500/10",
     },
     {
-      label: "Adjustments",
+      label: "Adjustment Points",
       value: adjustmentPoints,
       icon: AlertCircle,
       color: adjustmentPoints >= 0 ? "text-emerald-500" : "text-destructive",
@@ -110,7 +110,7 @@ const ScoreBreakdown = ({
       color: "text-primary",
       bg: "bg-primary/10",
     },
-  ].filter((item) => item.label !== "Adjustments" || item.value !== 0);
+  ].filter((item) => item.label !== "Adjustment Points" || item.value !== 0);
 
   return (
     <div
@@ -175,9 +175,9 @@ const InsightsStrip = ({
             <Award className="h-6 w-6 text-amber-500 group-hover:text-primary transition-colors" />
           </div>
           <div>
-            <p className="section-label mb-1 opacity-60">Performance</p>
+            <p className="section-label mb-1 opacity-60">Total Wins</p>
             <p className="text-metric group-hover:text-primary transition-colors">
-              {totalWins} Wins
+              {totalWins}
             </p>
             <p className="text-caption italic opacity-40">
               across {totalEvents} events
@@ -217,8 +217,8 @@ const InsightsStrip = ({
             <p className="text-metric truncate group-hover:text-primary transition-colors">
               {bestEvent?.eventName || "N/A"}
             </p>
-            <p className="text-caption italic opacity-40">
-              Highest scored event
+            <p className="caption italic opacity-40">
+              Highest scoring event
             </p>
           </div>
         </div>
@@ -340,41 +340,79 @@ export const ToggleButtons = ({
 
 export const EventChart = ({ data, onBarClick }: any) => {
   const maxPoints = Math.max(...data.map((d: any) => d.points), 10);
+  const [mounted, setMounted] = useState(false);
+  const isMounting = useRef(true);
+
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => {
+      setMounted(true);
+      // After first mount, all subsequent renders are data changes
+      setTimeout(() => { isMounting.current = false; }, 800);
+    });
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  const MAX_H = 200;
 
   return (
     <div className="bg-card rounded-[1.5rem] overflow-hidden border border-border">
       <div className="px-8 pt-8 flex items-center justify-between border-b border-border pb-4">
         <h3 className="section-label">Event Activity</h3>
         <span className="section-label text-primary bg-primary/10 px-3 py-1 rounded-full">
-          Points per event
+          pts per event
         </span>
       </div>
       <div className="p-4">
         <div className="h-[360px] w-full overflow-x-auto pb-4 pt-4 scrollbar-wizardly">
           <div className="h-full flex items-end gap-8 min-w-full relative px-6 pb-16 border-b border-border w-max">
-            {data.map((d: any) => {
-              const heightPercent = Math.max((d.points / maxPoints) * 100, 4);
+            {data.map((d: any, i: number) => {
+              const scaleY = mounted
+                ? Math.max(d.points / maxPoints, d.points === 0 ? 0.04 : 0.04)
+                : 0;
+              const staggerDelay = isMounting.current ? i * 60 : 0;
+
               return (
                 <div
                   key={d.name}
                   className="flex-1 group relative cursor-pointer min-w-[100px] max-w-[140px] flex flex-col items-center"
                   onClick={() => onBarClick && onBarClick(d.raw)}
                 >
-                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 transition-all duration-300 ease-out-quart transform group-hover:-translate-y-1 z-50">
-                    <div className="bg-transparent text-foreground text-label whitespace-nowrap font-bold">
+                  {/* Value label */}
+                  <div
+                    className="absolute left-1/2 -translate-x-1/2 z-50 group-hover:-translate-y-1 whitespace-nowrap"
+                    style={{
+                      bottom: `${MAX_H * scaleY + 8}px`,
+                      opacity: mounted ? 1 : 0,
+                      transition: `opacity 300ms cubic-bezier(0.16,1,0.3,1) ${mounted && isMounting.current ? i * 60 + 500 : 50}ms, transform 200ms cubic-bezier(0.25,1,0.5,1), bottom 450ms cubic-bezier(0.16,1,0.3,1) ${staggerDelay}ms`,
+                    }}
+                  >
+                    <div className="text-foreground text-label font-bold">
                       {d.points}
                     </div>
                   </div>
+
+                  {/* Bar — fixed height, scaleY is data-driven */}
                   <div
                     className={cn(
-                      "w-full rounded-t-xl transition-all duration-500 ease-out-quart relative",
+                      "w-full rounded-t-xl relative origin-bottom group-hover:brightness-110",
                       d.points === 0
                         ? "bg-muted border border-dashed border-border"
-                        : "bg-primary hover:bg-primary/80",
+                        : "bg-primary",
                     )}
-                    style={{ height: `${(heightPercent * 200) / 100}px` }}
+                    style={{
+                      height: `${MAX_H}px`,
+                      transform: `scaleY(${scaleY})`,
+                      transition: `transform 450ms cubic-bezier(0.16,1,0.3,1) ${staggerDelay}ms, filter 200ms ease`,
+                    }}
                   />
-                  <div className="absolute top-full mt-4 left-1/2 -translate-x-1/2 section-label group-hover:text-primary transition-colors w-[80px] text-center break-words whitespace-normal leading-tight">
+
+                  <div
+                    className="absolute top-full mt-4 left-1/2 -translate-x-1/2 section-label group-hover:text-primary transition-colors w-[80px] text-center break-words whitespace-normal leading-tight"
+                    style={{
+                      opacity: mounted ? 1 : 0,
+                      transition: `opacity 400ms cubic-bezier(0.16,1,0.3,1) ${mounted && isMounting.current ? i * 60 + 300 : 0}ms, color 150ms ease`,
+                    }}
+                  >
                     {d.name}
                   </div>
                 </div>
@@ -389,6 +427,18 @@ export const EventChart = ({ data, onBarClick }: any) => {
 
 export const ParticipantChart = ({ data, onBarClick, reportData }: any) => {
   const maxPoints = Math.max(...data.map((d: any) => d.points), 10);
+  const [mounted, setMounted] = useState(false);
+  const isMounting = useRef(true);
+
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => {
+      setMounted(true);
+      setTimeout(() => { isMounting.current = false; }, 800);
+    });
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  const MAX_H = 200;
 
   return (
     <div className="bg-card rounded-[1.5rem] overflow-hidden border border-border">
@@ -401,8 +451,11 @@ export const ParticipantChart = ({ data, onBarClick, reportData }: any) => {
       <div className="p-4">
         <div className="h-[360px] w-full overflow-x-auto pb-4 pt-4 scrollbar-wizardly">
           <div className="h-full flex items-end gap-8 min-w-full relative px-6 pb-16 border-b border-border w-max">
-            {data.map((d: any) => {
-              const heightPercent = Math.max((d.points / maxPoints) * 100, 4);
+            {data.map((d: any, i: number) => {
+              const scaleY = mounted
+                ? Math.max(d.points / maxPoints, 0.04)
+                : 0;
+              const staggerDelay = isMounting.current ? i * 60 : 0;
 
               const participantEvents =
                 reportData?.eventBreakdown?.filter((event: any) =>
@@ -443,21 +496,42 @@ export const ParticipantChart = ({ data, onBarClick, reportData }: any) => {
                     })
                   }
                 >
-                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 transition-all duration-300 ease-out-quart transform group-hover:-translate-y-1 z-50">
-                    <div className="bg-transparent text-foreground text-label whitespace-nowrap font-bold">
+                  {/* Value label */}
+                  <div
+                    className="absolute left-1/2 -translate-x-1/2 z-50 group-hover:-translate-y-1 whitespace-nowrap"
+                    style={{
+                      bottom: `${MAX_H * scaleY + 8}px`,
+                      opacity: mounted ? 1 : 0,
+                      transition: `opacity 300ms cubic-bezier(0.16,1,0.3,1) ${mounted && isMounting.current ? i * 60 + 500 : 50}ms, transform 200ms cubic-bezier(0.25,1,0.5,1), bottom 450ms cubic-bezier(0.16,1,0.3,1) ${staggerDelay}ms`,
+                    }}
+                  >
+                    <div className="text-foreground text-label font-bold">
                       {d.points}
                     </div>
                   </div>
+
+                  {/* Bar — fixed height, scaleY is data-driven */}
                   <div
                     className={cn(
-                      "w-full rounded-t-xl transition-all duration-500 ease-out-quart relative",
+                      "w-full rounded-t-xl relative origin-bottom group-hover:brightness-110",
                       d.points === 0
                         ? "bg-muted border border-dashed border-border"
-                        : "bg-warning hover:bg-warning/80",
+                        : "bg-warning",
                     )}
-                    style={{ height: `${(heightPercent * 200) / 100}px` }}
+                    style={{
+                      height: `${MAX_H}px`,
+                      transform: `scaleY(${scaleY})`,
+                      transition: `transform 450ms cubic-bezier(0.16,1,0.3,1) ${staggerDelay}ms, filter 200ms ease`,
+                    }}
                   />
-                  <div className="absolute top-full mt-4 left-1/2 -translate-x-1/2 section-label group-hover:text-warning transition-colors w-[100px] text-center break-words whitespace-normal leading-tight">
+
+                  <div
+                    className="absolute top-full mt-4 left-1/2 -translate-x-1/2 section-label group-hover:text-warning transition-colors w-[100px] text-center break-words whitespace-normal leading-tight"
+                    style={{
+                      opacity: mounted ? 1 : 0,
+                      transition: `opacity 400ms cubic-bezier(0.16,1,0.3,1) ${mounted && isMounting.current ? i * 60 + 300 : 0}ms, color 150ms ease`,
+                    }}
+                  >
                     {d.name}
                   </div>
                 </div>
@@ -499,7 +573,7 @@ export const DrilldownDrawer = ({
           <div className="flex flex-col gap-4">
             <div className="flex justify-between items-baseline border-b border-border/50 pb-3">
               <span className="text-sm text-muted-foreground font-medium">
-                Net Yield
+                Total Points
               </span>
               <span className="text-2xl font-bold tabular-nums tracking-tight">
                 {data?.total}{" "}
@@ -509,7 +583,7 @@ export const DrilldownDrawer = ({
             {data?.participants?.length > 0 && (
               <div className="flex justify-between items-baseline border-b border-border/50 pb-3">
                 <span className="text-sm text-muted-foreground font-medium">
-                  Unit Size
+                  Total Members
                 </span>
                 <span className="text-2xl font-bold tabular-nums tracking-tight">
                   {data?.participants?.length || 0}{" "}
@@ -525,7 +599,7 @@ export const DrilldownDrawer = ({
         {data?.winners?.length > 0 && (
           <div className="space-y-4">
             <h4 className="text-xs font-semibold tracking-wider uppercase text-muted-foreground">
-              {isParticipantView ? "Honorable Results" : "Victory Profile"}
+              {isParticipantView ? "Results" : "Winners"}
             </h4>
             <div className="flex flex-col gap-1">
               {data.winners.map((winner: any, i: number) => (
@@ -575,7 +649,7 @@ export const DrilldownDrawer = ({
         {data?.participants?.length > 0 && (
           <div className="space-y-4">
             <h4 className="text-xs font-semibold tracking-wider uppercase text-muted-foreground">
-              {isParticipantView ? "Event Deployment" : "Active Personnel"}
+              {isParticipantView ? "Event Participation" : "Members"}
             </h4>
             <div className="flex flex-wrap gap-2">
               {data?.participants?.map((p: any, i: number) => (
@@ -594,7 +668,7 @@ export const DrilldownDrawer = ({
           <div className="space-y-4 pt-6 border-t border-border">
             <div className="flex justify-between items-center">
               <span className="text-sm text-muted-foreground font-medium">
-                Participation Base
+                Participation Points
               </span>
               <span className="text-base font-bold tabular-nums tracking-tight">
                 {data?.participationPoints}
@@ -602,7 +676,7 @@ export const DrilldownDrawer = ({
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm text-muted-foreground font-medium">
-                Performance Bonus
+                Prize Points
               </span>
               <span className="text-base font-bold text-warning tabular-nums tracking-tight">
                 +{data?.prizePoints}
@@ -610,7 +684,7 @@ export const DrilldownDrawer = ({
             </div>
             <div className="flex justify-between items-center pt-4 border-t border-border/50">
               <span className="text-sm font-bold text-foreground">
-                Total Yield
+                Total Points
               </span>
               <span className="text-2xl font-bold text-primary tabular-nums tracking-tight">
                 {data?.total}

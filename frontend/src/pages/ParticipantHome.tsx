@@ -42,33 +42,33 @@ function ScoreBreakdownStrip({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 animate-in slide-in-from-bottom-4 fade-in duration-700 fill-mode-both delay-150">
       <div className="flex flex-col gap-1 p-5 rounded-2xl bg-card border border-border">
-        <span className="section-label text-muted-foreground">Engagement</span>
+        <span className="section-label text-muted-foreground">Participation Points</span>
         <div className="flex items-baseline gap-2 mt-2">
           <span className="text-metric-lg tabular-nums tracking-tight">
             {data.participationPoints}
           </span>
           <span className="text-caption text-muted-foreground font-medium uppercase tracking-widest">
-            Base
+            pts
           </span>
         </div>
       </div>
 
       <div className="flex flex-col gap-1 p-5 rounded-2xl bg-card border border-border">
         <span className="section-label text-muted-foreground">
-          Achievements
+          Prize Points
         </span>
         <div className="flex items-baseline gap-2 mt-2">
           <span className="text-metric-lg text-warning tabular-nums tracking-tight">
             {data.prizePoints}
           </span>
           <span className="text-caption text-muted-foreground font-medium uppercase tracking-widest">
-            Yield
+            pts
           </span>
         </div>
       </div>
 
       <div className="flex flex-col gap-1 p-5 rounded-2xl bg-card border border-border">
-        <span className="section-label text-muted-foreground">Corrections</span>
+        <span className="section-label text-muted-foreground">Adjustment Points</span>
         <div className="flex items-baseline gap-2 mt-2">
           <span
             className={cn(
@@ -80,7 +80,7 @@ function ScoreBreakdownStrip({
             {data.adjustmentPoints}
           </span>
           <span className="text-caption text-muted-foreground font-medium uppercase tracking-widest">
-            Net
+            pts
           </span>
         </div>
       </div>
@@ -95,51 +95,88 @@ function LeaderboardPreview({
   colleges: LeaderboardEntry[];
   userCollegeId?: number;
 }) {
+  const rankConfig = [
+    {
+      bg: "bg-amber-500/15",
+      text: "text-amber-400",
+      border: "border-l-amber-400/60",
+      icon: "🥇",
+    },
+    {
+      bg: "bg-slate-400/10",
+      text: "text-slate-300",
+      border: "border-l-slate-400/40",
+      icon: "🥈",
+    },
+    {
+      bg: "bg-orange-600/10",
+      text: "text-orange-400",
+      border: "border-l-orange-500/40",
+      icon: "🥉",
+    },
+  ];
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between border-b border-border pb-4">
         <h3 className="section-label">Live Leaderboard</h3>
         <span className="section-label text-muted-foreground">Top 5</span>
       </div>
-      <div className="flex flex-col">
+      <div className="flex flex-col gap-1">
         {colleges.slice(0, 5).map((entry, i) => {
           const isUser = entry.collegeId === userCollegeId;
           const rank = i + 1;
+          const cfg = rankConfig[i];
 
           return (
             <div
               key={entry.collegeId}
               className={cn(
-                "flex items-center justify-between py-3 border-b border-border/50 last:border-0",
-                isUser &&
-                  "bg-primary/5 -mx-4 px-4 rounded-lg border-transparent",
+                "flex items-center justify-between py-3 px-3 rounded-xl border-l-2 transition-colors",
+                isUser
+                  ? "bg-primary/8 border-l-primary"
+                  : cfg
+                    ? cn("border-l-2", cfg.border, "hover:bg-white/[0.02]")
+                    : "border-l-transparent hover:bg-white/[0.02]",
               )}
             >
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
+                {cfg && !isUser ? (
+                  <span
+                    className={cn(
+                      "text-xs font-black w-7 h-7 flex items-center justify-center rounded-lg tabular-nums",
+                      cfg.bg,
+                      cfg.text,
+                    )}
+                  >
+                    {rank}
+                  </span>
+                ) : (
+                  <span
+                    className={cn(
+                      "text-xs font-black w-7 h-7 flex items-center justify-center rounded-lg tabular-nums",
+                      isUser
+                        ? "bg-primary/15 text-primary"
+                        : "bg-muted/50 text-muted-foreground",
+                    )}
+                  >
+                    {rank}
+                  </span>
+                )}
                 <span
                   className={cn(
-                    "text-body font-bold w-6 text-center tabular-nums",
-                    isUser
-                      ? "text-primary"
-                      : rank <= 3
-                        ? "text-foreground"
-                        : "text-muted-foreground",
-                  )}
-                >
-                  {rank}
-                </span>
-                <span
-                  className={cn(
-                    "text-body truncate max-w-[180px]",
+                    "text-body",
                     isUser
                       ? "text-primary font-bold"
-                      : "text-foreground font-medium",
+                      : cfg
+                        ? "text-foreground font-semibold"
+                        : "text-foreground font-medium",
                   )}
                 >
                   {entry.college?.name}
                   {isUser && (
                     <span className="ml-2 text-primary/80 text-xs font-bold uppercase tracking-widest bg-primary/10 px-2 py-0.5 rounded">
-                      (You)
+                      You
                     </span>
                   )}
                 </span>
@@ -147,13 +184,15 @@ function LeaderboardPreview({
               <span
                 className={cn(
                   "text-metric tabular-nums tracking-tight",
-                  isUser ? "text-primary" : "text-foreground",
+                  isUser
+                    ? "text-primary"
+                    : cfg
+                      ? cfg.text
+                      : "text-muted-foreground",
                 )}
               >
                 {entry.totalPoints}{" "}
-                <span className="text-sm font-normal text-muted-foreground">
-                  pts
-                </span>
+                <span className="text-sm font-normal opacity-60">pts</span>
               </span>
             </div>
           );
@@ -162,6 +201,7 @@ function LeaderboardPreview({
     </div>
   );
 }
+
 
 export default function ParticipantHome() {
   const navigate = useNavigate();
@@ -224,6 +264,7 @@ export default function ParticipantHome() {
         reportService.getMyCollegeReport({ suppressRedirect: true }),
         leaderboardService.get({
           take: 10,
+          includeRelations: true,
           suppressRedirect: true,
           suppressErrorToast: true,
         }),
@@ -380,7 +421,7 @@ export default function ParticipantHome() {
       <div className="flex flex-col md:flex-row gap-8 md:items-end justify-between border-b border-border pb-8">
         <div className="flex flex-col gap-1">
           <span className="section-label text-muted-foreground">
-            Portfolio Value
+            Total Score
           </span>
           <div className="flex items-baseline gap-2">
             <span className="text-display tabular-nums leading-none tracking-tighter">
@@ -393,16 +434,42 @@ export default function ParticipantHome() {
         <div className="flex gap-10">
           <div className="flex flex-col gap-1">
             <span className="section-label text-muted-foreground">
-              Global Rank
+              Rank
             </span>
             <span className="text-metric-lg tracking-tight text-foreground">
               #{reportData?.leaderboard?.rank || "-"}
             </span>
+            {reportData?.leaderboard && reportData.leaderboard.rank > 1 && (
+              <div className="flex flex-col gap-0.5 mt-1">
+                {reportData.leaderboard.pointsToRankAbove != null && (
+                  <span className={cn(
+                    "text-xs",
+                    reportData.leaderboard.pointsToRankAbove === 0 ? "text-muted-foreground" : "text-destructive"
+                  )}>
+                    {reportData.leaderboard.pointsToRankAbove === 0 
+                      ? `Tied with #${reportData.leaderboard.rank - 1}`
+                      : `Behind from #${reportData.leaderboard.rank - 1}: ${reportData.leaderboard.pointsToRankAbove} pts`
+                    }
+                  </span>
+                )}
+                {reportData.leaderboard.pointsAheadOfNext != null && reportData.leaderboard.rank < reportData.leaderboard.totalColleges && (
+                  <span className={cn(
+                    "text-xs",
+                    reportData.leaderboard.pointsAheadOfNext === 0 ? "text-muted-foreground" : "text-success"
+                  )}>
+                    {reportData.leaderboard.pointsAheadOfNext === 0
+                      ? `Tied with #${reportData.leaderboard.rank + 1}`
+                      : `Ahead from #${reportData.leaderboard.rank + 1}: ${reportData.leaderboard.pointsAheadOfNext} pts`
+                    }
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col gap-1">
             <span className="section-label text-muted-foreground">
-              Activity Index
+              Events Participated
             </span>
             <span className="text-metric-lg tracking-tight text-foreground">
               {reportData?.insights?.totalEventsParticipated || 0}
@@ -411,7 +478,7 @@ export default function ParticipantHome() {
 
           <div className="flex flex-col gap-1">
             <span className="section-label text-muted-foreground">
-              Win Velocity
+              Total Wins
             </span>
             <span className="text-metric-lg tracking-tight text-foreground">
               {reportData?.insights?.totalWins || 0}

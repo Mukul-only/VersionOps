@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -21,6 +22,10 @@ export class UserService {
       throw new ConflictException('Email already exists');
     }
 
+    if (dto.role === 'PARTICIPANT' && !dto.collegeId) {
+      throw new BadRequestException('College ID is required for participant users');
+    }
+
     const hashedPassword = await hashPassword(dto.password);
 
     const user = await this.prisma.user.create({
@@ -29,6 +34,19 @@ export class UserService {
         email: dto.email,
         password: hashedPassword,
         role: dto.role ?? undefined,
+        ...(dto.role === 'PARTICIPANT' && dto.collegeId
+          ? {
+              participant: {
+                create: {
+                  participantId: `P-${Date.now()}`,
+                  name: dto.name,
+                  email: dto.email,
+                  year: 'ONE',
+                  collegeId: dto.collegeId,
+                },
+              },
+            }
+          : {}),
       },
     });
 

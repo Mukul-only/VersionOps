@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Pencil, Trash2, Plus, Users as UsersIcon, Mail, Shield, ShieldCheck } from "lucide-react";
-import { userService } from "@/api/services";
+import { userService, collegeService } from "@/api/services";
+import type { College } from "@/api/types";
 import { mapped_toast } from "@/lib/toast_map.ts";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -23,18 +24,19 @@ const ROLE_COLORS: Record<string, string> = {
   PARTICIPANT: "bg-white/5 text-white/40 border-white/10",
 };
 
-const MANAGEABLE_ROLES = ["OPERATOR", "DESK"];
+const MANAGEABLE_ROLES = ["OPERATOR", "DESK", "PARTICIPANT"];
 
 export default function Users() {
   const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
+  const [colleges, setColleges] = useState<College[]>([]);
   const [createOpen, setCreateOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
 
-  const [form, setForm] = useState({ name: "", email: "", password: "", role: "OPERATOR" });
+  const [form, setForm] = useState({ name: "", email: "", password: "", role: "OPERATOR", collegeId: "" });
   const [editForm, setEditForm] = useState({ name: "", password: "", role: "" });
 
-  useEffect(() => { void load(); }, []);
+  useEffect(() => { void load(); void loadColleges(); }, []);
 
   const load = async () => {
     try {
@@ -45,16 +47,33 @@ export default function Users() {
     }
   };
 
+  const loadColleges = async () => {
+    try {
+      const data = await collegeService.getAll();
+      setColleges(data.items);
+    } catch {
+      mapped_toast("Failed to load colleges", "error");
+    }
+  };
+
   const handleCreate = async () => {
     if (!form.name || !form.email || !form.password) {
       mapped_toast("All fields are required", "error");
       return;
     }
+    if (form.role === "PARTICIPANT" && !form.collegeId) {
+      mapped_toast("College is required for participants", "error");
+      return;
+    }
     try {
-      await userService.create(form);
+      const payload: any = { name: form.name, email: form.email, password: form.password, role: form.role };
+      if (form.role === "PARTICIPANT") {
+        payload.collegeId = parseInt(form.collegeId);
+      }
+      await userService.create(payload);
       mapped_toast("User created successfully", "success");
       setCreateOpen(false);
-      setForm({ name: "", email: "", password: "", role: "OPERATOR" });
+      setForm({ name: "", email: "", password: "", role: "OPERATOR", collegeId: "" });
       await load();
     } catch (e: any) {
       mapped_toast(e?.message || "Failed to create user", "error");
@@ -210,13 +229,14 @@ export default function Users() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Role</Label>
-                <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v })}>
+                <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v, collegeId: "" })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="OPERATOR">Operator</SelectItem>
                     <SelectItem value="DESK">Desk</SelectItem>
+                    <SelectItem value="PARTICIPANT">Participant</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -231,6 +251,24 @@ export default function Users() {
                 />
               </div>
             </div>
+
+            {form.role === "PARTICIPANT" && (
+              <div className="space-y-2">
+                <Label>College</Label>
+                <Select value={form.collegeId} onValueChange={(v) => setForm({ ...form, collegeId: v })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select college" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {colleges.map((college) => (
+                      <SelectItem key={college.id} value={college.id.toString()}>
+                        {college.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
 
           <DialogFooter>
@@ -273,6 +311,7 @@ export default function Users() {
                 <SelectContent>
                   <SelectItem value="OPERATOR">Operator</SelectItem>
                   <SelectItem value="DESK">Desk</SelectItem>
+                  <SelectItem value="PARTICIPANT">Participant</SelectItem>
                 </SelectContent>
               </Select>
             </div>
